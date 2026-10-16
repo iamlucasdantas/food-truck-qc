@@ -893,6 +893,7 @@ export type Database = {
         Args: { _dup: string; _keep: string }
         Returns: undefined
       }
+      owner_favorite_summary: { Args: { _truck_id: string }; Returns: Json }
       owner_id_by_email: { Args: { _email: string }; Returns: string }
       owns_truck: { Args: { _truck_id: string }; Returns: boolean }
       purge_deleted_trucks: { Args: never; Returns: number }
