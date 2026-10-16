@@ -28,12 +28,12 @@ export const Route = createFileRoute("/")({
   validateSearch: (s: Record<string, unknown>) => s as Record<string, string | undefined>,
   head: () => ({
     meta: [
-      { title: "FoodTruckQC — Food trucks near you." },
-      { name: "description", content: "See which Quad Cities food trucks are open now or this weekend." },
-      { property: "og:title", content: "FoodTruckQC — Food trucks near you." },
+      { title: "Quad Cities Food Trucks Open Now — Live Map | FoodTruckQC" },
+      { name: "description", content: "Find Quad Cities food trucks open now in Davenport, Bettendorf, Rock Island and Moline. Live map, today's locations, menus and weekly schedules." },
+      { property: "og:title", content: "Quad Cities Food Trucks Open Now — Live Map | FoodTruckQC" },
       { property: "og:image", content: "https://app.foodtruckqc.com/og-image.jpg" },
       { name: "twitter:image", content: "https://app.foodtruckqc.com/og-image.jpg" },
-      { property: "og:description", content: "See which Quad Cities food trucks are open now or this weekend." },
+      { property: "og:description", content: "Find Quad Cities food trucks open now in Davenport, Bettendorf, Rock Island and Moline. Live map, today's locations, menus and weekly schedules." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -357,7 +357,7 @@ function Index() {
       {/* Tablet / desktop column */}
       <aside className={`absolute inset-y-0 left-0 z-[1000] hidden flex-col bg-secondary shadow-pop md:flex ${mapFailed ? "w-full" : "w-[360px] min-[1200px]:w-[420px]"}`}>
         <div className={`space-y-2 bg-card p-3 shadow-pop ${mapFailed ? "mx-auto w-full max-w-[1100px]" : ""}`}>
-          <h1 className="px-1"><Logo /></h1>
+          <h1 className="px-1"><Logo /><span className="sr-only">Quad Cities food trucks open now: live map and schedules</span></h1>
           {searchRow}{quickRow}{activeRow}
         </div>
         <div className={`flex-1 overflow-y-auto pt-2 ${mapFailed ? "mx-auto w-full max-w-[1100px]" : ""}`}>{listHeader}<div className="mt-1">{list}</div><SiteFooter /></div>

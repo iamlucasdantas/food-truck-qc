@@ -21,9 +21,9 @@ export const Route = createFileRoute("/truck/$id")({
     return {
       meta: [
         { title: `${name} — food truck schedule | FoodTruckQC` },
-        { name: "description", content: `Where to find ${name} in the Quad Cities this week, plus menu and hours.` },
+        { name: "description", content: `Where is ${name} today? See its live location, upcoming stops, menu and hours in Davenport, Bettendorf, Rock Island and Moline.` },
         { property: "og:title", content: `${name} | FoodTruckQC` },
-        { property: "og:description", content: `Weekly schedule and menu for ${name}.` },
+        { property: "og:description", content: `Live location, upcoming stops and menu for ${name} in the Quad Cities.` },
         { property: "og:type", content: "website" },
         { name: "twitter:card", content: "summary" },
       ],
@@ -115,7 +115,7 @@ function TruckPage() {
       })()}
 
       <section className="panel p-5">
-        <h2 className="mb-3 text-xl font-bold">Upcoming stops</h2>
+        <h2 className="mb-3 text-xl font-bold">Upcoming stops for {t.name}</h2>
         {stops.length === 0 && <p className="text-sm text-muted-foreground">No stops scheduled.</p>}
         <ul className="divide-y-2 divide-muted">
           {stops.map((s) => (
@@ -133,7 +133,7 @@ function TruckPage() {
       {sections?.length ? (
         <section id="menu" className="panel scroll-mt-4 p-5" aria-labelledby="menu-h">
           <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-            <h2 id="menu-h" className="text-xl font-bold">Current menu</h2>
+            <h2 id="menu-h" className="text-xl font-bold">{t.name} menu</h2>
             {t.menu_updated_at && <p className="text-sm text-muted-foreground">Updated by owner · {new Date(t.menu_updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>}
           </div>
           <div className="space-y-4">
