@@ -15,3 +15,4 @@
 - Auth is a modal opened via `useAuth().openAuth()`; pages stay public and RLS protects data — no route-level gate.
 - Roles only come from `user_roles` + `has_role()`; never from profile/user metadata.
 - Truck logos are stored as small data URLs on the truck row because the workspace blocks public storage buckets.
+- Facebook ingestion: one async Apify job per kind (pages/groups) per run; an Apify webhook + admin Continue process posts in time-boxed batches, deduped via social_posts, so work survives reloads and timeouts.
