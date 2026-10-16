@@ -377,6 +377,7 @@ function Index() {
                 </span>
                 {sel.stop && sel.status !== "none" && <p className="mt-1 text-xs text-muted-foreground">{SOURCE_LABEL[sel.stop.source]}</p>}
               </div>
+              <button onClick={() => toggle(sel.t.id)} aria-label={isFav(sel.t.id) ? "Remove from favorites" : "Save to favorites"} className={`grid h-11 w-11 shrink-0 place-items-center rounded-full hover:bg-muted ${focus}`}><Heart className={`h-5 w-5 ${isFav(sel.t.id) ? "fill-primary text-primary" : "text-muted-foreground"}`} /></button>
               <button onClick={() => setSelected(null)} aria-label="Close" className={`grid h-11 w-11 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-muted ${focus}`}><X className="h-5 w-5" /></button>
             </div>
             <div className="mt-3 grid grid-cols-4 gap-2">
