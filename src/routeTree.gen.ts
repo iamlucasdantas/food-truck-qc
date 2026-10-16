@@ -20,6 +20,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
+import { Route as EmbedRegisterTruckRouteImport } from './routes/embed.register-truck'
 import { Route as OwnerNewRouteImport } from './routes/owner.new'
 import { Route as TruckIdRouteImport } from './routes/truck.$id'
 import { Route as ApiPublicApifyWebhookRouteImport } from './routes/api/public/apify-webhook'
@@ -79,6 +80,11 @@ const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
   path: '/account',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const EmbedRegisterTruckRoute = EmbedRegisterTruckRouteImport.update({
+  id: '/embed/register-truck',
+  path: '/embed/register-truck',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OwnerNewRoute = OwnerNewRouteImport.update({
   id: '/new',
   path: '/new',
@@ -112,6 +118,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/account': typeof AuthenticatedAccountRoute
+  '/embed/register-truck': typeof EmbedRegisterTruckRoute
   '/owner/new': typeof OwnerNewRoute
   '/truck/$id': typeof TruckIdRoute
   '/api/public/apify-webhook': typeof ApiPublicApifyWebhookRoute
@@ -128,6 +135,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/account': typeof AuthenticatedAccountRoute
+  '/embed/register-truck': typeof EmbedRegisterTruckRoute
   '/owner/new': typeof OwnerNewRoute
   '/truck/$id': typeof TruckIdRoute
   '/api/public/apify-webhook': typeof ApiPublicApifyWebhookRoute
@@ -146,6 +154,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/_authenticated/account': typeof AuthenticatedAccountRoute
+  '/embed/register-truck': typeof EmbedRegisterTruckRoute
   '/owner/new': typeof OwnerNewRoute
   '/truck/$id': typeof TruckIdRoute
   '/api/public/apify-webhook': typeof ApiPublicApifyWebhookRoute
@@ -164,6 +173,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terms'
     | '/account'
+    | '/embed/register-truck'
     | '/owner/new'
     | '/truck/$id'
     | '/api/public/apify-webhook'
@@ -180,6 +190,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terms'
     | '/account'
+    | '/embed/register-truck'
     | '/owner/new'
     | '/truck/$id'
     | '/api/public/apify-webhook'
@@ -197,6 +208,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terms'
     | '/_authenticated/account'
+    | '/embed/register-truck'
     | '/owner/new'
     | '/truck/$id'
     | '/api/public/apify-webhook'
@@ -214,6 +226,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
+  EmbedRegisterTruckRoute: typeof EmbedRegisterTruckRoute
   TruckIdRoute: typeof TruckIdRoute
   ApiPublicApifyWebhookRoute: typeof ApiPublicApifyWebhookRoute
   ApiPublicJobsFacebookDailyRoute: typeof ApiPublicJobsFacebookDailyRoute
@@ -298,6 +311,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAccountRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/embed/register-truck': {
+      id: '/embed/register-truck'
+      path: '/embed/register-truck'
+      fullPath: '/embed/register-truck'
+      preLoaderRoute: typeof EmbedRegisterTruckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/owner/new': {
       id: '/owner/new'
       path: '/new'
@@ -361,6 +381,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
+  EmbedRegisterTruckRoute: EmbedRegisterTruckRoute,
   TruckIdRoute: TruckIdRoute,
   ApiPublicApifyWebhookRoute: ApiPublicApifyWebhookRoute,
   ApiPublicJobsFacebookDailyRoute: ApiPublicJobsFacebookDailyRoute,
