@@ -122,7 +122,7 @@ function LiveCard({ truck }: { truck: Truck }) {
 
   async function findAddr() {
     const g = await geocode(addr);
-    if (!g) return toast.error("Address not found");
+    if (!g) { toast.error("Address not found"); return; }
     setPos(g);
   }
 
