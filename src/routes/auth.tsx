@@ -25,9 +25,6 @@ function AuthPage() {
   const { redirect, mode } = Route.useSearch();
   const { user } = useAuth();
   const navigate = useNavigate();
-  useEffect(() => {
-    try { sessionStorage.setItem("ftqc:returnTo", safe(redirect)); } catch { /* ignore */ }
-  }, [redirect]);
   useEffect(() => { if (user) void navigate({ to: safe(redirect), replace: true }); }, [user, redirect, navigate]);
 
   return (

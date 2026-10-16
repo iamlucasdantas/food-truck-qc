@@ -1,3 +1,4 @@
+import { Heart } from "lucide-react";
 import { SiteFooter } from "@/components/SiteFooter";
 import { createFileRoute, Link, ClientOnly } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -55,7 +56,7 @@ function TruckPage() {
           <h1 className="break-words text-2xl font-extrabold sm:text-3xl">{t.name}</h1>
           <p className="text-muted-foreground">{t.category} · {t.accepts_card ? "Cards accepted" : "Cash only"}</p>
         </div>
-        <button onClick={() => toggle(t.id)} aria-label="Favorite" className={`chip ${isFav(t.id) ? "chip-active" : ""}`}>♥</button>
+        <button onClick={() => toggle(t.id)} aria-label={isFav(t.id) ? "Remove from favorites" : "Save to favorites"} aria-pressed={isFav(t.id)} className="chip h-11"><Heart className={`h-4 w-4 ${isFav(t.id) ? "fill-primary text-primary" : ""}`} />{isFav(t.id) ? "Saved" : "Save"}</button>
       </header>
       <p>{t.description}</p>
       {(() => {

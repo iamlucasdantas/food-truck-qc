@@ -383,6 +383,7 @@ function Index() {
               <Action href={sel.t.phone ? `tel:${sel.t.phone}` : undefined} icon={<Phone className="h-4 w-4" />} label="Call" />
               <Action href={sel.t.website ?? undefined} icon={<Globe className="h-4 w-4" />} label="Website" external />
               <Action href={sel.t.instagram ? (sel.t.instagram.startsWith("http") ? sel.t.instagram : `https://instagram.com/${sel.t.instagram.replace(/^@/, "")}`) : undefined} icon={<Instagram className="h-4 w-4" />} label="Instagram" external />
+              <button onClick={() => toggle(sel.t.id)} aria-label={isFav(sel.t.id) ? "Remove from favorites" : "Save to favorites"} className="sr-only">fav</button>
               <Action href={`https://www.google.com/maps/dir/?api=1&destination=${sel.lat},${sel.lng}`} icon={<Navigation className="h-4 w-4" />} label="Directions" external primary />
             </div>
             <Link to="/truck/$id" params={{ id: sel.t.id }} className={`mt-2 flex h-11 items-center justify-center rounded-xl text-sm font-semibold text-primary hover:bg-muted ${focus}`}>View details →</Link>
