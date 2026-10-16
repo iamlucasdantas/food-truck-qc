@@ -44,3 +44,8 @@
 
 ## Part I — Premium Admin
 - [x] Sidebar + badges, top bar, Cmd/Ctrl+K palette, overview, truck drawer, table polish, undo, saved views, tests
+
+## Part J — Premium Owner Onboarding (done, not published)
+- [x] Welcome screen, icon stepper, completeness ring + nudges, live truck-page preview, celebrate moments, autosave indicator, save-and-finish-later
+- [x] Social-link prefill (OG tags), Google address autocomplete, cuisine picker, status tracker, share kit (copy/QR/social), dashboard tour + gentle nudges
+- [ ] Verify signed-in wizard flow on screen; social prefill depends on sites allowing fetches

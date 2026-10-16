@@ -163,6 +163,16 @@ html, body { overflow-x: hidden; }
 .leaflet-container { font-family: var(--font-body); }
 .leaflet-control-zoom a { width: 44px !important; height: 44px !important; line-height: 44px !important; }
 
+/* Onboarding celebratory micro-moments (disabled by the reduced-motion rule above). */
+@keyframes pop {
+  0% { transform: scale(0.4); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes confetti {
+  0% { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.6); }
+}
+
 /* Softer outlines everywhere: legacy thick borders render as hairlines. */
 .border-2 { border-width: 1px; }
 
