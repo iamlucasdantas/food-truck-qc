@@ -67,13 +67,12 @@ export const submitTruckSignup = createServerFn({ method: "POST" })
     if (!s.ok) return { ok: false, field: s.field, error: s.error };
     const slug = data.truckName.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) || "truck";
     const id = `${slug}-${Math.random().toString(36).slice(2, 6)}`;
-    const { error } = await supabaseAdmin.from("trucks").insert({ id, ...s.truck, status: "pending", source: "embed_form" });
+    // A typed email is not proof of account ownership: never attach the truck to an account here.
+    // The owner links it by claiming it while signed in.
+    const { error } = await supabaseAdmin.from("trucks").insert({ id, ...s.truck, created_by: null, claimed_by: null, status: "pending", source: "embed_form" });
     if (error) {
       console.error("[embed signup] insert failed", error);
       return { ok: false, error: "Could not save. Please try again." };
-    }
-    if (s.truck.created_by) {
-      await supabaseAdmin.from("claims").insert({ truck_id: id, user_id: s.truck.created_by, user_email: s.contact.email, message: "Additional truck submitted via the embed form" });
     }
     const { postOwnerWebhook } = await import("@/lib/owner-webhook.server");
     await postOwnerWebhook({
