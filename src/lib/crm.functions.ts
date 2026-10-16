@@ -127,7 +127,7 @@ export const notifyCrmTruckDecision = createServerFn({ method: "POST" })
       name = name || (u?.user?.user_metadata?.["full_name"] as string) || (u?.user?.user_metadata?.["name"] as string) || "";
     }
     // Same business name for every truck of a business: the owner's business profile, else the name saved with the submission.
-    let businessName = (t.description.match(/Business:\s*([^\n]+)/)?.[1] ?? "").trim();
+    let businessName = t.business_name || (t.description.match(/Business:\s*([^\n]+)/)?.[1] ?? "").trim();
     const ownerId = t.claimed_by ?? t.created_by;
     if (ownerId) {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

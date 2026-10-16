@@ -36,10 +36,11 @@ function NewTruck() {
 
   // An owner who already has a business only answers truck questions (single step).
   const [hasBiz, setHasBiz] = useState(false);
+  const [bizName, setBizName] = useState("");
   useEffect(() => {
     if (!user) return;
-    void supabase.from("businesses").select("owner_id").eq("owner_id", user.id).maybeSingle().then(({ data }) => {
-      if (data) { setHasBiz(true); setStep(1); }
+    void supabase.from("businesses").select("owner_id, name").eq("owner_id", user.id).maybeSingle().then(({ data }) => {
+      if (data) { setHasBiz(true); setBizName(data.name); setStep(1); }
     });
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (user?.email && !f.email) setF((p) => ({ ...p, email: user.email ?? "" })); }, [user?.email]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -63,7 +64,10 @@ function NewTruck() {
     e.preventDefault();
     const e1 = step1Errors();
     setErr(e1);
-    if (!Object.keys(e1).length) setStep(1);
+    if (Object.keys(e1).length) return;
+    // First truck: its name starts as the business name (editable).
+    if (!f.name.trim() && f.businessName.trim()) setF((p) => ({ ...p, name: p.businessName.trim() }));
+    setStep(1);
   }
 
   async function submit(e: React.FormEvent) {
@@ -130,7 +134,7 @@ function NewTruck() {
       ) : (
         <form onSubmit={step === 0 ? next : submit} className="panel space-y-3 p-4 sm:p-5" noValidate>
           {hasBiz ? (
-            <div className="space-y-1"><h2 className="text-base font-bold">Your new truck</h2><p className="text-sm text-muted-foreground">It joins your business and uses its website, social links and payment methods.</p></div>
+            <div className="space-y-1"><h2 className="text-base font-bold">Your new truck</h2>{bizName && <p className="text-sm">Business: <b>{bizName}</b></p>}<p className="text-sm text-muted-foreground">It joins your business and uses its website, social links and payment methods.</p></div>
           ) : <StepHeader step={step} titles={["About you and your business", "Your truck"]} />}
           {step === 0 ? (
             <>
