@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as FavoritesRouteImport } from './routes/favorites'
+import { Route as OwnerRouteImport } from './routes/owner'
+import { Route as OwnerNewRouteImport } from './routes/owner.new'
 import { Route as TruckIdRouteImport } from './routes/truck.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -23,6 +25,16 @@ const FavoritesRoute = FavoritesRouteImport.update({
   path: '/favorites',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OwnerRoute = OwnerRouteImport.update({
+  id: '/owner',
+  path: '/owner',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OwnerNewRoute = OwnerNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => OwnerRoute,
+} as any)
 const TruckIdRoute = TruckIdRouteImport.update({
   id: '/truck/$id',
   path: '/truck/$id',
@@ -32,30 +44,37 @@ const TruckIdRoute = TruckIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/favorites': typeof FavoritesRoute
+  '/owner': typeof OwnerRouteWithChildren
+  '/owner/new': typeof OwnerNewRoute
   '/truck/$id': typeof TruckIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/favorites': typeof FavoritesRoute
+  '/owner': typeof OwnerRouteWithChildren
+  '/owner/new': typeof OwnerNewRoute
   '/truck/$id': typeof TruckIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/favorites': typeof FavoritesRoute
+  '/owner': typeof OwnerRouteWithChildren
+  '/owner/new': typeof OwnerNewRoute
   '/truck/$id': typeof TruckIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/favorites' | '/truck/$id'
+  fullPaths: '/' | '/favorites' | '/owner' | '/owner/new' | '/truck/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/favorites' | '/truck/$id'
-  id: '__root__' | '/' | '/favorites' | '/truck/$id'
+  to: '/' | '/favorites' | '/owner' | '/owner/new' | '/truck/$id'
+  id: '__root__' | '/' | '/favorites' | '/owner' | '/owner/new' | '/truck/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   FavoritesRoute: typeof FavoritesRoute
+  OwnerRoute: typeof OwnerRouteWithChildren
   TruckIdRoute: typeof TruckIdRoute
 }
 
@@ -75,6 +94,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FavoritesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/owner': {
+      id: '/owner'
+      path: '/owner'
+      fullPath: '/owner'
+      preLoaderRoute: typeof OwnerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/owner/new': {
+      id: '/owner/new'
+      path: '/new'
+      fullPath: '/owner/new'
+      preLoaderRoute: typeof OwnerNewRouteImport
+      parentRoute: typeof OwnerRoute
+    }
     '/truck/$id': {
       id: '/truck/$id'
       path: '/truck/$id'
@@ -85,9 +118,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface OwnerRouteChildren {
+  OwnerNewRoute: typeof OwnerNewRoute
+}
+
+const OwnerRouteChildren: OwnerRouteChildren = {
+  OwnerNewRoute: OwnerNewRoute,
+}
+
+const OwnerRouteWithChildren = OwnerRoute._addFileChildren(OwnerRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   FavoritesRoute: FavoritesRoute,
+  OwnerRoute: OwnerRouteWithChildren,
   TruckIdRoute: TruckIdRoute,
 }
 export const routeTree = rootRouteImport
