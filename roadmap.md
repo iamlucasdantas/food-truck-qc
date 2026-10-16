@@ -11,3 +11,7 @@
 - Admin approval of claims (step 3)
 - Admin /admin: claims, trucks edit/archive/merge, CSV import, ingestion logs
 - PWA manifest, /privacy, /terms
+
+## Step 3 — done
+- [x] /admin: claims (approve/reject w/ reason), pending trucks, trucks search/edit/archive/merge, CSV import, import logs
+- [x] PWA manifest + icons, /privacy, /terms, Admin link in account menu

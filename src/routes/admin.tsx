@@ -1,0 +1,256 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/use-auth";
+import { parseCsv, slugify } from "@/data/trucks";
+import { geocode } from "@/lib/geocode";
+
+export const Route = createFileRoute("/admin")({
+  head: () => ({
+    meta: [
+      { title: "Admin | FoodTruckQC" },
+      { name: "description", content: "Review claims, approve trucks, import and merge listings." },
+      { property: "og:title", content: "Admin | FoodTruckQC" },
+      { property: "og:description", content: "FoodTruckQC administration." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
+  component: Admin,
+});
+
+const TABS = ["Claims", "Pending trucks", "Trucks", "CSV import", "Logs"] as const;
+const err = (e: { message: string } | null) => (e ? (toast.error(e.message), true) : false);
+
+function Admin() {
+  const { user, ready, isAdmin, openAuth } = useAuth();
+  const [tab, setTab] = useState<(typeof TABS)[number]>("Claims");
+  return (
+    <main className="mx-auto max-w-4xl space-y-4 p-4 pb-16">
+      <Link to="/" className="chip">← Map</Link>
+      <h1 className="text-3xl font-extrabold">Admin</h1>
+      {ready && !user && <button className="chip" onClick={() => openAuth()}>Sign in</button>}
+      {ready && user && !isAdmin && <p className="panel p-5">This area is for admins only.</p>}
+      {isAdmin && (
+        <>
+          <div className="flex flex-wrap gap-2">
+            {TABS.map((t) => (
+              <button key={t} onClick={() => setTab(t)} className={`chip ${tab === t ? "bg-primary text-primary-foreground" : ""}`}>{t}</button>
+            ))}
+          </div>
+          {tab === "Claims" && <Claims />}
+          {tab === "Pending trucks" && <PendingTrucks />}
+          {tab === "Trucks" && <Trucks />}
+          {tab === "CSV import" && <CsvImport />}
+          {tab === "Logs" && <Logs />}
+        </>
+      )}
+    </main>
+  );
+}
+
+function useInvalidate() {
+  const qc = useQueryClient();
+  return () => void qc.invalidateQueries();
+}
+
+function Claims() {
+  const inv = useInvalidate();
+  const { data = [] } = useQuery({
+    queryKey: ["admin", "claims"],
+    queryFn: async () => (await supabase.from("claims").select("*, trucks(name, status)").order("created_at", { ascending: false }).limit(100)).data ?? [],
+  });
+  const review = async (id: string, approve: boolean) => {
+    const reason = approve ? null : window.prompt("Reason for rejecting (optional)") ?? null;
+    if (!approve && reason === null) return;
+    const { error } = await supabase.rpc("review_claim", { _claim_id: id, _approve: approve, _reason: reason ?? "" });
+    if (!err(error)) { toast.success(approve ? "Approved — owner role granted" : "Rejected"); inv(); }
+  };
+  if (!data.length) return <p className="panel p-5 text-muted-foreground">No claims yet.</p>;
+  return (
+    <ul className="space-y-2">
+      {data.map((c) => (
+        <li key={c.id} className="panel space-y-1 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <b>{c.trucks?.name ?? c.truck_id}</b>
+            <span className="text-xs uppercase text-muted-foreground">{c.status}</span>
+          </div>
+          <p className="text-sm">{c.user_email} · {new Date(c.created_at).toLocaleString()}</p>
+          {c.message && <p className="text-sm text-muted-foreground">“{c.message}”</p>}
+          {c.reject_reason && <p className="text-sm text-destructive">Reason: {c.reject_reason}</p>}
+          {c.status === "pending" && (
+            <div className="flex gap-2 pt-1">
+              <button className="chip bg-primary text-primary-foreground" onClick={() => review(c.id, true)}>Approve</button>
+              <button className="chip" onClick={() => review(c.id, false)}>Reject</button>
+            </div>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function PendingTrucks() {
+  const inv = useInvalidate();
+  const { data = [] } = useQuery({
+    queryKey: ["admin", "pending"],
+    queryFn: async () => (await supabase.from("trucks").select("*").eq("status", "pending").order("created_at")).data ?? [],
+  });
+  const set = async (id: string, status: "active" | "archived") => {
+    if (!err((await supabase.from("trucks").update({ status }).eq("id", id)).error)) { toast.success(status === "active" ? "Approved" : "Rejected"); inv(); }
+  };
+  if (!data.length) return <p className="panel p-5 text-muted-foreground">No trucks waiting for approval.</p>;
+  return (
+    <ul className="space-y-2">
+      {data.map((t) => (
+        <li key={t.id} className="panel flex flex-wrap items-center justify-between gap-2 p-4">
+          <div><b>{t.emoji} {t.name}</b><p className="text-sm text-muted-foreground">{t.category} · {t.base_address ?? "no address"}</p></div>
+          <div className="flex gap-2">
+            <button className="chip bg-primary text-primary-foreground" onClick={() => set(t.id, "active")}>Approve</button>
+            <button className="chip" onClick={() => set(t.id, "archived")}>Reject</button>
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function Trucks() {
+  const inv = useInvalidate();
+  const [q, setQ] = useState("");
+  const [edit, setEdit] = useState<string | null>(null);
+  const [merge, setMerge] = useState<string | null>(null);
+  const { data = [] } = useQuery({
+    queryKey: ["admin", "trucks"],
+    queryFn: async () => (await supabase.from("trucks").select("id,name,category,phone,website,instagram,facebook,status,merged_into").order("name")).data ?? [],
+  });
+  const list = data.filter((t) => t.name.toLowerCase().includes(q.toLowerCase()));
+  const active = data.filter((t) => t.status !== "archived");
+
+  const save = async (id: string, f: FormData) => {
+    const g = (k: string) => String(f.get(k) ?? "").trim() || null;
+    const { error } = await supabase.from("trucks").update({ name: g("name") ?? "Untitled", category: g("category") ?? "Other", phone: g("phone"), website: g("website"), instagram: g("instagram"), facebook: g("facebook") }).eq("id", id);
+    if (!err(error)) { toast.success("Saved"); setEdit(null); inv(); }
+  };
+  const archive = async (id: string, status: "archived" | "active") => {
+    if (!err((await supabase.from("trucks").update({ status }).eq("id", id)).error)) inv();
+  };
+  const doMerge = async (dup: string, keep: string) => {
+    if (!keep || !confirm("Move favorites and stops into the master truck and archive this one?")) return;
+    if (!err((await supabase.rpc("merge_trucks", { _keep: keep, _dup: dup })).error)) { toast.success("Merged"); setMerge(null); inv(); }
+  };
+
+  return (
+    <div className="space-y-2">
+      <input className="field w-full" placeholder="Search trucks…" value={q} onChange={(e) => setQ(e.target.value)} />
+      <p className="text-sm text-muted-foreground">{list.length} trucks</p>
+      <ul className="space-y-2">
+        {list.map((t) => (
+          <li key={t.id} className="panel space-y-2 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div><b>{t.name}</b> <span className="text-xs uppercase text-muted-foreground">{t.status}{t.merged_into && ` → ${t.merged_into}`}</span></div>
+              <div className="flex flex-wrap gap-1">
+                <button className="chip" onClick={() => setEdit(edit === t.id ? null : t.id)}>Edit</button>
+                <button className="chip" onClick={() => setMerge(merge === t.id ? null : t.id)}>Merge…</button>
+                <button className="chip" onClick={() => archive(t.id, t.status === "archived" ? "active" : "archived")}>{t.status === "archived" ? "Restore" : "Archive"}</button>
+              </div>
+            </div>
+            {edit === t.id && (
+              <form className="grid gap-2 sm:grid-cols-2" onSubmit={(e) => { e.preventDefault(); void save(t.id, new FormData(e.currentTarget)); }}>
+                {(["name", "category", "phone", "website", "instagram", "facebook"] as const).map((k) => (
+                  <input key={k} name={k} className="field" placeholder={k} defaultValue={t[k] ?? ""} />
+                ))}
+                <button className="chip bg-primary text-primary-foreground sm:col-span-2">Save</button>
+              </form>
+            )}
+            {merge === t.id && (
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                Duplicate of:
+                <select className="field" defaultValue="" onChange={(e) => void doMerge(t.id, e.target.value)}>
+                  <option value="" disabled>Pick the master truck</option>
+                  {active.filter((o) => o.id !== t.id).map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
+                </select>
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+function CsvImport() {
+  const inv = useInvalidate();
+  const [log, setLog] = useState<string[]>([]);
+  const [busy, setBusy] = useState(false);
+
+  const run = async (file: File) => {
+    const rows = parseCsv(await file.text()).filter((r) => r["name"]);
+    if (!rows.length) { toast.error("No rows with a name column found."); return; }
+    setBusy(true); setLog([]);
+    const add = (s: string) => setLog((l) => [...l, s]);
+    const { data: runRow } = await supabase.from("ingestion_runs").insert({ source: "csv", notes: file.name }).select().single();
+    let created = 0;
+    try {
+      for (const [i, r] of rows.entries()) {
+        const addr = r["address"] ?? "";
+        const geo = addr ? await geocode(addr) : null;
+        const id = `${slugify(r["name"]!)}-${Math.random().toString(36).slice(2, 6)}`;
+        const { error } = await supabase.from("trucks").insert({
+          id, name: r["name"]!, category: r["category"] || "Other",
+          phone: r["phone"] || null, website: r["website"] || null, instagram: r["instagram"] || null, facebook: r["facebook"] || null,
+          base_address: geo?.label ?? (addr || null), base_lat: geo?.lat ?? null, base_lng: geo?.lng ?? null,
+          status: "active", source: "manual",
+        });
+        if (error) add(`✗ ${r["name"]}: ${error.message}`);
+        else { created++; add(`✓ ${r["name"]}${addr && !geo ? " (address not found)" : ""}`); }
+        if (addr && i < rows.length - 1) await sleep(1100); // Nominatim: max 1 request/second
+      }
+      if (runRow) await supabase.from("ingestion_runs").update({ status: "success", finished_at: new Date().toISOString(), items_found: rows.length, items_created: created }).eq("id", runRow.id);
+      toast.success(`Imported ${created} of ${rows.length}`);
+    } catch (e) {
+      if (runRow) await supabase.from("ingestion_runs").update({ status: "error", finished_at: new Date().toISOString(), items_found: rows.length, items_created: created, error: String(e) }).eq("id", runRow.id);
+      toast.error(String(e));
+    }
+    setBusy(false); inv();
+  };
+
+  return (
+    <div className="panel space-y-3 p-5">
+      <p className="text-sm">Columns: <code>name,category,phone,website,instagram,facebook,address</code>. Addresses are looked up one per second, so large files take a while.</p>
+      <input type="file" accept=".csv,text/csv" disabled={busy} onChange={(e) => { const f = e.target.files?.[0]; if (f) void run(f); e.target.value = ""; }} />
+      {busy && <p className="text-sm">Importing… keep this tab open.</p>}
+      {log.length > 0 && <pre className="max-h-64 overflow-auto rounded bg-muted p-2 text-xs">{log.join("\n")}</pre>}
+    </div>
+  );
+}
+
+function Logs() {
+  const { data = [] } = useQuery({
+    queryKey: ["admin", "runs"],
+    queryFn: async () => (await supabase.from("ingestion_runs").select("*").order("started_at", { ascending: false }).limit(100)).data ?? [],
+  });
+  if (!data.length) return <p className="panel p-5 text-muted-foreground">No imports yet.</p>;
+  return (
+    <div className="panel overflow-x-auto">
+      <table className="w-full text-left text-sm">
+        <thead><tr className="border-b">{["Started", "Source", "Status", "Found", "Created", "Notes / error"].map((h) => <th key={h} className="p-2">{h}</th>)}</tr></thead>
+        <tbody>
+          {data.map((r) => (
+            <tr key={r.id} className="border-b last:border-0">
+              <td className="p-2 whitespace-nowrap">{new Date(r.started_at).toLocaleString()}</td>
+              <td className="p-2">{r.source}</td><td className="p-2">{r.status}</td>
+              <td className="p-2">{r.items_found}</td><td className="p-2">{r.items_created}</td>
+              <td className="p-2 text-muted-foreground">{r.error ?? r.notes}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}

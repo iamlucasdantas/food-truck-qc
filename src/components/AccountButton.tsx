@@ -15,6 +15,9 @@ export function AccountButton() {
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild><Link to="/favorites">♥ My favorites</Link></DropdownMenuItem>
         <DropdownMenuItem asChild><Link to="/owner">🚚 Owner dashboard</Link></DropdownMenuItem>
+        {isAdmin && <DropdownMenuItem asChild><Link to="/admin">🛠 Admin</Link></DropdownMenuItem>}
+        <DropdownMenuItem asChild><Link to="/privacy">Privacy</Link></DropdownMenuItem>
+        <DropdownMenuItem asChild><Link to="/terms">Terms</Link></DropdownMenuItem>
         <DropdownMenuItem onClick={() => void signOut()}>Sign out</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

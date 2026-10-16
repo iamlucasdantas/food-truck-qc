@@ -35,3 +35,9 @@ describe("truck rules", () => {
   });
   it("slugifies truck names", () => expect(slugify("Cluckin' Good!")).toBe("cluckin-good"));
 });
+
+import { parseCsv } from "./trucks";
+import { test as t2, expect as e2 } from "vitest";
+t2("parseCsv handles quoted commas", () => {
+  e2(parseCsv('name,address\n"Taco, Inc",1 Main St\n')).toEqual([{ name: "Taco, Inc", address: "1 Main St" }]);
+});
