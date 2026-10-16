@@ -59,6 +59,14 @@ function cleanUrl(raw: string): string | null {
   try { const u = new URL(/^https?:\/\//i.test(s) ? s : `https://${s}`); return u.hostname.includes(".") ? u.toString() : null; } catch { return null; }
 }
 
+/** Facebook session cookies (JSON array exported from a dedicated account) or null when the secret is unset/invalid. */
+function facebookCookies(): unknown[] | null {
+  const raw = process.env["FACEBOOK_COOKIES_JSON"];
+  if (!raw) return null;
+  try { const v = JSON.parse(raw); return Array.isArray(v) && v.length ? v : null; } catch { console.error("[facebook] FACEBOOK_COOKIES_JSON is not valid JSON"); return null; }
+}
+export const facebookSessionConfigured = () => !!facebookCookies();
+
 async function startActor(kind: Kind, all: Source[]): Promise<string> {
   // Apify rejects the whole job if one link is malformed, so fix or skip bad ones.
   const sources = all.flatMap((s) => { const url = cleanUrl(s.url); return url ? [{ ...s, url }] : []; });
@@ -67,6 +75,9 @@ async function startActor(kind: Kind, all: Source[]): Promise<string> {
     : kind === "group" ? { startUrls: sources.map((s) => ({ url: s.url })), resultsLimit: 40, viewOption: "CHRONOLOGICAL", onlyPostsNewerThan: "7 days" }
     : kind === "reddit" ? { startUrls: sources.map((s) => ({ url: s.url })), maxItems: 30, sort: "new" }
     : { directUrls: sources.map((s) => s.url), resultsType: "posts", resultsLimit: 10 };
+  // Optional logged-in session for private/blocked groups: Admin explains the FACEBOOK_COOKIES_JSON secret (never pasted in chat).
+  const cookies = (kind === "group" || kind === "page") ? facebookCookies() : null;
+  if (cookies) Object.assign(input, { cookies });
   const hooks = btoa(JSON.stringify([{ eventTypes: ["ACTOR.RUN.SUCCEEDED", "ACTOR.RUN.FAILED", "ACTOR.RUN.TIMED_OUT", "ACTOR.RUN.ABORTED"], requestUrl: `${PUBLIC_ORIGIN}/api/public/apify-webhook` }]));
   const res = await fetch(`https://api.apify.com/v2/acts/${ACTORS[kind]}/runs?webhooks=${hooks}`, {
     method: "POST", headers: { Authorization: `Bearer ${apifyToken()}`, "Content-Type": "application/json" }, body: JSON.stringify(input),

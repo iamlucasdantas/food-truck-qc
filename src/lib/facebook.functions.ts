@@ -71,3 +71,12 @@ export const processPastedPost = createServerFn({ method: "POST" })
       return { error: e instanceof Error ? e.message : String(e), read: { text, author, postDate }, stops: [] };
     }
   });
+
+/** Admin-only: whether the optional logged-in Facebook session secret is set (never returns its value). */
+export const facebookSessionStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { facebookSessionConfigured } = await import("./facebook.server");
+    return { configured: facebookSessionConfigured() };
+  });
