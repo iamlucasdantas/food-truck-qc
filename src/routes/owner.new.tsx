@@ -83,9 +83,9 @@ function NewTruck() {
     const keep = (cur: string | null | undefined, v: string) => (cur && cur.trim() ? cur : v.trim() || null);
     const { error: bizErr } = linked ? { error: null } : await supabase.from("businesses").upsert({
       owner_id: user.id,
-      name: keep(biz?.name, f.businessName) ?? "",
-      description: keep(biz?.description, f.description) ?? "",
-      website: keep(biz?.website, f.website), instagram: keep(biz?.instagram, f.instagram), facebook: keep(biz?.facebook, f.facebook),
+      name: keep(null, f.businessName) ?? "",
+      description: keep(null, f.description) ?? "",
+      website: keep(null, f.website), instagram: keep(null, f.instagram), facebook: keep(null, f.facebook),
     }, { onConflict: "owner_id" });
     if (bizErr) console.error("[owner/new] business save failed", bizErr);
     // Additional trucks reuse the owner contact of the first truck so every webhook sends the same person.
