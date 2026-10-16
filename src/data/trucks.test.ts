@@ -100,3 +100,29 @@ describe("facebook post rules", () => {
     expect(keepExtraction({ confidence: 0.9, date: "2026-11-16" }, "2026-10-16")).toBe(false);
   });
 });
+
+import { socialHandle, authorIsTruck, stopBadge } from "./trucks";
+describe("detected post rules", () => {
+  it("extracts handles from URLs and raw handles", () => {
+    expect(socialHandle("https://www.facebook.com/BraggBBQ/")).toBe("braggbbq");
+    expect(socialHandle("@braggbbq")).toBe("braggbbq");
+    expect(socialHandle("https://reddit.com/u/braggbbq")).toBe("braggbbq");
+    expect(socialHandle("https://www.instagram.com/bragg.bbq?ig=1")).toBe("bragg.bbq");
+    expect(socialHandle(null)).toBe("");
+  });
+  it("matches a post author to the truck's own handles", () => {
+    const t = { facebook: "https://facebook.com/braggbbq", instagram: "@braggbbq", reddit: null };
+    expect(authorIsTruck("braggbbq", t)).toBe(true);
+    expect(authorIsTruck("https://instagram.com/braggbbq", t)).toBe(true);
+    expect(authorIsTruck("someoneelse", t)).toBe(false);
+    expect(authorIsTruck("", t)).toBe(false);
+  });
+  it("maps stops to source badges", () => {
+    expect(stopBadge({ source: "own_post" })).toBe("own post");
+    expect(stopBadge({ source: "apify_post" })).toBe("community");
+    expect(stopBadge({ source: "apify_event" })).toBe("community");
+    expect(stopBadge({ source: "owner" })).toBe("manual");
+    expect(stopBadge({ source: "owner" }, { external_uid: "abc@google" })).toBe("calendar");
+    expect(stopBadge({ source: "owner" }, { external_uid: null })).toBe("manual");
+  });
+});
