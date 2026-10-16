@@ -46,7 +46,7 @@ export type Command = {
   id: string;
   group: "Go to" | "Actions" | "Trucks" | "Claims";
   label: string;
-  hint?: string;
+  hint?: string | undefined;
   keywords?: string;
   target: { tab?: AdminSection; truck?: string; extra?: Record<string, string> };
 };

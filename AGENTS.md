@@ -30,3 +30,4 @@
 - Admin truck delete is a soft delete (deleted_at/deleted_by via admin_delete_trucks/admin_restore_truck RPCs, logged in truck_deletions) with a 30-day restore window; a daily pg_cron job purges the truck and its stops/photos/menu after that — so mistakes are reversible.
 - Search/filter rules (text, dish, cuisine, city, type, status, open) live in src/data/filters.ts and are shared by the map and Admin; filter state lives in URL params so views can be shared.
 - "I'm here" end times come from liveEnd() in src/data/trucks.ts (15 min–12 h, Central time); the DB trigger caps live stops at 12 h.
+- Admin UI lives in src/components/admin (shell, overview, truck drawer, shared ui bits); section/badge/command-palette rules are pure in src/data/admin.ts (unit-tested) and the section + open truck are URL params (?tab, ?truck) so links and the palette share one navigation path.
