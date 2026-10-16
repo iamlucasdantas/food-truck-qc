@@ -24,7 +24,15 @@ const hours = (d: Date) => d.getHours() + d.getMinutes() / 60;
 const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
 
 /** Best stop for one truck on a date/time window, with status relative to now. */
+/** Google Maps base-location stops are low-confidence: shown gray ("none"), only when no real stop matches. */
 export function pickStop(stops: Stop[], date: Date, win: Window, now: Date): { stop: Stop | null; status: Status } {
+  const real = pickReal(stops.filter((s) => s.source !== "apify_maps"), date, win, now);
+  if (real.stop) return real;
+  const base = stops.find((s) => !s.cancelled && s.source === "apify_maps" && sameDay(new Date(s.starts_at), date));
+  return base ? { stop: base, status: "none" } : real;
+}
+
+function pickReal(stops: Stop[], date: Date, win: Window, now: Date): { stop: Stop | null; status: Status } {
   const live = stops.filter((s) => !s.cancelled);
   if (win === "now") {
     if (!sameDay(date, now)) return { stop: null, status: "none" };

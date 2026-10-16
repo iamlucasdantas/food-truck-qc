@@ -1,3 +1,4 @@
+import { SiteFooter } from "@/components/SiteFooter";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
@@ -88,6 +89,7 @@ function TruckPage() {
         {t.instagram && <span className="chip">📸 {t.instagram}</span>}
       </section>
       {!t.claimed_by && <ClaimButton truckId={t.id} />}
+    <SiteFooter />
     </main>
   );
 }

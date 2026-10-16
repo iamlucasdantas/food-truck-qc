@@ -1,3 +1,4 @@
+import { SiteFooter } from "@/components/SiteFooter";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { fmtRange, milesBetween, QC_CENTER } from "@/data/trucks";
@@ -67,6 +68,7 @@ function Favorites() {
           );
         })}
       </ul>
+    <SiteFooter />
     </main>
   );
 }
