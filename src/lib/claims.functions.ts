@@ -1,12 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { matchClaimCandidates, REASON_LABEL, type Candidate, type Me } from "@/data/claims";
 import { cityOf } from "@/data/filters";
 
 const COLS = "id, name, status, claimed_by, created_by, deleted_at, merged_into, website, facebook, instagram, reddit, description";
 
-async function loadMatches(userId: string, supabase: Parameters<Parameters<ReturnType<typeof createServerFn>["handler"]>[0]>[0] extends never ? never : any) {
+async function loadMatches(userId: string, supabase: SupabaseClient<Database>) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: u } = await supabaseAdmin.auth.admin.getUserById(userId);
   const [{ data: biz }, { data: mine }, { data: open }, { data: claims }] = await Promise.all([
@@ -17,10 +19,10 @@ async function loadMatches(userId: string, supabase: Parameters<Parameters<Retur
   ]);
   const me: Me = {
     email: u?.user?.email ?? "", emailConfirmed: !!u?.user?.email_confirmed_at,
-    businessName: biz?.name ?? "", truckNames: (mine ?? []).map((t: { name: string }) => t.name),
+    businessName: biz?.name ?? "", truckNames: (mine ?? []).map((t) => t.name),
     website: biz?.website, facebook: biz?.facebook, instagram: biz?.instagram, reddit: biz?.reddit,
   };
-  const asked = new Set((claims ?? []).filter((c: { status: string }) => c.status !== "rejected").map((c: { truck_id: string }) => c.truck_id));
+  const asked = new Set((claims ?? []).filter((c) => c.status !== "rejected").map((c) => c.truck_id));
   const rows = (open ?? []) as Candidate[];
   const matches = matchClaimCandidates(me, rows, userId).filter((m) => !asked.has(m.id));
   return { me, matches, rows, supabaseAdmin };
