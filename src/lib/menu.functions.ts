@@ -64,17 +64,8 @@ export const readMenuPhotos = createServerFn({ method: "POST" })
     const key = process.env["LOVABLE_API_KEY"];
     if (!key) return { sections: [], readable: false, problem: "", error: "The menu reader isn't configured yet." };
 
-    const res = await fetch(GATEWAY, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Lovable-API-Key": key, "X-Lovable-AIG-SDK": "fetch" },
-      body: JSON.stringify({
-        model: MODEL, stream: true, store: false,
-        reasoning: { effort: "low", summary: "auto" }, include: ["reasoning.encrypted_content"],
-        instructions: PROMPT,
-        input: [{ role: "user", content: [{ type: "input_text", text: "Read this menu." }, ...data.images.map((u) => ({ type: "input_image", image_url: u }))] }],
-        text: { format: { type: "json_schema", name: "menu", strict: true, schema: SCHEMA } },
-      }),
-    });
+    return readMenuWithAI(key, data.images);
+  });
     if (!res.ok || !res.body) {
       const body = await res.text().catch(() => "");
       console.error(`[menu reader] gateway failed [${res.status}]: ${body}`);
@@ -113,3 +104,17 @@ export const readMenuPhotos = createServerFn({ method: "POST" })
     try { return normalizeMenu(JSON.parse(text)); }
     catch { return { sections: [], readable: false, problem: "The menu reader returned something unexpected. Try a clearer photo." }; }
   });
+
+/** Calls the AI vision model and returns a normalized menu (or a friendly error). */
+export async function readMenuWithAI(key: string, images: string[]): Promise<MenuRead & { error?: string }> {
+    const res = await fetch(GATEWAY, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Lovable-API-Key": key, "X-Lovable-AIG-SDK": "fetch" },
+      body: JSON.stringify({
+        model: MODEL, stream: true, store: false,
+        reasoning: { effort: "low", summary: "auto" }, include: ["reasoning.encrypted_content"],
+        instructions: PROMPT,
+        input: [{ role: "user", content: [{ type: "input_text", text: "Read this menu." }, ...images.map((u) => ({ type: "input_image", image_url: u }))] }],
+        text: { format: { type: "json_schema", name: "menu", strict: true, schema: SCHEMA } },
+      }),
+  }
