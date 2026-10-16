@@ -22,7 +22,9 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
+import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as EmbedRegisterTruckRouteImport } from './routes/embed.register-truck'
+import { Route as FoodieIdRouteImport } from './routes/foodie.$id'
 import { Route as OwnerNewRouteImport } from './routes/owner.new'
 import { Route as OwnerOnboardingRouteImport } from './routes/owner.onboarding'
 import { Route as TruckIdRouteImport } from './routes/truck.$id'
@@ -96,9 +98,19 @@ const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
   path: '/account',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const EmbedRegisterTruckRoute = EmbedRegisterTruckRouteImport.update({
   id: '/embed/register-truck',
   path: '/embed/register-truck',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FoodieIdRoute = FoodieIdRouteImport.update({
+  id: '/foodie/$id',
+  path: '/foodie/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OwnerNewRoute = OwnerNewRouteImport.update({
@@ -151,7 +163,9 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/account': typeof AuthenticatedAccountRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/embed/register-truck': typeof EmbedRegisterTruckRoute
+  '/foodie/$id': typeof FoodieIdRoute
   '/owner/new': typeof OwnerNewRoute
   '/owner/onboarding': typeof OwnerOnboardingRoute
   '/truck/$id': typeof TruckIdRoute
@@ -173,7 +187,9 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/account': typeof AuthenticatedAccountRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/embed/register-truck': typeof EmbedRegisterTruckRoute
+  '/foodie/$id': typeof FoodieIdRoute
   '/owner/new': typeof OwnerNewRoute
   '/owner/onboarding': typeof OwnerOnboardingRoute
   '/truck/$id': typeof TruckIdRoute
@@ -197,7 +213,9 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/account': typeof AuthenticatedAccountRoute
+  '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/embed/register-truck': typeof EmbedRegisterTruckRoute
+  '/foodie/$id': typeof FoodieIdRoute
   '/owner/new': typeof OwnerNewRoute
   '/owner/onboarding': typeof OwnerOnboardingRoute
   '/truck/$id': typeof TruckIdRoute
@@ -221,7 +239,9 @@ export interface FileRouteTypes {
     | '/terms'
     | '/.well-known/oauth-protected-resource'
     | '/account'
+    | '/profile'
     | '/embed/register-truck'
+    | '/foodie/$id'
     | '/owner/new'
     | '/owner/onboarding'
     | '/truck/$id'
@@ -243,7 +263,9 @@ export interface FileRouteTypes {
     | '/terms'
     | '/.well-known/oauth-protected-resource'
     | '/account'
+    | '/profile'
     | '/embed/register-truck'
+    | '/foodie/$id'
     | '/owner/new'
     | '/owner/onboarding'
     | '/truck/$id'
@@ -266,7 +288,9 @@ export interface FileRouteTypes {
     | '/terms'
     | '/.well-known/oauth-protected-resource'
     | '/_authenticated/account'
+    | '/_authenticated/profile'
     | '/embed/register-truck'
+    | '/foodie/$id'
     | '/owner/new'
     | '/owner/onboarding'
     | '/truck/$id'
@@ -290,6 +314,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   EmbedRegisterTruckRoute: typeof EmbedRegisterTruckRoute
+  FoodieIdRoute: typeof FoodieIdRoute
   TruckIdRoute: typeof TruckIdRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   ApiPublicApifyWebhookRoute: typeof ApiPublicApifyWebhookRoute
@@ -390,11 +415,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAccountRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/profile': {
+      id: '/_authenticated/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AuthenticatedProfileRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/embed/register-truck': {
       id: '/embed/register-truck'
       path: '/embed/register-truck'
       fullPath: '/embed/register-truck'
       preLoaderRoute: typeof EmbedRegisterTruckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/foodie/$id': {
+      id: '/foodie/$id'
+      path: '/foodie/$id'
+      fullPath: '/foodie/$id'
+      preLoaderRoute: typeof FoodieIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/owner/new': {
@@ -451,10 +490,12 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
+  AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountRoute: AuthenticatedAccountRoute,
+  AuthenticatedProfileRoute: AuthenticatedProfileRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -487,6 +528,7 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
   EmbedRegisterTruckRoute: EmbedRegisterTruckRoute,
+  FoodieIdRoute: FoodieIdRoute,
   TruckIdRoute: TruckIdRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   ApiPublicApifyWebhookRoute: ApiPublicApifyWebhookRoute,

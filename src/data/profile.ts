@@ -18,7 +18,7 @@ export function readNotifications(raw: unknown): Notifications {
   for (const key of ["quiet_start", "quiet_end"] as const) {
     if (typeof v[key] === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(v[key])) n[key] = v[key];
   }
-  if (typeof v.radius === "number" && Number.isFinite(v.radius)) n.radius = Math.max(1, Math.min(50, v.radius));
+  if (typeof v['radius'] === "number" && Number.isFinite(v['radius'])) n.radius = Math.max(1, Math.min(50, v['radius']));
   return n;
 }
 export function foodieLevel(favorites: number, visits: readonly { truck_id: string; visited_at: string | null }[]) {

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Compass, type LucideIcon } from "lucide-react";
-export function Section({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
+export function Section({ title, subtitle, children }: { title: string; subtitle?: string | undefined; children: ReactNode }) {
   return <section className="space-y-5 border-b border-border py-6 last:border-0"><div><h2 className="text-lg font-semibold">{title}</h2>{subtitle && <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>}</div>{children}</section>;
 }
 export function Empty({ title, detail, icon: Icon = Compass, children }: { title: string; detail?: string; icon?: LucideIcon; children?: ReactNode }) {
