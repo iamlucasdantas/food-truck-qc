@@ -191,7 +191,7 @@ function CsvImport() {
 
   const run = async (file: File) => {
     const rows = parseCsv(await file.text()).filter((r) => r["name"]);
-    if (!rows.length) return toast.error("No rows with a name column found.");
+    if (!rows.length) { toast.error("No rows with a name column found."); return; }
     setBusy(true); setLog([]);
     const add = (s: string) => setLog((l) => [...l, s]);
     const { data: runRow } = await supabase.from("ingestion_runs").insert({ source: "csv", notes: file.name }).select().single();
