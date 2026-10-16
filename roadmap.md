@@ -1,9 +1,9 @@
 # Roadmap
 
 ## Mobile fixes and map preview
-- [ ] Fix profile header and quiet-hours input layout on phones
-- [ ] Simplify selected truck card to original post, directions, menu and profile
-- [ ] Verify phone layouts and links; do not publish
+- [x] Fix profile header and quiet-hours input layout on phones
+- [x] Simplify selected truck card to original post, directions, menu and profile
+- [x] Verify signed-in layouts at 320/390/768/1280px, original-post URL and menu navigation; not published
 
 ## Part K — Premium profiles (not published)
 - [x] Shared /profile hub, avatar crop, editable settings and account security
