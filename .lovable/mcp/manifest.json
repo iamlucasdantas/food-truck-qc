@@ -1,0 +1,135 @@
+{
+  "version": 1,
+  "sdk_version": "3.1.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://zsyrthmisdcvpvblbubk.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "food-truck-qc",
+      "version": "0.1.0",
+      "title": "Food Truck QC"
+    },
+    "tools": [
+      {
+        "name": "search_trucks",
+        "title": "Search food trucks",
+        "description": "Find approved Quad Cities food trucks by name, cuisine or dish.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "query": {
+              "description": "Truck name, cuisine or dish, e.g. 'tacos'. Omit to list all.",
+              "type": "string",
+              "maxLength": 100
+            },
+            "limit": {
+              "description": "Max results (default 20).",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "upcoming_stops",
+        "title": "Upcoming truck stops",
+        "description": "List where food trucks will be (or are now) over the next days, optionally for one truck or city. Times are Central.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "truck_id": {
+              "description": "Only this truck (id from search_trucks).",
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "city": {
+              "description": "Only stops in this city, e.g. 'Davenport'.",
+              "type": "string",
+              "maxLength": 60
+            },
+            "days": {
+              "description": "How many days ahead (default 3).",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 14
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "my_favorites",
+        "title": "My favorite trucks",
+        "description": "List the signed-in user's favorite (hearted) food trucks.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "set_favorite",
+        "title": "Heart or unheart a truck",
+        "description": "Add a truck to, or remove it from, the signed-in user's favorites.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "truck_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "description": "Truck id from search_trucks."
+            },
+            "favorite": {
+              "type": "boolean",
+              "description": "true to add, false to remove."
+            }
+          },
+          "required": [
+            "truck_id",
+            "favorite"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
