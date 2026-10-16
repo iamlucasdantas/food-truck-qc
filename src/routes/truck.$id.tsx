@@ -1,4 +1,5 @@
 import { Heart } from "lucide-react";
+import { truckByline } from "@/data/onboarding";
 import { SiteFooter } from "@/components/SiteFooter";
 import { createFileRoute, Link, ClientOnly } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -64,7 +65,8 @@ function TruckPage() {
         </div>
         <div className="min-w-0">
           <h1 className="break-words text-2xl font-extrabold sm:text-3xl">{t.name}</h1>
-          <p className="text-muted-foreground">{t.category}{biz?.name ? ` · ${biz.name}` : ""}</p>
+          {truckByline(t.name, biz?.name || t.business_name) && <p className="font-semibold">{truckByline(t.name, biz?.name || t.business_name)}</p>}
+          <p className="text-muted-foreground">{t.category}</p>
         </div>
         <button onClick={() => toggle(t.id)} aria-label={isFav(t.id) ? "Remove from favorites" : "Save to favorites"} aria-pressed={isFav(t.id)} className="chip h-11"><Heart className={`h-4 w-4 ${isFav(t.id) ? "fill-primary text-primary" : ""}`} />{isFav(t.id) ? "Saved" : "Save"}</button>
       </header>

@@ -1,4 +1,5 @@
 import { matchesSearch } from "@/data/menu";
+import { truckByline } from "@/data/onboarding";
 import { Logo } from "@/components/Logo";
 import { SiteFooter } from "@/components/SiteFooter";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -243,6 +244,7 @@ function Index() {
             </span>
             <span className="min-w-0 flex-1 space-y-0.5">
               <span className="block truncate font-bold">{r.t.name}</span>
+              {truckByline(r.t.name, r.t.business_name) && <span className="block truncate text-xs text-muted-foreground">{truckByline(r.t.name, r.t.business_name)}</span>}
               <span className="block truncate text-sm">{r.t.category} · {r.dist.toFixed(1)} mi</span>
               <span className="block truncate text-xs text-muted-foreground">{r.stop && r.status !== "none" ? `${r.stop.venue_name}, ${r.stop.city}` : (r.t.base_address ?? "Base location")}</span>
               <span className={`mt-1 inline-flex max-w-full items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold ${PILL[r.status]}`}>
@@ -375,6 +377,7 @@ function Index() {
               </div>
               <div className="min-w-0 flex-1">
                 <h2 className="truncate text-base font-bold">{sel.t.name}</h2>
+                {truckByline(sel.t.name, sel.t.business_name) && <p className="truncate text-xs text-muted-foreground">{truckByline(sel.t.name, sel.t.business_name)}</p>}
                 <p className="truncate text-sm text-muted-foreground">{sel.t.category} · {sel.dist.toFixed(1)} mi</p>
                 <span className={`mt-1 inline-flex max-w-full items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold ${PILL[sel.status]}`}>
                   <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${DOT[sel.status]}`} /><span className="truncate">{statusText(sel)}</span>
