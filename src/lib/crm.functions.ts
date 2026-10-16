@@ -45,19 +45,18 @@ export const syncCrmContact = createServerFn({ method: "POST" })
     const email = c?.email;
     if (!email) return { ok: false };
     const meta = c?.user_metadata ?? {};
-    const displayName = prof?.display_name ?? meta.full_name ?? meta.name ?? "";
-    const [first = "", ...rest] = displayName.split(" ");
+    const name: string = (prof?.display_name ?? meta.full_name ?? meta.name ?? "").trim() || (email.split("@")[0] ?? email);
+    const [first = "", ...rest] = name.split(" ");
 
-    const result = await postToHighLevel(process.env["HIGHLEVEL_SIGNUP_WEBHOOK_URL"], {
+    const result = await postToHighLevel(process.env["HIGHLEVEL_USER_WEBHOOK_URL"], {
       event: "user_signup",
-      source: "FoodTruckQC",
-      user_id: userId,
       email,
       first_name: first,
       last_name: rest.join(" "),
-      display_name: displayName || email.split("@")[0],
+      name,
+      tags: ["usuario"],
     });
-    if ("ok" in result && result.ok === false) return result;
+    if (!("ok" in result) || result.ok === false) return result;
     await supabase.from("profiles").update({ crm_synced_at: new Date().toISOString() }).eq("id", userId);
     return { ok: true };
   });
@@ -89,15 +88,11 @@ export const notifyCrmLiveAlert = createServerFn({ method: "POST" })
 
     return postToHighLevel(process.env["HIGHLEVEL_ALERT_WEBHOOK_URL"], {
       event: "favorite_truck_live",
-      source: "FoodTruckQC",
-      user_id: userId,
       email,
-      display_name: displayName,
       first_name: displayName.split(" ")[0] ?? "",
       truck_name: data.truckName,
-      truck_id: data.truckId,
-      venue: data.venue ?? null,
-      ends_at: data.endsAt ?? null,
+      venue: data.venue ?? "",
       truck_url: `https://app.foodtruckqc.com/truck/${data.truckId}`,
+      opened_at: new Date().toISOString(),
     });
   });
