@@ -14,7 +14,11 @@ export function useProfileLibrary() {
   }});
   const mutation=useMutation({mutationFn:async ({truckId,patch}:{truckId:string;patch:Partial<TablesInsert<"profile_trucks">>})=>{
     if(!user)throw new Error("Please sign in.");
-    const {error}=await supabase.from("profile_trucks").upsert({...patch,user_id:user.id,truck_id:truckId},{onConflict:"user_id,truck_id"});
+    const {data:existing,error:readError}=await supabase.from("profile_trucks").select("*").eq("user_id",user.id).eq("truck_id",truckId).maybeSingle();
+    if(readError)throw readError;
+    const {error}=existing
+      ? await supabase.from("profile_trucks").update(patch).eq("user_id",user.id).eq("truck_id",truckId)
+      : await supabase.from("profile_trucks").upsert({...patch,user_id:user.id,truck_id:truckId},{onConflict:"user_id,truck_id",ignoreDuplicates:true});
     if(error)throw error;
   },onSuccess:()=>void qc.invalidateQueries({queryKey:key}),onError:()=>toast.error("Couldn't save. Please try again.")});
   const recordView = useCallback((truckId:string) => { if(user) mutation.mutate({truckId,patch:{viewed_at:new Date().toISOString()}}); }, [user?.id, mutation.mutate]);

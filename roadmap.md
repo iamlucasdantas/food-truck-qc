@@ -1,10 +1,12 @@
 # Roadmap
 
 ## Part K — Premium profiles (not published)
-- [ ] Shared /profile hub, avatar crop, editable settings and account security
-- [ ] Foodie lists, follows, visits, preferences and progress
-- [ ] Owner home, real summaries, business preview and existing tool links
-- [ ] Persist under RLS, calculation tests and signed-in screen verification
+- [x] Shared /profile hub, avatar crop, editable settings and account security
+- [x] Foodie lists, follows, visits, preferences and progress
+- [x] Owner home, real favorite summaries, business preview and existing tools
+- [x] Caller-owned RLS, calculation tests and signed-in saves/crop/export verification
+- [ ] New notification delivery/quiet-hours enforcement — requires HighLevel workflow support; webhook changes excluded
+- [ ] Specials, reviews, device session inventory and non-favorite performance metrics — no existing data/service; explicit unavailable states
 
 ## Step 1 (current)
 - [x] Lovable Cloud, roles table + has_role, first user = admin
