@@ -22,6 +22,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as EmbedRegisterTruckRouteImport } from './routes/embed.register-truck'
 import { Route as OwnerNewRouteImport } from './routes/owner.new'
+import { Route as OwnerOnboardingRouteImport } from './routes/owner.onboarding'
 import { Route as TruckIdRouteImport } from './routes/truck.$id'
 import { Route as ApiPublicApifyWebhookRouteImport } from './routes/api/public/apify-webhook'
 import { Route as ApiPublicCalendarIdRouteImport } from './routes/api/public/calendar.$id'
@@ -91,6 +92,11 @@ const OwnerNewRoute = OwnerNewRouteImport.update({
   path: '/new',
   getParentRoute: () => OwnerRoute,
 } as any)
+const OwnerOnboardingRoute = OwnerOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => OwnerRoute,
+} as any)
 const TruckIdRoute = TruckIdRouteImport.update({
   id: '/truck/$id',
   path: '/truck/$id',
@@ -126,6 +132,7 @@ export interface FileRoutesByFullPath {
   '/account': typeof AuthenticatedAccountRoute
   '/embed/register-truck': typeof EmbedRegisterTruckRoute
   '/owner/new': typeof OwnerNewRoute
+  '/owner/onboarding': typeof OwnerOnboardingRoute
   '/truck/$id': typeof TruckIdRoute
   '/api/public/apify-webhook': typeof ApiPublicApifyWebhookRoute
   '/api/public/calendar/$id': typeof ApiPublicCalendarIdRoute
@@ -144,6 +151,7 @@ export interface FileRoutesByTo {
   '/account': typeof AuthenticatedAccountRoute
   '/embed/register-truck': typeof EmbedRegisterTruckRoute
   '/owner/new': typeof OwnerNewRoute
+  '/owner/onboarding': typeof OwnerOnboardingRoute
   '/truck/$id': typeof TruckIdRoute
   '/api/public/apify-webhook': typeof ApiPublicApifyWebhookRoute
   '/api/public/calendar/$id': typeof ApiPublicCalendarIdRoute
@@ -164,6 +172,7 @@ export interface FileRoutesById {
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/embed/register-truck': typeof EmbedRegisterTruckRoute
   '/owner/new': typeof OwnerNewRoute
+  '/owner/onboarding': typeof OwnerOnboardingRoute
   '/truck/$id': typeof TruckIdRoute
   '/api/public/apify-webhook': typeof ApiPublicApifyWebhookRoute
   '/api/public/calendar/$id': typeof ApiPublicCalendarIdRoute
@@ -184,6 +193,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/embed/register-truck'
     | '/owner/new'
+    | '/owner/onboarding'
     | '/truck/$id'
     | '/api/public/apify-webhook'
     | '/api/public/calendar/$id'
@@ -202,6 +212,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/embed/register-truck'
     | '/owner/new'
+    | '/owner/onboarding'
     | '/truck/$id'
     | '/api/public/apify-webhook'
     | '/api/public/calendar/$id'
@@ -221,6 +232,7 @@ export interface FileRouteTypes {
     | '/_authenticated/account'
     | '/embed/register-truck'
     | '/owner/new'
+    | '/owner/onboarding'
     | '/truck/$id'
     | '/api/public/apify-webhook'
     | '/api/public/calendar/$id'
@@ -338,6 +350,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OwnerNewRouteImport
       parentRoute: typeof OwnerRoute
     }
+    '/owner/onboarding': {
+      id: '/owner/onboarding'
+      path: '/onboarding'
+      fullPath: '/owner/onboarding'
+      preLoaderRoute: typeof OwnerOnboardingRouteImport
+      parentRoute: typeof OwnerRoute
+    }
     '/truck/$id': {
       id: '/truck/$id'
       path: '/truck/$id'
@@ -382,10 +401,12 @@ const AuthenticatedRouteRouteWithChildren =
 
 interface OwnerRouteChildren {
   OwnerNewRoute: typeof OwnerNewRoute
+  OwnerOnboardingRoute: typeof OwnerOnboardingRoute
 }
 
 const OwnerRouteChildren: OwnerRouteChildren = {
   OwnerNewRoute: OwnerNewRoute,
+  OwnerOnboardingRoute: OwnerOnboardingRoute,
 }
 
 const OwnerRouteWithChildren = OwnerRoute._addFileChildren(OwnerRouteChildren)

@@ -122,7 +122,7 @@ function Wizard({ userId, email }: { userId: string; email: string }) {
             const id = `${slugify(f.name)}-${Math.random().toString(36).slice(2, 6)}`;
             const { error } = await supabase.from("trucks").insert({
               id, name: f.name.trim(), category: f.category.trim(), emoji: f.truckType === "fixed" ? "🏠" : "🚚", status: "pending", created_by: userId,
-              truck_type: f.truckType, business_name: biz.name, description: `${biz.name ? `Business: ${biz.name}\n\n` : ""}${contactLine({ name: "", email, phone: "" }).replace("Owner contact: ", "Owner contact: " + (email.split("@")[0] ?? "") + " · ").replace(/ · $/, "")}`,
+              truck_type: f.truckType, business_name: biz.name, description: `${biz.name ? `Business: ${biz.name}\n\n` : ""}${contactLine({ name: email.split("@")[0] ?? "", email, phone: "" })}`,
               base_address: f.address.trim() || null, base_lat: g?.lat ?? null, base_lng: g?.lng ?? null,
             });
             if (error) return void toast.error(error.message);
