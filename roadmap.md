@@ -41,3 +41,6 @@
 ## Step 9 — Truck approval flow (done, not published)
 - [x] Admin Pending trucks: Approve / Reject with reason; HIGHLEVEL_APPROVAL_WEBHOOK_URL webhook (truck_approved/truck_rejected), fire-and-forget
 - [ ] User fills HIGHLEVEL_APPROVAL_WEBHOOK_URL secret; verify email arrives in HighLevel
+
+## Part I — Premium Admin
+- [x] Sidebar + badges, top bar, Cmd/Ctrl+K palette, overview, truck drawer, table polish, undo, saved views, tests
