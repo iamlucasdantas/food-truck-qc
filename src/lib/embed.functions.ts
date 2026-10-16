@@ -23,8 +23,8 @@ export const truckSignupSchema = z.object({
 
 /** Fields shown on each step of the two-step owner form (used for per-step validation). */
 export const SIGNUP_STEPS = [
-  ["contactName", "email", "phone", "businessName", "website", "instagram", "facebook"],
-  ["truckName", "truckType", "category", "city", "description"],
+  ["contactName", "email", "phone", "businessName", "description", "website", "instagram", "facebook"],
+  ["truckName", "truckType", "category", "city"],
 ] as const;
 
 /** Public endpoint for the embeddable owner signup form: creates a pending truck for admin review and notifies HighLevel. */
