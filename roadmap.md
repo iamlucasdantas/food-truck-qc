@@ -25,3 +25,9 @@
 - [x] New users pushed to HighLevel via inbound webhook (once per account)
 - [x] Favorite-truck live alerts forwarded to HighLevel workflow
 - [ ] Owner creates the two HighLevel inbound-webhook workflows and shares the URLs (waiting on user)
+
+## Step 7 — Owner schedule
+- [x] Repeating stops (weekly / every 2 weeks / monthly), skip or edit one date, month + week calendar
+- [x] Public map, truck page "Upcoming stops" use scheduled stops; .ics export
+- [x] Calendar link import (Apple/iCloud, Google secret iCal address), choose events to import, disconnect
+- [ ] Google Calendar sign-in (OAuth) — waiting on owner's Google OAuth client
