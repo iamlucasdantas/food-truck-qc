@@ -5,6 +5,7 @@ import { checkBusinessEmail, submitTruckSignup, truckSignupSchema } from "@/lib/
 import { signupStepsFor } from "@/data/business";
 import { LogoMark } from "@/components/Logo";
 import { StepHeader } from "@/components/StepHeader";
+import { StatusTracker } from "@/components/onboarding/StatusTracker";
 
 export const Route = createFileRoute("/embed/register-truck")({
   staticData: { sitemap: false },
