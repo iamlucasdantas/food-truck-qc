@@ -68,7 +68,7 @@ export function getTrucks(): Truck[] {
       const lunch = r() < 0.55;
       const start = lunch ? 11 : 16 + Math.floor(r() * 2);
       const end = lunch ? 14 : 20 + Math.floor(r() * 2);
-      const v = VENUES[Math.floor(r() * VENUES.length)];
+      const v = VENUES[Math.floor(r() * VENUES.length)]!;
       const venue = { ...v, lat: v.lat + (r() - 0.5) * 0.004, lng: v.lng + (r() - 0.5) * 0.004 };
       const sr = r();
       return { venue, start, end, source: sr < 0.35 ? "owner" : sr < 0.7 ? "facebook" : "estimated" } as Stop;
