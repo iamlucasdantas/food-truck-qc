@@ -64,7 +64,7 @@ export const seedCity = createServerFn({ method: "POST" })
         const d = day.toISOString().slice(0, 10);
         return {
           truck_id: truckId, venue_name: "Base location (Google Maps)", address: p.address ?? null, city: p.city ?? data.city.split(",")[0]!,
-          lat: p.location!.lat, lng: p.location!.lng, starts_at: `${d}T16:00:00Z`, ends_at: `${d}T23:59:00Z`, // ~11am–7pm Central
+          lat: p.location!.lat, lng: p.location!.lng, starts_at: `${d}T05:00:00Z`, ends_at: new Date(Date.parse(`${d}T05:00:00Z`) + 86_340_000).toISOString(), // all day, Central
           source: "apify_maps" as const, confidence: 0.3,
         };
       });
