@@ -127,6 +127,13 @@
       "when": 1792170333692,
       "tag": "0017_business_name_on_trucks_and_onboarding",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792170993748,
+      "tag": "0018_admin_truck_delete_restore_live_12h",
+      "breakpoints": true
     }
   ]
 }

@@ -553,6 +553,36 @@ export type Database = {
           },
         ]
       }
+      truck_deletions: {
+        Row: {
+          action: string
+          actor: string | null
+          actor_email: string | null
+          created_at: string
+          id: string
+          truck_id: string
+          truck_name: string
+        }
+        Insert: {
+          action: string
+          actor?: string | null
+          actor_email?: string | null
+          created_at?: string
+          id?: string
+          truck_id: string
+          truck_name: string
+        }
+        Update: {
+          action?: string
+          actor?: string | null
+          actor_email?: string | null
+          created_at?: string
+          id?: string
+          truck_id?: string
+          truck_name?: string
+        }
+        Relationships: []
+      }
       truck_photos: {
         Row: {
           created_at: string
@@ -602,6 +632,8 @@ export type Database = {
           claimed_by: string | null
           created_at: string
           created_by: string | null
+          deleted_at: string | null
+          deleted_by: string | null
           description: string
           emoji: string
           facebook: string | null
@@ -623,6 +655,7 @@ export type Database = {
           source: string
           status: Database["public"]["Enums"]["truck_status"]
           truck_type: string
+          updated_at: string
           website: string | null
         }
         Insert: {
@@ -635,6 +668,8 @@ export type Database = {
           claimed_by?: string | null
           created_at?: string
           created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           description?: string
           emoji?: string
           facebook?: string | null
@@ -656,6 +691,7 @@ export type Database = {
           source?: string
           status?: Database["public"]["Enums"]["truck_status"]
           truck_type?: string
+          updated_at?: string
           website?: string | null
         }
         Update: {
@@ -668,6 +704,8 @@ export type Database = {
           claimed_by?: string | null
           created_at?: string
           created_by?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           description?: string
           emoji?: string
           facebook?: string | null
@@ -689,6 +727,7 @@ export type Database = {
           source?: string
           status?: Database["public"]["Enums"]["truck_status"]
           truck_type?: string
+          updated_at?: string
           website?: string | null
         }
         Relationships: []
@@ -716,6 +755,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_delete_trucks: { Args: { _ids: string[] }; Returns: number }
+      admin_restore_truck: { Args: { _id: string }; Returns: undefined }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -729,6 +770,7 @@ export type Database = {
       }
       owner_id_by_email: { Args: { _email: string }; Returns: string }
       owns_truck: { Args: { _truck_id: string }; Returns: boolean }
+      purge_deleted_trucks: { Args: never; Returns: number }
       review_claim:
         | { Args: { _approve: boolean; _claim_id: string }; Returns: undefined }
         | {

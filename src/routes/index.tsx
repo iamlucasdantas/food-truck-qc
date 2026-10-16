@@ -1,4 +1,4 @@
-import { matchesSearch } from "@/data/menu";
+import { CUISINES, cityOf, matchesFilters, parseFilters, filtersToSearch, type CuisineKey, type Filters } from "@/data/filters";
 import { truckByline } from "@/data/onboarding";
 import { Logo } from "@/components/Logo";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -8,7 +8,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } 
 import { Search, SlidersHorizontal, Heart, X, Phone, Globe, Instagram, Navigation, ChevronDown } from "lucide-react";
 import {
   pickStop, placeTruck, byStatusThenDistance, chooseCenter, milesBetween, fmtRange, fmtTime, QC_CENTER, SOURCE_LABEL,
-  type Window, type Status, type Stop,
+  fmtCentral, type Window, type Status, type Stop,
 } from "@/data/trucks";
 import { useFavorites } from "@/hooks/use-favorites";
 import { useTrucks, useStops, groupBy, dayBounds, useStopsRealtime } from "@/lib/queries";
@@ -24,6 +24,7 @@ const TruckMap = lazy(() => import("@/components/TruckMap"));
 
 export const Route = createFileRoute("/")({
   staticData: { sitemap: true },
+  validateSearch: (s: Record<string, unknown>) => s as Record<string, string | undefined>,
   head: () => ({
     meta: [
       { title: "FoodTruckQC — Food trucks near you." },
@@ -38,21 +39,6 @@ export const Route = createFileRoute("/")({
   }),
   component: Index,
 });
-
-const CUISINES = [
-  { key: "tacos", label: "Tacos", emoji: "🌮", re: /mexic|taco|latin/i },
-  { key: "bbq", label: "BBQ", emoji: "🍖", re: /bbq|barbe|smoke/i },
-  { key: "burgers", label: "Burgers", emoji: "🍔", re: /burger|hot dog|sandwich|chicken|grill/i },
-  { key: "asian", label: "Asian", emoji: "🍜", re: /asian|thai|korean|japan|chinese|indian|viet|fusion/i },
-  { key: "pizza", label: "Pizza", emoji: "🍕", re: /pizza|italian/i },
-  { key: "dessert", label: "Dessert", emoji: "🍦", re: /dessert|ice cream|sweet|bak|donut|cupcake/i },
-  { key: "coffee", label: "Coffee", emoji: "☕", re: /coffee|espresso|cafe/i },
-  { key: "other", label: "Other", emoji: "🍽", re: null },
-] as const;
-type CuisineKey = (typeof CUISINES)[number]["key"];
-function cuisineOf(category: string): CuisineKey {
-  return CUISINES.find((c) => c.re?.test(category))?.key ?? "other";
-}
 
 const WIN_LABEL: Record<Window, string> = { now: "Now", lunch: "Lunch 11–2", dinner: "Dinner 5–9", all: "All day" };
 const PILL: Record<Status, string> = {
@@ -76,22 +62,35 @@ function Index() {
   const [now, setNow] = useState<Date | null>(null);
   const [dayIdx, setDayIdx] = useState(0);
   const [win, setWin] = useState<Window>("now");
-  const [radius, setRadius] = useState(RADIUS_DEFAULT);
   const [center, setCenter] = useState(QC_CENTER);
-  const [q, setQ] = useState("");
-  const [cuisines, setCuisines] = useState<CuisineKey[]>([]);
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const f = parseFilters(search);
+  const urlRadius = Number(search["radius"]);
+  const setF = (next: Partial<Filters>, extra: Record<string, string | undefined> = {}) =>
+    void navigate({ search: (prev: Record<string, string | undefined>) => ({ ...prev, ...filtersToSearch({ ...f, ...next, status: [] }), ...extra }), replace: true });
+  const q = f.q, cuisines = f.cuisines, onlyOpen = f.open;
+  const setQ = (v: string) => setF({ q: v });
+  const setCuisines = (fn: (xs: CuisineKey[]) => CuisineKey[]) => setF({ cuisines: fn(cuisines) });
+  const setOnlyOpen = (v: boolean) => setF({ open: v });
   const [onlyFav, setOnlyFav] = useState(false);
-  const [onlyOpen, setOnlyOpen] = useState(false);
   const [card, setCard] = useState(false);
   const [sort, setSort] = useState<"nearest" | "open">("open");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
+  const radius = urlRadius >= 1 && urlRadius <= 25 ? Math.round(urlRadius) : RADIUS_DEFAULT;
+  const setRadius = (r: number) => setF({}, { radius: r === RADIUS_DEFAULT ? undefined : String(r) });
   const [mapFailed, setMapFailed] = useState(false);
   const [sheetH, setSheetH] = useState<number | null>(null);
   const drag = useRef<{ y: number; h: number } | null>(null);
   const { isFav, toggle } = useFavorites();
 
+  useEffect(() => {
+    // Refresh "now" every minute so live check-ins drop off the map exactly when they end.
+    const id = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(id);
+  }, []);
   useEffect(() => {
     setNow(new Date());
     navigator.geolocation?.getCurrentPosition(
@@ -112,21 +111,20 @@ function Index() {
 
   const results = useMemo(() => {
     if (!now || !date) return [];
-    const term = q.trim().toLowerCase();
     const rows = trucks
       .map((t) => {
         const p = placeTruck(t, pickStop(byTruck.get(t.id) ?? [], date, effWin, now));
         return p ? { t, stop: p.stop as Stop | null, status: p.status, lat: p.lat, lng: p.lng, dist: milesBetween(center, p) } : null;
       })
       .filter((r): r is NonNullable<typeof r> => !!r && r.dist <= radius)
-      .filter((r) => !term || matchesSearch(term, [r.t.name, r.t.category, r.stop?.city ?? r.t.base_address ?? "", r.t.menu_search ?? ""].join(" ")))
-      .filter((r) => cuisines.length === 0 || cuisines.includes(cuisineOf(r.t.category)))
+      .filter((r) => matchesFilters({ ...r.t, city: (r.stop && r.status !== "none" ? r.stop.city : "") || cityOf(r.t.base_address), open: r.status === "open" }, { ...f, status: [], open: false }))
       .filter((r) => !onlyFav || isFav(r.t.id))
       .filter((r) => !onlyOpen || r.status === "open")
       .filter((r) => !card || r.t.accepts_card);
     return sort === "open" ? rows.sort(byStatusThenDistance) : rows.sort((a, b) => a.dist - b.dist);
-  }, [now, date, effWin, q, center, radius, cuisines, onlyFav, onlyOpen, card, isFav, trucks, byTruck, sort]);
+  }, [now, date, effWin, search, center, radius, onlyFav, onlyOpen, card, isFav, trucks, byTruck, sort]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const cityList = useMemo(() => Array.from(new Set(trucks.map((t) => cityOf(t.base_address)).filter(Boolean))).sort(), [trucks]);
   const pins = useMemo(() => results.map((r) => ({
     id: r.t.id, lat: r.lat, lng: r.lng, status: r.status, emoji: r.t.emoji, name: r.t.name,
   })), [results]);
@@ -139,10 +137,13 @@ function Index() {
   if (effWin !== "now" && !(dayIdx > 0 && effWin === "all")) active.push({ key: "win", label: WIN_LABEL[effWin], clear: () => setWin("now") });
   if (radius !== RADIUS_DEFAULT) active.push({ key: "r", label: `${radius} mi`, clear: () => setRadius(RADIUS_DEFAULT) });
   for (const c of cuisines) { const m = CUISINES.find((x) => x.key === c)!; active.push({ key: c, label: `${m.emoji} ${m.label}`, clear: () => setCuisines((xs) => xs.filter((x) => x !== c)) }); }
+  if (f.dish) active.push({ key: "dish", label: `Dish: ${f.dish}`, clear: () => setF({ dish: "" }) });
+  if (f.city) active.push({ key: "city", label: f.city, clear: () => setF({ city: "" }) });
+  if (f.type) active.push({ key: "type", label: f.type === "fixed" ? "Fixed location" : "Mobile", clear: () => setF({ type: "" }) });
   if (onlyOpen) active.push({ key: "open", label: "Open now", clear: () => setOnlyOpen(false) });
   if (card) active.push({ key: "card", label: "Takes card", clear: () => setCard(false) });
   if (onlyFav) active.push({ key: "fav", label: "Favorites only", clear: () => setOnlyFav(false) });
-  const clearAll = () => { setDayIdx(0); setWin("now"); setRadius(RADIUS_DEFAULT); setCuisines([]); setOnlyOpen(false); setCard(false); setOnlyFav(false); setQ(""); };
+  const clearAll = () => { setDayIdx(0); setWin("now"); setCard(false); setOnlyFav(false); void navigate({ search: {}, replace: true }); };
   const toggleCuisine = (k: CuisineKey) => setCuisines((xs) => xs.includes(k) ? xs.filter((x) => x !== k) : [...xs, k]);
 
   const snaps = () => { const vh = window.innerHeight; return [148, Math.round(vh * 0.45), Math.round(vh * 0.88)]; };
@@ -219,7 +220,7 @@ function Index() {
 
   const statusText = (r: (typeof results)[number]) =>
     !r.stop || r.status === "none" ? "Location not confirmed"
-      : r.status === "open" ? `Open now · until ${fmtTime(r.stop.ends_at)}`
+      : r.status === "open" ? (r.stop.is_live ? `Here until ${fmtCentral(r.stop.ends_at)}` : `Open now · until ${fmtTime(r.stop.ends_at)}`)
         : `${dayIdx === 0 ? "Today" : dayIdx === 1 ? "Tomorrow" : "Scheduled"} ${fmtRange(r.stop)}`;
 
   const loading = isLoading || !now;
@@ -286,6 +287,19 @@ function Index() {
       <Section title="Distance" aside={<span className="text-sm font-semibold text-primary">{radius} mi</span>}>
         <Slider min={1} max={25} step={1} value={[radius]} onValueChange={(v) => setRadius(v[0] ?? RADIUS_DEFAULT)} aria-label="Distance in miles" className="py-3" />
         <div className="flex justify-between text-xs text-muted-foreground"><span>1 mi</span><span>25 mi</span></div>
+      </Section>
+      <Section title="Food">
+        <div className="grid gap-2 sm:grid-cols-2">
+          <input className="field" placeholder="Dish, e.g. tacos" aria-label="Dish" value={f.dish} onChange={(e) => setF({ dish: e.target.value })} />
+          <select className="field" aria-label="City" value={f.city} onChange={(e) => setF({ city: e.target.value })}>
+            <option value="">Any city</option>{cityList.map((c) => <option key={c}>{c}</option>)}
+          </select>
+        </div>
+        <div className="mt-3 grid grid-cols-3 gap-1 rounded-full bg-muted p-1" role="group" aria-label="Fixed or mobile">
+          {([["", "All"], ["mobile", "Mobile"], ["fixed", "Fixed"]] as const).map(([v, l]) => (
+            <button key={l} onClick={() => setF({ type: v })} aria-pressed={f.type === v} className={`h-10 rounded-full text-sm font-medium ${focus} ${f.type === v ? "bg-card shadow-pop-sm" : "text-muted-foreground"}`}>{l}</button>
+          ))}
+        </div>
       </Section>
       <Section title="Cuisine">
         <div className="flex flex-wrap gap-2">
