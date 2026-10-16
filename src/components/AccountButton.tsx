@@ -12,7 +12,7 @@ export function AccountButton() {
   const { data: profile } = useProfile();
   if (!user) {
     return (
-      <button onClick={() => openAuth()} className={`h-11 shrink-0 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-pop transition-colors duration-150 hover:bg-primary/90 ${ring}`}>
+      <button onClick={() => openAuth()} className={`h-11 shrink-0 rounded-full border border-border bg-card px-4 text-sm font-medium shadow-pop transition-colors duration-150 hover:bg-muted ${ring}`}>
         Sign in
       </button>
     );
