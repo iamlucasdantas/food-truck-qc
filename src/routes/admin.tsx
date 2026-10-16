@@ -10,6 +10,7 @@ import { geocode } from "@/lib/geocode";
 import { useServerFn } from "@tanstack/react-start";
 import { seedCity, SEED_CITIES } from "@/lib/apify.functions";
 import { startFacebookUpdate, continueFacebookUpdate } from "@/lib/facebook.functions";
+import { notifyCrmTruckDecision } from "@/lib/crm.functions";
 
 export const Route = createFileRoute("/admin")({
   staticData: { sitemap: false },
@@ -106,19 +107,36 @@ function PendingTrucks() {
     queryKey: ["admin", "pending"],
     queryFn: async () => (await supabase.from("trucks").select("*").eq("status", "pending").order("created_at")).data ?? [],
   });
-  const set = async (id: string, status: "active" | "archived") => {
-    if (!err((await supabase.from("trucks").update({ status }).eq("id", id)).error)) { toast.success(status === "active" ? "Approved" : "Rejected"); inv(); }
+  const [rejecting, setRejecting] = useState<string | null>(null);
+  const [reason, setReason] = useState("");
+  const decide = async (id: string, decision: "approved" | "rejected", why = "") => {
+    const status = decision === "approved" ? "active" : "archived";
+    if (err((await supabase.from("trucks").update({ status }).eq("id", id)).error)) return;
+    toast.success(decision === "approved" ? "Approved" : "Rejected");
+    setRejecting(null); setReason(""); inv();
+    // Fire-and-forget: the CRM email must never block the decision.
+    void notifyCrmTruckDecision({ data: { truckId: id, decision, reason: why } })
+      .then((r) => { if (r && "skipped" in r && r.skipped) toast("CRM webhook not configured — no email sent."); })
+      .catch(() => toast("CRM webhook failed — the decision was saved anyway."));
   };
   if (!data.length) return <p className="panel p-5 text-muted-foreground">No trucks waiting for approval.</p>;
   return (
     <ul className="space-y-2">
       {data.map((t) => (
-        <li key={t.id} className="panel flex flex-wrap items-center justify-between gap-2 p-4">
-          <div><b>{t.emoji} {t.name}</b> <span className="chip">{t.truck_type === "fixed" ? "🏠 Fixed" : "🚚 Mobile"}</span><p className="text-sm text-muted-foreground">{t.category} · {t.base_address ?? "no address"}</p></div>
-          <div className="flex gap-2">
-            <button className="chip bg-primary text-primary-foreground" onClick={() => set(t.id, "active")}>Approve</button>
-            <button className="chip" onClick={() => set(t.id, "archived")}>Reject</button>
+        <li key={t.id} className="panel space-y-2 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div><b>{t.emoji} {t.name}</b> <span className="chip">{t.truck_type === "fixed" ? "🏠 Fixed" : "🚚 Mobile"}</span><p className="text-sm text-muted-foreground">{t.category} · {t.base_address ?? "no address"}</p></div>
+            <div className="flex gap-2">
+              <button className="chip bg-primary text-primary-foreground" onClick={() => decide(t.id, "approved")}>Approve</button>
+              <button className="chip" onClick={() => { setRejecting(rejecting === t.id ? null : t.id); setReason(""); }}>Reject</button>
+            </div>
           </div>
+          {rejecting === t.id && (
+            <form className="flex flex-wrap gap-2" onSubmit={(e) => { e.preventDefault(); void decide(t.id, "rejected", reason.trim()); }}>
+              <input className="field min-w-0 flex-1" placeholder="Reason (sent to the owner)" value={reason} onChange={(e) => setReason(e.target.value)} />
+              <button className="chip bg-primary text-primary-foreground">Confirm rejection</button>
+            </form>
+          )}
         </li>
       ))}
     </ul>
