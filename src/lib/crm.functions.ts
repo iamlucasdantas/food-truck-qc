@@ -96,3 +96,60 @@ export const notifyCrmLiveAlert = createServerFn({ method: "POST" })
       opened_at: new Date().toISOString(),
     });
   });
+
+interface TruckDecisionInput {
+  truckId: string;
+  decision: "approved" | "rejected";
+  reason?: string;
+}
+
+/** Tell HighLevel a pending truck was approved or rejected. Never throws — the admin decision stands even if the webhook fails. */
+export const notifyCrmTruckDecision = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: TruckDecisionInput) => input)
+  .handler(async ({ data, context }) => {
+    const { data: isAdmin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+    if (!isAdmin) throw new Error("Forbidden");
+    const hook = process.env["HIGHLEVEL_APPROVAL_WEBHOOK_URL"];
+    if (!hook) return { ok: true, skipped: true };
+
+    const { data: t } = await context.supabase.from("trucks").select("*").eq("id", data.truckId).maybeSingle();
+    if (!t) return { ok: false, error: "Truck not found" };
+
+    // Owner contact: embed trucks keep it in the description; account-created trucks via the creator's auth email.
+    let email = "", name = "", phone = t.phone ?? "";
+    const m = t.description.match(/Owner contact:\s*([^·\n]+)(?:·\s*([^\s·]+@[^\s·]+))?(?:·\s*([^\n]+))?/);
+    if (m) { name = (m[1] ?? "").trim(); email = (m[2] ?? "").trim(); phone = phone || (m[3] ?? "").trim(); }
+    if (!email && t.created_by) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: u } = await supabaseAdmin.auth.admin.getUserById(t.created_by);
+      email = u?.user?.email ?? "";
+      name = name || (u?.user?.user_metadata?.full_name as string) || (u?.user?.user_metadata?.name as string) || "";
+    }
+    const [first = "", ...rest] = name.trim().split(" ");
+    const truckUrl = `https://app.foodtruckqc.com/truck/${t.id}`;
+    const approved = data.decision === "approved";
+
+    const result = await postToHighLevel(hook, {
+      event: approved ? "truck_approved" : "truck_rejected",
+      email,
+      first_name: first,
+      last_name: rest.join(" "),
+      name: name.trim(),
+      phone,
+      truck_name: t.name,
+      truck_type: t.truck_type,
+      cuisine: t.category,
+      city: t.base_address ?? "",
+      truck_url: truckUrl,
+      owner_dashboard_url: "https://app.foodtruckqc.com/owner",
+      claim_url: truckUrl,
+      rejection_reason: approved ? "" : (data.reason ?? ""),
+      next_steps: approved
+        ? "Create your FoodTruckQC account, open your truck page and tap Claim it to take over the listing."
+        : "Reply to this email if you think this was a mistake or want to fix the listing and reapply.",
+      tags: [approved ? "owner-approved" : "owner-rejected"],
+    });
+    if ("ok" in result && result.ok === false) console.error(`[HighLevel] approval webhook failed for truck ${t.id}`);
+    return { ok: true };
+  });
