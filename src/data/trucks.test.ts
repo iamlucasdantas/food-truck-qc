@@ -126,3 +126,25 @@ describe("detected post rules", () => {
     expect(stopBadge({ source: "owner" }, { external_uid: null })).toBe("manual");
   });
 });
+
+import { effectivePayments, ownerHandles, authorIsTruck as authorIsTruck2, publicDescription } from "./trucks";
+describe("business vs truck data", () => {
+  const biz = { payment_methods: ["Cash", "Venmo"], payment_other: "", facebook: "https://facebook.com/tacoco", instagram: null, reddit: null };
+  it("truck inherits business payment methods when 'Same as business' is on", () => {
+    expect(effectivePayments({ payments_same_as_business: true, payment_methods: ["Zelle"], payment_other: "" }, biz)).toEqual(["Cash", "Venmo"]);
+  });
+  it("truck override replaces business methods and adds the free 'other' text", () => {
+    expect(effectivePayments({ payments_same_as_business: false, payment_methods: ["Zelle"], payment_other: "Bitcoin" }, biz)).toEqual(["Zelle", "Bitcoin"]);
+  });
+  it("own-post matching uses the business handle for every truck of that business", () => {
+    const h = ownerHandles({ facebook: null, instagram: null, reddit: null }, biz);
+    expect(authorIsTruck2("tacoco", h)).toBe(true);
+    expect(authorIsTruck2("someone-else", h)).toBe(false);
+  });
+  it("legacy truck handle still matches when the business has none", () => {
+    expect(authorIsTruck2("oldpage", ownerHandles({ facebook: "facebook.com/oldpage", instagram: null, reddit: null }, null))).toBe(true);
+  });
+  it("public description hides owner contact lines", () => {
+    expect(publicDescription("Great tacos\n\nBusiness: Taco Co\n\nOwner contact: Jo · jo@x.com")).toBe("Great tacos");
+  });
+});
