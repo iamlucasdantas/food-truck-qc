@@ -20,3 +20,8 @@
 - [x] Public footer links to Privacy/Terms
 - [x] Apify Google Maps seed (admin tab, per-city runs, gray base stops, run logs)
 - [x] Step 5: Facebook scraping (sources tab, daily 6am CT)
+
+## Step 6 — CRM (HighLevel)
+- [x] New users pushed to HighLevel via inbound webhook (once per account)
+- [x] Favorite-truck live alerts forwarded to HighLevel workflow
+- [ ] Owner creates the two HighLevel inbound-webhook workflows and shares the URLs (waiting on user)
