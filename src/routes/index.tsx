@@ -2,10 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ClientOnly } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import {
-  getTrucks, stopFor, milesBetween, fmtHour, QC_CENTER, SOURCE_LABEL,
-  type Window, type Status,
+  pickStop, milesBetween, fmtRange, QC_CENTER, SOURCE_LABEL,
+  type Window, type Status, type Stop,
 } from "@/data/trucks";
 import { useFavorites } from "@/hooks/use-favorites";
+import { useTrucks, useStops, groupBy, dayBounds } from "@/lib/queries";
+import { AccountButton } from "@/components/AccountButton";
 
 const TruckMap = lazy(() => import("@/components/TruckMap"));
 
@@ -58,25 +60,30 @@ function Index() {
   const days = useMemo(() => (now ? dayOptions() : []), [now]);
   const date = days[dayIdx];
 
+  const [from, to] = date ? dayBounds(date) : [null, null];
+  const { data: trucks = [] } = useTrucks();
+  const { data: stops = [] } = useStops(from, to);
+  const byTruck = useMemo(() => groupBy(stops, (s) => s.truck_id), [stops]);
+
   const results = useMemo(() => {
     if (!now || !date) return [];
     const effWin: Window = dayIdx > 0 && win === "now" ? "all" : win;
     const term = q.trim().toLowerCase();
-    return getTrucks()
+    return trucks
       .map((t) => {
-        const { stop, status } = stopFor(t, date, effWin, now);
-        return { t, stop, status, dist: stop ? milesBetween(center, stop.venue) : Infinity };
+        const { stop, status } = pickStop(byTruck.get(t.id) ?? [], date, effWin, now);
+        return { t, stop: stop as Stop | null, status, dist: stop ? milesBetween(center, stop) : Infinity };
       })
       .filter((r) => r.stop && r.dist <= radius)
-      .filter((r) => !term || [r.t.name, r.t.category, r.stop!.venue.city].some((s) => s.toLowerCase().includes(term)))
+      .filter((r) => !term || [r.t.name, r.t.category, r.stop!.city].some((s) => s.toLowerCase().includes(term)))
       .filter((r) => !onlyFav || isFav(r.t.id))
       .filter((r) => !onlyOpen || r.status === "open")
-      .filter((r) => !card || r.t.acceptsCard)
+      .filter((r) => !card || r.t.accepts_card)
       .sort((a, b) => a.dist - b.dist);
-  }, [now, date, dayIdx, win, q, center, radius, onlyFav, onlyOpen, card, isFav]);
+  }, [now, date, dayIdx, win, q, center, radius, onlyFav, onlyOpen, card, isFav, trucks, byTruck]);
 
   const pins = useMemo(() => results.map((r) => ({
-    id: r.t.id, lat: r.stop!.venue.lat, lng: r.stop!.venue.lng, status: r.status, emoji: r.t.emoji, name: r.t.name,
+    id: r.t.id, lat: r.stop!.lat, lng: r.stop!.lng, status: r.status, emoji: r.t.emoji, name: r.t.name,
   })), [results]);
 
   const sel = results.find((r) => r.t.id === selected);
@@ -102,6 +109,7 @@ function Index() {
               className="min-w-0 flex-1 rounded-full border-2 border-border bg-background px-4 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
             />
             <Link to="/favorites" className="chip shrink-0" aria-label="My favorites">♥</Link>
+            <AccountButton />
           </div>
           <div className="flex gap-2 overflow-x-auto pb-1">
             <select
@@ -125,7 +133,7 @@ function Index() {
             ))}
             <span className="mx-1 w-px shrink-0 bg-border" />
             <button onClick={() => setOnlyOpen(!onlyOpen)} className={`chip whitespace-nowrap ${onlyOpen ? "chip-active" : ""}`}>Open now</button>
-            <button onClick={() => setOnlyFav(!onlyFav)} className={`chip ${onlyFav ? "chip-active" : ""}`}>Favorites</button>
+            <button onClick={() => setOnlyFav(!onlyFav)} className={`chip whitespace-nowrap ${onlyFav ? "chip-active" : ""}`}>Favorites only</button>
             <button onClick={() => setCard(!card)} className={`chip whitespace-nowrap ${card ? "chip-active" : ""}`}>Takes card</button>
           </div>
         </div>
@@ -139,10 +147,10 @@ function Index() {
               <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border-2 border-border bg-secondary text-2xl">{sel.t.emoji}</div>
               <div className="min-w-0 flex-1">
                 <h2 className="truncate text-lg font-bold">{sel.t.name}</h2>
-                <p className="text-sm text-muted-foreground">{sel.t.category} · {sel.dist.toFixed(1)} mi · {sel.stop!.venue.name}</p>
+                <p className="text-sm text-muted-foreground">{sel.t.category} · {sel.dist.toFixed(1)} mi · {sel.stop!.venue_name}</p>
                 <p className="mt-1 flex items-center gap-1.5 text-sm font-medium">
                   <span className={`h-2.5 w-2.5 rounded-full border border-border ${STATUS_DOT[sel.status]}`} />
-                  {STATUS_TEXT[sel.status]} · {fmtHour(sel.stop!.start)}–{fmtHour(sel.stop!.end)}
+                  {STATUS_TEXT[sel.status]} · {fmtRange(sel.stop!)}
                 </p>
                 <p className="mt-0.5 text-xs text-muted-foreground">{SOURCE_LABEL[sel.stop!.source]}</p>
               </div>
@@ -151,7 +159,7 @@ function Index() {
             <div className="mt-3 flex gap-2">
               <button onClick={() => toggle(sel.t.id)} className={`chip ${isFav(sel.t.id) ? "chip-active" : ""}`}>♥ {isFav(sel.t.id) ? "Saved" : "Save"}</button>
               <a target="_blank" rel="noreferrer" className="chip"
-                href={`https://www.google.com/maps/dir/?api=1&destination=${sel.stop!.venue.lat},${sel.stop!.venue.lng}`}>Directions</a>
+                href={`https://www.google.com/maps/dir/?api=1&destination=${sel.stop!.lat},${sel.stop!.lng}`}>Directions</a>
               <Link to="/truck/$id" params={{ id: sel.t.id }} className="chip ml-auto bg-primary text-primary-foreground">Details →</Link>
             </div>
           </div>
@@ -176,11 +184,11 @@ function Index() {
                   <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-secondary text-xl">{r.t.emoji}</span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-bold">{r.t.name}</span>
-                    <span className="block truncate text-xs text-muted-foreground">{r.t.category} · {r.stop!.venue.name}, {r.stop!.venue.city}</span>
+                    <span className="block truncate text-xs text-muted-foreground">{r.t.category} · {r.stop!.venue_name}, {r.stop!.city}</span>
                   </span>
                   <span className="shrink-0 text-right text-xs">
                     <span className="flex items-center justify-end gap-1 font-semibold">
-                      <span className={`h-2 w-2 rounded-full ${STATUS_DOT[r.status]}`} />{fmtHour(r.stop!.start)}–{fmtHour(r.stop!.end)}
+                      <span className={`h-2 w-2 rounded-full ${STATUS_DOT[r.status]}`} />{fmtRange(r.stop!)}
                     </span>
                     <span className="text-muted-foreground">{r.dist.toFixed(1)} mi</span>
                   </span>
