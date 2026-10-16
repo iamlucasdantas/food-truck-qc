@@ -29,12 +29,12 @@ function useOverview() {
         supabase.from("trucks").select("id", head).eq("status", "active").is("deleted_at", null),
         supabase.from("trucks").select("id", head).is("deleted_at", null).gte("created_at", wk),
         supabase.from("trucks").select("id", head).is("deleted_at", null).gte("created_at", wk2).lt("created_at", wk),
-        supabase.from("stops").select("id", head).eq("cancelled", false).lte("starts_at", iso).gt("ends_at", iso),
+        supabase.from("stops").select("id", head).eq("cancelled", false).neq("source", "apify_maps").lte("starts_at", iso).gt("ends_at", iso),
         supabase.from("trucks").select("id", head).eq("status", "pending").is("deleted_at", null),
         supabase.from("claims").select("id", head).eq("status", "pending"),
         supabase.from("claims").select("id", head).gte("created_at", wk),
-        supabase.from("stops").select("id", head).eq("cancelled", false).gte("starts_at", start.toISOString()).lt("starts_at", end.toISOString()),
-        supabase.from("stops").select("id", head).eq("cancelled", false).gte("starts_at", new Date(start.getTime() - 7 * DAY).toISOString()).lt("starts_at", new Date(end.getTime() - 7 * DAY).toISOString()),
+        supabase.from("stops").select("id", head).eq("cancelled", false).neq("source", "apify_maps").gte("starts_at", start.toISOString()).lt("starts_at", end.toISOString()),
+        supabase.from("stops").select("id", head).eq("cancelled", false).neq("source", "apify_maps").gte("starts_at", new Date(start.getTime() - 7 * DAY).toISOString()).lt("starts_at", new Date(end.getTime() - 7 * DAY).toISOString()),
         supabase.from("suggested_stops").select("id", head).eq("status", "pending"),
         supabase.from("suggested_stops").select("id", head).eq("status", "pending").eq("needs_address_check", true),
         supabase.from("ingestion_runs").select("status,started_at,finished_at,items_created").eq("source", "apify_facebook").order("started_at", { ascending: false }).limit(1),
@@ -95,7 +95,7 @@ export function AdminOverview() {
         {isLoading || !d ? Array.from({ length: 6 }, (_, i) => <Skeleton key={i} className="h-[124px] rounded-xl" />) : (
           <>
             <Kpi icon={Truck} label="Active trucks" value={d.total} foot={<Trend now={d.newWk} prev={d.newPrev} label="new vs last wk" />} onClick={() => go({ tab: "trucks" })} />
-            <Kpi icon={Radio} label="Live now" value={d.live} foot={<span className="text-xs text-muted-foreground">serving right now</span>} />
+            <Kpi icon={Radio} label="Live now" value={d.live} foot={<span className="text-xs text-muted-foreground">serving now (excl. map hours)</span>} />
             <Kpi icon={Clock} label="Pending approvals" value={d.pending} foot={<span className="text-xs text-muted-foreground">trucks to review</span>} onClick={() => go({ tab: "pending" })} />
             <Kpi icon={BadgeCheck} label="Open claims" value={d.claims} foot={<span className="text-xs text-muted-foreground">{d.claimsWk} this week</span>} onClick={() => go({ tab: "claims" })} />
             <Kpi icon={CalendarDays} label="Stops today" value={d.today} foot={<Trend now={d.today} prev={d.lastWkDay} label="vs last week" />} />
