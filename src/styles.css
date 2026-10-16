@@ -209,3 +209,16 @@ html, body { overflow-x: hidden; }
   --sidebar-border: #382c24;
   --sidebar-ring: #ef4f18;
 }
+
+/* Native iOS time controls must stay inside their grid track. */
+.profile-time {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.profile-time::-webkit-date-and-time-value { min-width: 0; text-align: left; }
+.profile-time::-webkit-datetime-edit { min-width: 0; padding: 0; }
