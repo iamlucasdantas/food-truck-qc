@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { parseCsv, slugify } from "@/data/trucks";
 import { geocode } from "@/lib/geocode";
+import { useServerFn } from "@tanstack/react-start";
+import { seedCity, SEED_CITIES } from "@/lib/apify.functions";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -22,7 +24,7 @@ export const Route = createFileRoute("/admin")({
   component: Admin,
 });
 
-const TABS = ["Claims", "Pending trucks", "Trucks", "CSV import", "Logs"] as const;
+const TABS = ["Claims", "Pending trucks", "Trucks", "CSV import", "Apify", "Logs"] as const;
 const err = (e: { message: string } | null) => (e ? (toast.error(e.message), true) : false);
 
 function Admin() {
@@ -45,6 +47,7 @@ function Admin() {
           {tab === "Pending trucks" && <PendingTrucks />}
           {tab === "Trucks" && <Trucks />}
           {tab === "CSV import" && <CsvImport />}
+          {tab === "Apify" && <ApifySeed />}
           {tab === "Logs" && <Logs />}
         </>
       )}
@@ -251,6 +254,67 @@ function Logs() {
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+function ApifySeed() {
+  const inv = useInvalidate();
+  const seed = useServerFn(seedCity);
+  const [busy, setBusy] = useState(false);
+  const [log, setLog] = useState<string[]>([]);
+  const { data: count = 0 } = useQuery({
+    queryKey: ["admin", "active-count"],
+    queryFn: async () => (await supabase.from("trucks").select("id", { count: "exact", head: true }).eq("status", "active")).count ?? 0,
+  });
+  const { data: runs = [] } = useQuery({
+    queryKey: ["admin", "runs", "apify"],
+    queryFn: async () => (await supabase.from("ingestion_runs").select("*").eq("source", "apify_maps").order("started_at", { ascending: false }).limit(10)).data ?? [],
+  });
+
+  const run = async () => {
+    setBusy(true); setLog([]);
+    const { data: r } = await supabase.from("ingestion_runs").insert({ source: "apify_maps", notes: "Google Maps seed" }).select().single();
+    let found = 0, created = 0, updated = 0; const errs: string[] = [];
+    for (const city of SEED_CITIES) {
+      setLog((l) => [...l, `⏳ ${city}…`]);
+      try {
+        const out = await seed({ data: { city } });
+        found += out.found; created += out.created; updated += out.updated; errs.push(...out.errors);
+        setLog((l) => [...l.slice(0, -1), `✓ ${city}: ${out.found} found, ${out.created} new, ${out.updated} updated`]);
+      } catch (e) {
+        errs.push(`${city}: ${e instanceof Error ? e.message : String(e)}`);
+        setLog((l) => [...l.slice(0, -1), `✗ ${city}: ${e instanceof Error ? e.message : String(e)}`]);
+      }
+    }
+    if (r) await supabase.from("ingestion_runs").update({
+      status: errs.length ? (created + updated ? "partial" : "error") : "success", finished_at: new Date().toISOString(),
+      items_found: found, items_created: created, notes: `Google Maps seed · ${updated} updated`, error: errs.slice(0, 20).join("\n") || null,
+    }).eq("id", r.id);
+    setBusy(false); inv();
+    toast.success(`Seed done: ${created} new trucks`);
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="panel space-y-3 p-5">
+        <p className="text-2xl font-extrabold">{count} <span className="text-base font-normal text-muted-foreground">/ 50 active trucks</span></p>
+        <div className="h-2 overflow-hidden rounded bg-muted"><div className="h-full bg-primary" style={{ width: `${Math.min(100, (count / 50) * 100)}%` }} /></div>
+        <p className="text-sm text-muted-foreground">Searches Google Maps for food trucks in {SEED_CITIES.length} Quad Cities-area towns. Takes a few minutes and uses Apify credits. Trucks claimed by owners are never overwritten.</p>
+        <button disabled={busy} onClick={() => void run()} className="chip bg-primary text-primary-foreground">{busy ? "Running…" : "Run Google Maps seed"}</button>
+        {log.length > 0 && <pre className="rounded bg-muted p-2 text-xs">{log.join("\n")}</pre>}
+      </div>
+      <h3 className="font-bold">Last runs</h3>
+      {runs.length === 0 ? <p className="text-sm text-muted-foreground">No seeds yet.</p> : (
+        <ul className="space-y-1 text-sm">
+          {runs.map((r) => (
+            <li key={r.id} className="panel p-3">
+              <b>{new Date(r.started_at).toLocaleString()}</b> · {r.status} · {r.items_found} found · {r.items_created} new
+              {r.error && <pre className="mt-1 whitespace-pre-wrap text-xs text-destructive">{r.error}</pre>}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
