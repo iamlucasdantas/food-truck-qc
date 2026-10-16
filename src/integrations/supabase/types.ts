@@ -550,6 +550,44 @@ export type Database = {
           },
         ]
       }
+      truck_photos: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          is_cover: boolean
+          path: string
+          position: number
+          truck_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_cover?: boolean
+          path: string
+          position?: number
+          truck_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_cover?: boolean
+          path?: string
+          position?: number
+          truck_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "truck_photos_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "trucks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trucks: {
         Row: {
           accepts_card: boolean
@@ -568,6 +606,9 @@ export type Database = {
           instagram: string | null
           logo_url: string | null
           menu: Json
+          menu_search: string
+          menu_sections: Json | null
+          menu_updated_at: string | null
           merged_into: string | null
           name: string
           payment_methods: string[]
@@ -597,6 +638,9 @@ export type Database = {
           instagram?: string | null
           logo_url?: string | null
           menu?: Json
+          menu_search?: string
+          menu_sections?: Json | null
+          menu_updated_at?: string | null
           merged_into?: string | null
           name: string
           payment_methods?: string[]
@@ -626,6 +670,9 @@ export type Database = {
           instagram?: string | null
           logo_url?: string | null
           menu?: Json
+          menu_search?: string
+          menu_sections?: Json | null
+          menu_updated_at?: string | null
           merged_into?: string | null
           name?: string
           payment_methods?: string[]
