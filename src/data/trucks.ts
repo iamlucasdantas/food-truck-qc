@@ -107,6 +107,36 @@ export function closingTime(choice: "+2h" | "+4h" | "9pm", now: Date): Date {
   return d.getTime() > cap ? new Date(cap) : d;
 }
 
+export const LIVE_MIN_MINUTES = 15;
+export const LIVE_MAX_MINUTES = 12 * 60;
+export const LIVE_DEFAULT_MINUTES = 120;
+export type LiveChoice = { kind: "minutes"; minutes: number } | { kind: "until"; time: string };
+
+/**
+ * End time for an "I'm here" check-in. Durations are minutes from now; "until" is a Central (America/Chicago)
+ * wall-clock HH:MM — if that time already passed today it means tomorrow. Must be 15 min to 12 h away.
+ */
+export function liveEnd(choice: LiveChoice, now: Date): { ok: true; end: Date } | { ok: false; error: string } {
+  let end: Date;
+  if (choice.kind === "minutes") {
+    if (!Number.isFinite(choice.minutes)) return { ok: false, error: "Enter how long you'll be there." };
+    end = new Date(now.getTime() + Math.round(choice.minutes) * 60_000);
+  } else {
+    if (!/^\d{1,2}:\d{2}$/.test(choice.time)) return { ok: false, error: "Pick an end time." };
+    end = centralToUtc(chicagoDate(now), choice.time);
+    if (end <= now) end = centralToUtc(chicagoDate(new Date(now.getTime() + 86_400_000)), choice.time);
+  }
+  const mins = (end.getTime() - now.getTime()) / 60_000;
+  if (mins < LIVE_MIN_MINUTES - 0.01) return { ok: false, error: "Pick at least 15 minutes." };
+  if (mins > LIVE_MAX_MINUTES + 0.01) return { ok: false, error: "The longest check-in is 12 hours." };
+  return { ok: true, end };
+}
+
+/** Clock time in Quad Cities (Central) time, e.g. "3:45 PM". */
+export function fmtCentral(iso: string | Date): string {
+  return new Date(iso).toLocaleTimeString("en-US", { timeZone: "America/Chicago", hour: "numeric", minute: "2-digit" });
+}
+
 export function slugify(s: string) {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
