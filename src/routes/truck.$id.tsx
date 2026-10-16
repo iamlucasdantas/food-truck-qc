@@ -11,6 +11,7 @@ import { ClaimButton } from "@/components/ClaimButton";
 import { useFavorites } from "@/hooks/use-favorites";
 
 export const Route = createFileRoute("/truck/$id")({
+  staticData: { sitemap: true },
   head: ({ params }) => {
     const name = params.id.split("-").map((w) => w[0]?.toUpperCase() + w.slice(1)).join(" ");
     return {

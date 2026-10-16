@@ -7,6 +7,7 @@ import { slugify } from "@/data/trucks";
 import { geocode } from "@/lib/geocode";
 
 export const Route = createFileRoute("/owner/new")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Add your food truck | FoodTruckQC" },

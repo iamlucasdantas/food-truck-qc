@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/use-auth";
 const safe = (p?: string) => (p && p.startsWith("/") && !p.startsWith("//") ? p : "/");
 
 export const Route = createFileRoute("/auth")({
+  staticData: { sitemap: false },
   validateSearch: z.object({ redirect: z.string().optional(), mode: z.enum(["in", "up"]).optional() }),
   head: () => ({
     meta: [

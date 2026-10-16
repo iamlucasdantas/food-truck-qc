@@ -2,6 +2,7 @@ import { Logo } from "@/components/Logo";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/terms")({
+  staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: "Terms of Use | FoodTruckQC" },

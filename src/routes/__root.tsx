@@ -78,6 +78,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -86,6 +87,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "theme-color", content: "#d62f22" },
       { name: "description", content: "See which Quad Cities food trucks are open now or this weekend." },
       { property: "og:site_name", content: "FoodTruckQC" },
+      { name: "google-site-verification", content: "mLdpWlY8t8hdesRRdvfhZEHq0d5mINT74VkYz6Zh9WQ" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],

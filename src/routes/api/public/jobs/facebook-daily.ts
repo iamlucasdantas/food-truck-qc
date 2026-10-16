@@ -3,6 +3,7 @@ import { authenticateCronRequest } from "@/integrations/supabase/cron-auth";
 
 /** Daily 6am Central: fires at 11:00 and 12:00 UTC; only the one that is 6am in Chicago runs (DST-safe). */
 export const Route = createFileRoute("/api/public/jobs/facebook-daily")({
+  staticData: { sitemap: false },
   server: {
     handlers: {
       POST: async ({ request }) => {

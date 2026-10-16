@@ -13,6 +13,7 @@ import { geocode, fileToLogo } from "@/lib/geocode";
 const TruckMap = lazy(() => import("@/components/TruckMap"));
 
 export const Route = createFileRoute("/owner")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Owner dashboard | FoodTruckQC" },
