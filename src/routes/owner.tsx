@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/use-auth";
 import { closingTime, fmtTime, QC_CENTER, type Truck } from "@/data/trucks";
 import { useStops, dayBounds, useStopsRealtime } from "@/lib/queries";
@@ -284,10 +285,10 @@ function ProfileForm({ truck, siblings }: { truck: Truck; siblings: string[] }) 
   const qc = useQueryClient();
   const [f, setF] = useState({
     name: truck.name, category: truck.category, emoji: truck.emoji, description: truck.description,
-    phone: truck.phone ?? "", website: truck.website ?? "", instagram: truck.instagram ?? "", facebook: truck.facebook ?? "",
+    phone: truck.phone ?? "", website: truck.website ?? "", instagram: truck.instagram ?? "", facebook: truck.facebook ?? "", reddit: truck.reddit ?? "",
     accepts_card: truck.accepts_card, logo_url: truck.logo_url, truck_type: truck.truck_type,
   });
-  const txt = (k: "name" | "category" | "emoji" | "description" | "phone" | "website" | "instagram" | "facebook", ph: string) => (
+  const txt = (k: "name" | "category" | "emoji" | "description" | "phone" | "website" | "instagram" | "facebook" | "reddit", ph: string) => (
     <input className="field" placeholder={ph} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} />
   );
   async function save(e: React.FormEvent) {
@@ -317,7 +318,8 @@ function ProfileForm({ truck, siblings }: { truck: Truck; siblings: string[] }) 
         </select>
       </label>
       <textarea className="field" rows={3} placeholder="Description" value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} />
-      <div className="grid grid-cols-2 gap-2">{txt("phone", "Phone")}{txt("website", "Website")}{txt("instagram", "Instagram")}{txt("facebook", "Facebook")}</div>
+      <div className="grid grid-cols-2 gap-2">{txt("phone", "Phone")}{txt("website", "Website")}{txt("instagram", "Instagram")}{txt("facebook", "Facebook")}{txt("reddit", "Reddit username")}</div>
+      <p className="text-xs text-muted-foreground">Your social handles tell FoodTruckQC which posts are yours — stops from your own posts go straight onto your public calendar.</p>
       <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={f.accepts_card} onChange={(e) => setF({ ...f, accepts_card: e.target.checked })} /> Accepts cards</label>
       <button className="chip bg-primary text-primary-foreground">Save profile</button>
     </form>

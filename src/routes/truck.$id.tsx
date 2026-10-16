@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { lazy, Suspense, useMemo, useState } from "react";
 const TruckMap = lazy(() => import("@/components/TruckMap"));
 import { supabase } from "@/integrations/supabase/client";
-import { fmtRange, SOURCE_LABEL } from "@/data/trucks";
+import { fmtRange, SOURCE_LABEL, stopBadge } from "@/data/trucks";
 import { useStops, dayBounds, useStopsRealtime } from "@/lib/queries";
 import { ClaimButton } from "@/components/ClaimButton";
 import { useFavorites } from "@/hooks/use-favorites";
