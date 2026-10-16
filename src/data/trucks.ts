@@ -210,7 +210,7 @@ export function chooseCenter(user: { lat: number; lng: number } | null) {
 
 /** Truck names compared loosely: lowercase, no punctuation, filler words dropped. */
 export function normalizeTruckName(name: string): string {
-  return name.toLowerCase().replace(/&/g, " and ").replace(/[^a-z0-9 ]/g, " ")
+  return name.toLowerCase().replace(/['’]/g, "").replace(/&/g, " and ").replace(/[^a-z0-9 ]/g, " ")
     .split(/\s+/).filter((w) => w && !["the", "food", "truck", "trailer", "llc", "co", "inc"].includes(w)).join(" ");
 }
 /** Find an existing truck by normalized name (exact, or containment for names ≥ 5 chars). */
