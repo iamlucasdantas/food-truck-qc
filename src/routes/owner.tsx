@@ -1,3 +1,4 @@
+import { Logo } from "@/components/Logo";
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { ClientOnly } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -48,9 +49,9 @@ function Owner() {
   useStopsRealtime();
 
   return (
+    <div className="min-h-dvh bg-sidebar text-sidebar-foreground"><header className="border-b border-sidebar-border bg-sidebar"><div className="mx-auto flex w-full max-w-[1100px] items-center justify-between gap-3 p-4"><Logo /><Link to="/" className="chip">← Map</Link></div></header>
     <main className="mx-auto w-full max-w-[1100px] min-w-0 space-y-4 p-4 pb-16">
-      <div className="flex items-center justify-between">
-        <Link to="/" className="chip">← Map</Link>
+      <div className="flex items-center justify-end">
         <Link to="/owner/new" className="chip">+ Add a truck</Link>
       </div>
       <h1 className="text-3xl font-extrabold">Owner dashboard</h1>
@@ -60,7 +61,7 @@ function Owner() {
           <button onClick={() => openAuth("Sign in to manage your truck.")} className="chip bg-primary text-primary-foreground">Sign in</button>
         </div>
       )}
-      {pending.map((t) => <p key={t.id} className="panel p-3 text-sm"><b>{t.name}</b> is waiting for review. We'll unlock it once approved.</p>)}
+      {pending.map((t) => <p key={t.id} className="panel p-3 text-sm"><b>{t.name}</b> is waiting for review and unlocks once approved.</p>)}
       {user && data && mine.length === 0 && (
         <p className="panel p-5 text-sm">No trucks linked to your account yet. Find your truck on the map and tap <b>"Claim it"</b>, or add a new one.</p>
       )}

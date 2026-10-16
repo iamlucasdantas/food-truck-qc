@@ -1,3 +1,4 @@
+import { Logo } from "@/components/Logo";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { z } from "zod";
@@ -30,7 +31,7 @@ function AuthPage() {
   return (
     <main className="grid min-h-dvh place-items-center bg-secondary p-4">
       <div className="w-full max-w-sm space-y-5 rounded-2xl bg-card p-6 shadow-pop">
-        <Link to="/" className="block text-center text-xl font-extrabold"><span className="text-primary">FoodTruck</span>QC</Link>
+        <div className="flex justify-center"><Logo size="lg" /></div>
         <AuthForm initialMode={mode ?? "in"} />
       </div>
     </main>

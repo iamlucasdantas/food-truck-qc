@@ -20,7 +20,7 @@ export function ClaimButton({ truckId }: { truckId: string }) {
   async function submit() {
     const { error } = await supabase.from("claims").insert({ truck_id: truckId, user_id: user!.id, user_email: user!.email ?? null, message: msg });
     if (error) return void toast.error(error.message);
-    toast.success("Claim sent! We'll review it soon.");
+    toast.success("Claim sent — review usually takes a day or two.");
     setOpen(false);
     void qc.invalidateQueries({ queryKey: key });
   }

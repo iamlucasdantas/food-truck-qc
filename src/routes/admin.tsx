@@ -1,3 +1,4 @@
+import { Logo } from "@/components/Logo";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -32,8 +33,8 @@ function Admin() {
   const { user, ready, isAdmin, openAuth } = useAuth();
   const [tab, setTab] = useState<(typeof TABS)[number]>("Claims");
   return (
+    <div className="min-h-dvh bg-sidebar text-sidebar-foreground"><header className="border-b border-sidebar-border bg-sidebar"><div className="mx-auto flex w-full max-w-[1100px] items-center justify-between gap-3 p-4"><Logo /><Link to="/" className="chip">← Map</Link></div></header>
     <main className="mx-auto w-full max-w-[1100px] min-w-0 space-y-4 p-4 pb-16">
-      <Link to="/" className="chip">← Map</Link>
       <h1 className="text-3xl font-extrabold">Admin</h1>
       {ready && !user && <button className="chip" onClick={() => openAuth()}>Sign in</button>}
       {ready && user && !isAdmin && <p className="panel p-5">This area is for admins only.</p>}

@@ -64,7 +64,7 @@ export function AuthForm({ initialMode = "in" }: { initialMode?: "in" | "up" }) 
       {mode !== "forgot" ? (
         <div role="tablist" className="grid grid-cols-2 gap-1 rounded-full bg-muted p-1">{tab("in", "Sign in")}{tab("up", "Create account")}</div>
       ) : (
-        <div><p className="font-semibold">Reset your password</p><p className="text-sm text-muted-foreground">We'll email you a link to choose a new one.</p></div>
+        <div><p className="font-semibold">Reset your password</p><p className="text-sm text-muted-foreground">Get an email link to choose a new one.</p></div>
       )}
       {mode !== "forgot" && (
         <>

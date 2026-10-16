@@ -1,3 +1,4 @@
+import { Logo } from "@/components/Logo";
 import { SiteFooter } from "@/components/SiteFooter";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ClientOnly } from "@tanstack/react-router";
@@ -22,9 +23,11 @@ const TruckMap = lazy(() => import("@/components/TruckMap"));
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "FoodTruckQC — Find food trucks in the Quad Cities" },
-      { name: "description", content: "Live map of food trucks in Davenport, Bettendorf, Rock Island, Moline and East Moline. Search by distance and date." },
-      { property: "og:title", content: "FoodTruckQC — Food trucks near you" },
+      { title: "FoodTruckQC — Food trucks near you." },
+      { name: "description", content: "See which Quad Cities food trucks are open now or this weekend." },
+      { property: "og:title", content: "FoodTruckQC — Food trucks near you." },
+      { property: "og:image", content: "https://app.foodtruckqc.com/og-image.jpg" },
+      { name: "twitter:image", content: "https://app.foodtruckqc.com/og-image.jpg" },
       { property: "og:description", content: "See which Quad Cities food trucks are open now or this weekend." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -225,9 +228,8 @@ function Index() {
       {!loading && results.length === 0 && (
         <li className="flex flex-col items-center gap-3 px-4 py-12 text-center">
           <span className="text-4xl" aria-hidden>🚚</span>
-          <p className="font-semibold">No trucks match these filters</p>
-          <p className="text-sm text-muted-foreground">Try a bigger distance, another day, or fewer cuisines.</p>
-          <button onClick={clearAll} className={`h-11 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors duration-150 hover:bg-primary/90 ${focus}`}>Clear filters</button>
+          <p className="text-base">0 trucks within {radius} mi — widen the radius or pick another date.</p>
+          <button onClick={clearAll} className={`h-11 rounded-full border border-border bg-card px-5 text-sm font-medium transition-colors duration-150 hover:bg-muted ${focus}`}>Clear filters</button>
         </li>
       )}
       {!loading && results.map((r) => (
@@ -336,7 +338,7 @@ function Index() {
       {/* Tablet / desktop column */}
       <aside className={`absolute inset-y-0 left-0 z-[1000] hidden flex-col bg-secondary shadow-pop md:flex ${mapFailed ? "w-full" : "w-[360px] min-[1200px]:w-[420px]"}`}>
         <div className={`space-y-2 bg-card p-3 shadow-pop ${mapFailed ? "mx-auto w-full max-w-[1100px]" : ""}`}>
-          <h1 className="px-1 text-lg font-extrabold"><span className="text-primary">FoodTruck</span>QC</h1>
+          <h1 className="px-1"><Logo /></h1>
           {searchRow}{quickRow}{activeRow}
         </div>
         <div className={`flex-1 overflow-y-auto pt-2 ${mapFailed ? "mx-auto w-full max-w-[1100px]" : ""}`}>{listHeader}<div className="mt-1">{list}</div><SiteFooter /></div>
@@ -381,10 +383,10 @@ function Index() {
               <button onClick={() => setSelected(null)} aria-label="Close" className={`grid h-11 w-11 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-muted ${focus}`}><X className="h-5 w-5" /></button>
             </div>
             <div className="mt-3 grid grid-cols-4 gap-2">
-              <Action href={sel.t.phone ? `tel:${sel.t.phone}` : undefined} icon={<Phone className="h-4 w-4" />} label="Call" />
-              <Action href={sel.t.website ?? undefined} icon={<Globe className="h-4 w-4" />} label="Website" external />
-              <Action href={sel.t.instagram ? (sel.t.instagram.startsWith("http") ? sel.t.instagram : `https://instagram.com/${sel.t.instagram.replace(/^@/, "")}`) : undefined} icon={<Instagram className="h-4 w-4" />} label="Instagram" external />
-              <Action href={`https://www.google.com/maps/dir/?api=1&destination=${sel.lat},${sel.lng}`} icon={<Navigation className="h-4 w-4" />} label="Directions" external primary />
+              <Action href={sel.t.phone ? `tel:${sel.t.phone}` : undefined} icon={<Phone className="h-5 w-5" />} label="Call" />
+              <Action href={sel.t.website ?? undefined} icon={<Globe className="h-5 w-5" />} label="Website" external />
+              <Action href={sel.t.instagram ? (sel.t.instagram.startsWith("http") ? sel.t.instagram : `https://instagram.com/${sel.t.instagram.replace(/^@/, "")}`) : undefined} icon={<Instagram className="h-5 w-5" />} label="Instagram" external />
+              <Action href={`https://www.google.com/maps/dir/?api=1&destination=${sel.lat},${sel.lng}`} icon={<Navigation className="h-5 w-5" />} label="Directions" external primary />
             </div>
             <Link to="/truck/$id" params={{ id: sel.t.id }} className={`mt-2 flex h-11 items-center justify-center rounded-xl text-sm font-semibold text-primary hover:bg-muted ${focus}`}>View details →</Link>
           </div>
@@ -404,7 +406,7 @@ function Section({ title, aside, children }: { title: string; aside?: ReactNode;
 }
 
 function Action({ href, icon, label, external, primary }: { href?: string | undefined; icon: ReactNode; label: string; external?: boolean; primary?: boolean }) {
-  const cls = `flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl text-xs font-medium transition-colors duration-150 ${focus} ${primary ? "bg-primary text-primary-foreground hover:bg-primary/90" : "bg-muted hover:bg-accent"}`;
-  if (!href) return <span className={`${cls} cursor-not-allowed opacity-40`} aria-disabled>{icon}{label}</span>;
+  const cls = `flex h-16 flex-col items-center justify-center gap-1.5 rounded-md border text-[13px] font-medium transition-colors duration-150 ${focus} ${primary ? "border-primary bg-primary text-primary-foreground hover:bg-primary/90" : "border-border bg-card hover:bg-accent"}`;
+  if (!href) return <span className={`${cls} cursor-not-allowed text-pin-none`} aria-disabled>{icon}{label}</span>;
   return <a href={href} className={cls} {...(external ? { target: "_blank", rel: "noreferrer" } : {})}>{icon}{label}</a>;
 }

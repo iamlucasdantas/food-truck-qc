@@ -95,7 +95,7 @@ function Account() {
 
         <div className={card}>
           <label className="flex min-h-11 cursor-pointer items-center justify-between gap-4">
-            <span><span className="block font-semibold">Notify me when my favorite trucks go live</span><span className="block text-sm text-muted-foreground">We'll let you know when a saved truck checks in.</span></span>
+            <span><span className="block font-semibold">Notify me when my favorite trucks go live</span><span className="block text-sm text-muted-foreground">Get an alert when a saved truck checks in.</span></span>
             <Switch checked={profile?.notify_favorites ?? true} onCheckedChange={(v) => void setNotify(v)} />
           </label>
         </div>
