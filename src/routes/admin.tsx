@@ -38,7 +38,7 @@ function Admin() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const TAB_KEY: Record<string, (typeof TABS)[number]> = { pending: "Pending trucks", trucks: "Trucks" };
-  const tab: (typeof TABS)[number] = TAB_KEY[String(search.tab ?? "")] ?? (TABS.find((t) => t === search.tab) ?? "Claims");
+  const tab: (typeof TABS)[number] = TAB_KEY[String(search["tab"] ?? "")] ?? (TABS.find((t) => t === search["tab"]) ?? "Claims");
   const setTab = (t: (typeof TABS)[number]) => void navigate({ search: { tab: t === "Pending trucks" ? "pending" : t === "Trucks" ? "trucks" : t === "Claims" ? undefined : t } });
   return (
     <div className="min-h-dvh bg-sidebar text-sidebar-foreground"><header className="border-b border-sidebar-border bg-sidebar"><div className="mx-auto flex w-full max-w-[1100px] items-center justify-between gap-3 p-4"><Logo /><Link to="/" className="chip">← Map</Link></div></header>

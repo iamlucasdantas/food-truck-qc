@@ -19,7 +19,8 @@ type Row = {
   menu_search: string; merged_into: string | null; phone: string | null; website: string | null; instagram: string | null; facebook: string | null;
 };
 
-export function AdminTrucks({ search }: { search: Record<string, unknown> }) {
+type S = Record<string, string | number | undefined>;
+export function AdminTrucks({ search }: { search: S }) {
   const qc = useQueryClient();
   const navigate = useNavigate({ from: "/admin" });
   const f = parseFilters(search);
@@ -30,9 +31,9 @@ export function AdminTrucks({ search }: { search: Record<string, unknown> }) {
   const [edit, setEdit] = useState<string | null>(null);
   const [merge, setMerge] = useState<string | null>(null);
 
-  const set = (next: Partial<Filters>, extra: Record<string, unknown> = {}) =>
-    void navigate({ search: (prev: Record<string, unknown>) => ({ ...prev, ...filtersToSearch({ ...f, ...next }), page: undefined, ...extra }), replace: true });
-  const setRaw = (extra: Record<string, unknown>) => void navigate({ search: (prev: Record<string, unknown>) => ({ ...prev, ...extra }), replace: true });
+  const set = (next: Partial<Filters>, extra: S = {}) =>
+    void navigate({ search: (prev: S): S => ({ ...prev, ...filtersToSearch({ ...f, ...next }), page: undefined, ...extra }), replace: true });
+  const setRaw = (extra: S) => void navigate({ search: (prev: S): S => ({ ...prev, ...extra }), replace: true });
 
   const { data = [] } = useQuery({
     queryKey: ["admin", "trucks"],

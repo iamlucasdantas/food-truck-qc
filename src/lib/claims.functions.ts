@@ -20,7 +20,7 @@ async function loadMatches(userId: string, supabase: SupabaseClient<Database>) {
   const me: Me = {
     email: u?.user?.email ?? "", emailConfirmed: !!u?.user?.email_confirmed_at,
     businessName: biz?.name ?? "", truckNames: (mine ?? []).map((t) => t.name),
-    website: biz?.website, facebook: biz?.facebook, instagram: biz?.instagram, reddit: biz?.reddit,
+    website: biz?.website ?? null, facebook: biz?.facebook ?? null, instagram: biz?.instagram ?? null, reddit: biz?.reddit ?? null,
   };
   const asked = new Set((claims ?? []).filter((c) => c.status !== "rejected").map((c) => c.truck_id));
   const rows = (open ?? []) as Candidate[];
