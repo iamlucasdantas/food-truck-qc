@@ -307,12 +307,12 @@ function CalendarConnect({ truck, onImport }: { truck: Truck; onImport: (d: Draf
     if (ok(error, "Calendar disconnected")) void qc.invalidateQueries({ queryKey: ["feed", truck.id] });
   }
   const toDraft = (e: FeedEvent): Draft => {
-    const s = new Date(e.start), en = new Date(e.end);
+    const s = new Date(e.start);
     return {
       date: ymd(s), start: e.allDay ? "11:00" : hhmm(e.start), end: e.allDay ? "14:00" : hhmm(e.end), venue: e.title, address: e.location, note: "",
       pos: null, city: "", repeat: e.recurrence?.freq ?? "none", weekdays: e.recurrence?.weekdays ?? [s.getDay()], nth: e.recurrence?.month_nth ?? 1,
       until: e.recurrence?.end_date ?? "", externalUid: e.recurrence ? e.uid : undefined,
-    } satisfies Draft && { ...{ date: ymd(s) }, start: e.allDay ? "11:00" : hhmm(e.start), end: e.allDay ? "14:00" : hhmm(en.toISOString()), venue: e.title, address: e.location, note: "", pos: null, city: "", repeat: e.recurrence?.freq ?? "none", weekdays: e.recurrence?.weekdays ?? [s.getDay()], nth: e.recurrence?.month_nth ?? 1, until: e.recurrence?.end_date ?? "", externalUid: e.recurrence ? e.uid : undefined };
+    };
   };
 
   return (
