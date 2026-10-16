@@ -35,7 +35,7 @@ export const submitTruckSignup = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const slug = data.truckName.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) || "truck";
     const id = `${slug}-${Math.random().toString(36).slice(2, 6)}`;
-    const contact = `Owner contact: ${[data.contactName, data.email, data.phone, data.businessName].filter(Boolean).join(" · ")}`;
+    const contact = `Owner contact: ${[data.contactName, data.email, data.phone].filter(Boolean).join(" · ")}`;
     const { error } = await supabaseAdmin.from("trucks").insert({
       id,
       name: data.truckName,
@@ -45,7 +45,7 @@ export const submitTruckSignup = createServerFn({ method: "POST" })
       instagram: data.instagram || null,
       facebook: data.facebook || null,
       base_address: data.city || null,
-      description: [data.description, contact].filter(Boolean).join("\n\n"),
+      description: [data.description, data.businessName && `Business: ${data.businessName}`, contact].filter(Boolean).join("\n\n"),
       status: "pending",
       source: "embed_form",
       truck_type: data.truckType,
