@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, redirect } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -12,6 +12,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 
 export const Route = createFileRoute("/_authenticated/account")({
   staticData: { sitemap: false },
+  beforeLoad: () => { throw redirect({to:"/profile",search:{section:"security",view:undefined}}); },
   head: () => ({
     meta: [
       { title: "Your account | FoodTruckQC" },

@@ -141,6 +141,20 @@
       "when": 1792171617410,
       "tag": "0019_venues_and_source_results",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1792179950472,
+      "tag": "0020_premium_profile_preferences",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1792180004589,
+      "tag": "0021_owner_profile_favorite_summary",
+      "breakpoints": true
     }
   ]
 }

@@ -7,6 +7,11 @@ export const deleteMyAccount = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const uid = context.userId;
+    const [{ error: libraryError }, { error: settingsError }] = await Promise.all([
+      supabaseAdmin.from("profile_trucks").delete().eq("user_id", uid),
+      supabaseAdmin.from("profile_settings").delete().eq("user_id", uid),
+    ]);
+    if (libraryError || settingsError) throw new Error("Could not delete account preferences");
     await supabaseAdmin.from("favorites").delete().eq("user_id", uid);
     await supabaseAdmin.from("profiles").delete().eq("id", uid);
     const { error } = await supabaseAdmin.auth.admin.deleteUser(uid);

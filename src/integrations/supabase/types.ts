@@ -233,6 +233,77 @@ export type Database = {
         }
         Relationships: []
       }
+      profile_settings: {
+        Row: {
+          bio: string
+          cuisines: string[]
+          dietary: string[]
+          home_area: string
+          notifications: Json
+          share_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bio?: string
+          cuisines?: string[]
+          dietary?: string[]
+          home_area?: string
+          notifications?: Json
+          share_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bio?: string
+          cuisines?: string[]
+          dietary?: string[]
+          home_area?: string
+          notifications?: Json
+          share_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profile_trucks: {
+        Row: {
+          bell: boolean
+          following: boolean
+          list: string
+          truck_id: string
+          user_id: string
+          viewed_at: string | null
+          visited_at: string | null
+        }
+        Insert: {
+          bell?: boolean
+          following?: boolean
+          list?: string
+          truck_id: string
+          user_id: string
+          viewed_at?: string | null
+          visited_at?: string | null
+        }
+        Update: {
+          bell?: boolean
+          following?: boolean
+          list?: string
+          truck_id?: string
+          user_id?: string
+          viewed_at?: string | null
+          visited_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_trucks_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "trucks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -822,6 +893,7 @@ export type Database = {
         Args: { _dup: string; _keep: string }
         Returns: undefined
       }
+      owner_favorite_summary: { Args: { _truck_id: string }; Returns: Json }
       owner_id_by_email: { Args: { _email: string }; Returns: string }
       owns_truck: { Args: { _truck_id: string }; Returns: boolean }
       purge_deleted_trucks: { Args: never; Returns: number }
@@ -831,6 +903,7 @@ export type Database = {
             Args: { _approve: boolean; _claim_id: string; _reason: string }
             Returns: undefined
           }
+      shared_foodie_profile: { Args: { _user_id: string }; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "owner" | "consumer"
