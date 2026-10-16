@@ -1,4 +1,3 @@
-// @vitest-environment node
 // Live checks of the access rules on the real backend, as a signed-out visitor.
 // Owner-only writes (photos, menu, business) must be refused; public reads must work.
 import { readFileSync } from "node:fs";
