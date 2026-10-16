@@ -148,3 +148,29 @@ describe("business vs truck data", () => {
     expect(publicDescription("Great tacos\n\nBusiness: Taco Co\n\nOwner contact: Jo · jo@x.com")).toBe("Great tacos");
   });
 });
+
+import { liveEnd, fmtCentral } from "./trucks";
+describe("I'm here duration", () => {
+  const now = new Date("2026-10-16T17:00:00Z"); // 12:00 Central (CDT)
+  it("chips add hours from now", () => {
+    const r = liveEnd({ kind: "minutes", minutes: 120 }, now);
+    expect(r.ok && r.end.toISOString()).toBe("2026-10-16T19:00:00.000Z");
+  });
+  it("rejects under 15 minutes and over 12 hours", () => {
+    expect(liveEnd({ kind: "minutes", minutes: 10 }, now).ok).toBe(false);
+    expect(liveEnd({ kind: "minutes", minutes: 15 }, now).ok).toBe(true);
+    expect(liveEnd({ kind: "minutes", minutes: 720 }, now).ok).toBe(true);
+    expect(liveEnd({ kind: "minutes", minutes: 721 }, now).ok).toBe(false);
+  });
+  it("an end time is read in Central time", () => {
+    const r = liveEnd({ kind: "until", time: "15:30" }, now);
+    expect(r.ok && r.end.toISOString()).toBe("2026-10-16T20:30:00.000Z");
+    expect(r.ok && fmtCentral(r.end)).toBe("3:30 PM");
+  });
+  it("an end time earlier than now means tomorrow, which must still be within 12h", () => {
+    expect(liveEnd({ kind: "until", time: "11:00" }, now).ok).toBe(false);
+    const late = new Date("2026-10-17T03:00:00Z"); // 10pm Central
+    const r = liveEnd({ kind: "until", time: "01:00" }, late);
+    expect(r.ok && r.end.toISOString()).toBe("2026-10-17T06:00:00.000Z");
+  });
+});

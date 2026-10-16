@@ -33,4 +33,20 @@ describe("access rules (signed-out visitor)", () => {
     const r = await fetch(`${URL_}/rest/v1/businesses`, { method: "POST", headers: h, body: JSON.stringify({ owner_id: "00000000-0000-0000-0000-000000000000", name: "x" }) });
     expect(r.ok).toBe(false);
   });
+  it("cannot delete or restore trucks (admin only)", async () => {
+    const d = await fetch(`${URL_}/rest/v1/rpc/admin_delete_trucks`, { method: "POST", headers: h, body: JSON.stringify({ _ids: [TRUCK] }) });
+    expect(d.ok).toBe(false);
+    const r = await fetch(`${URL_}/rest/v1/rpc/admin_restore_truck`, { method: "POST", headers: h, body: JSON.stringify({ _id: TRUCK }) });
+    expect(r.ok).toBe(false);
+  });
+  it("cannot hard-delete a truck row", async () => {
+    const r = await fetch(`${URL_}/rest/v1/trucks?id=eq.${TRUCK}`, { method: "DELETE", headers: h });
+    const rows = r.ok ? ((await r.json()) as unknown[]) : [];
+    expect(rows).toHaveLength(0);
+  });
+  it("cannot read the delete log", async () => {
+    const r = await fetch(`${URL_}/rest/v1/truck_deletions?select=id`, { headers: h });
+    const rows = r.ok ? ((await r.json()) as unknown[]) : [];
+    expect(rows).toHaveLength(0);
+  });
 });
