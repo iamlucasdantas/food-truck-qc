@@ -57,6 +57,13 @@
       "when": 1792157604941,
       "tag": "0007_profiles",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792158223237,
+      "tag": "0008_tighten_stops_read_drop_logos_policy",
+      "breakpoints": true
     }
   ]
 }
