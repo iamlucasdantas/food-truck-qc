@@ -14,16 +14,19 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as FavoritesRouteImport } from './routes/favorites'
+import { Route as McpRouteImport } from './routes/mcp'
 import { Route as OwnerRouteImport } from './routes/owner'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as EmbedRegisterTruckRouteImport } from './routes/embed.register-truck'
 import { Route as OwnerNewRouteImport } from './routes/owner.new'
 import { Route as OwnerOnboardingRouteImport } from './routes/owner.onboarding'
 import { Route as TruckIdRouteImport } from './routes/truck.$id'
+import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as ApiPublicApifyWebhookRouteImport } from './routes/api/public/apify-webhook'
 import { Route as ApiPublicCalendarIdRouteImport } from './routes/api/public/calendar.$id'
 import { Route as ApiPublicJobsFacebookDailyRouteImport } from './routes/api/public/jobs/facebook-daily'
@@ -52,6 +55,11 @@ const FavoritesRoute = FavoritesRouteImport.update({
   path: '/favorites',
   getParentRoute: () => rootRouteImport,
 } as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OwnerRoute = OwnerRouteImport.update({
   id: '/owner',
   path: '/owner',
@@ -77,6 +85,12 @@ const TermsRoute = TermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
   id: '/account',
   path: '/account',
@@ -102,6 +116,11 @@ const TruckIdRoute = TruckIdRouteImport.update({
   path: '/truck/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
+  id: '/.lovable/oauth/consent',
+  path: '/.lovable/oauth/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicApifyWebhookRoute = ApiPublicApifyWebhookRouteImport.update({
   id: '/api/public/apify-webhook',
   path: '/api/public/apify-webhook',
@@ -124,16 +143,19 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/favorites': typeof FavoritesRoute
+  '/mcp': typeof McpRoute
   '/owner': typeof OwnerRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/account': typeof AuthenticatedAccountRoute
   '/embed/register-truck': typeof EmbedRegisterTruckRoute
   '/owner/new': typeof OwnerNewRoute
   '/owner/onboarding': typeof OwnerOnboardingRoute
   '/truck/$id': typeof TruckIdRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/api/public/apify-webhook': typeof ApiPublicApifyWebhookRoute
   '/api/public/calendar/$id': typeof ApiPublicCalendarIdRoute
   '/api/public/jobs/facebook-daily': typeof ApiPublicJobsFacebookDailyRoute
@@ -143,16 +165,19 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/favorites': typeof FavoritesRoute
+  '/mcp': typeof McpRoute
   '/owner': typeof OwnerRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/account': typeof AuthenticatedAccountRoute
   '/embed/register-truck': typeof EmbedRegisterTruckRoute
   '/owner/new': typeof OwnerNewRoute
   '/owner/onboarding': typeof OwnerOnboardingRoute
   '/truck/$id': typeof TruckIdRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/api/public/apify-webhook': typeof ApiPublicApifyWebhookRoute
   '/api/public/calendar/$id': typeof ApiPublicCalendarIdRoute
   '/api/public/jobs/facebook-daily': typeof ApiPublicJobsFacebookDailyRoute
@@ -164,16 +189,19 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/favorites': typeof FavoritesRoute
+  '/mcp': typeof McpRoute
   '/owner': typeof OwnerRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/embed/register-truck': typeof EmbedRegisterTruckRoute
   '/owner/new': typeof OwnerNewRoute
   '/owner/onboarding': typeof OwnerOnboardingRoute
   '/truck/$id': typeof TruckIdRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/api/public/apify-webhook': typeof ApiPublicApifyWebhookRoute
   '/api/public/calendar/$id': typeof ApiPublicCalendarIdRoute
   '/api/public/jobs/facebook-daily': typeof ApiPublicJobsFacebookDailyRoute
@@ -185,16 +213,19 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/favorites'
+    | '/mcp'
     | '/owner'
     | '/privacy'
     | '/reset-password'
     | '/sitemap.xml'
     | '/terms'
+    | '/.well-known/oauth-protected-resource'
     | '/account'
     | '/embed/register-truck'
     | '/owner/new'
     | '/owner/onboarding'
     | '/truck/$id'
+    | '/.lovable/oauth/consent'
     | '/api/public/apify-webhook'
     | '/api/public/calendar/$id'
     | '/api/public/jobs/facebook-daily'
@@ -204,16 +235,19 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/favorites'
+    | '/mcp'
     | '/owner'
     | '/privacy'
     | '/reset-password'
     | '/sitemap.xml'
     | '/terms'
+    | '/.well-known/oauth-protected-resource'
     | '/account'
     | '/embed/register-truck'
     | '/owner/new'
     | '/owner/onboarding'
     | '/truck/$id'
+    | '/.lovable/oauth/consent'
     | '/api/public/apify-webhook'
     | '/api/public/calendar/$id'
     | '/api/public/jobs/facebook-daily'
@@ -224,16 +258,19 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/favorites'
+    | '/mcp'
     | '/owner'
     | '/privacy'
     | '/reset-password'
     | '/sitemap.xml'
     | '/terms'
+    | '/.well-known/oauth-protected-resource'
     | '/_authenticated/account'
     | '/embed/register-truck'
     | '/owner/new'
     | '/owner/onboarding'
     | '/truck/$id'
+    | '/.lovable/oauth/consent'
     | '/api/public/apify-webhook'
     | '/api/public/calendar/$id'
     | '/api/public/jobs/facebook-daily'
@@ -245,13 +282,16 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
   FavoritesRoute: typeof FavoritesRoute
+  McpRoute: typeof McpRoute
   OwnerRoute: typeof OwnerRouteWithChildren
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
+  Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   EmbedRegisterTruckRoute: typeof EmbedRegisterTruckRoute
   TruckIdRoute: typeof TruckIdRoute
+  DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   ApiPublicApifyWebhookRoute: typeof ApiPublicApifyWebhookRoute
   ApiPublicCalendarIdRoute: typeof ApiPublicCalendarIdRoute
   ApiPublicJobsFacebookDailyRoute: typeof ApiPublicJobsFacebookDailyRoute
@@ -294,6 +334,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FavoritesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/owner': {
       id: '/owner'
       path: '/owner'
@@ -329,6 +376,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/account': {
       id: '/_authenticated/account'
       path: '/account'
@@ -362,6 +416,13 @@ declare module '@tanstack/react-router' {
       path: '/truck/$id'
       fullPath: '/truck/$id'
       preLoaderRoute: typeof TruckIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.lovable/oauth/consent': {
+      id: '/.lovable/oauth/consent'
+      path: '/.lovable/oauth/consent'
+      fullPath: '/.lovable/oauth/consent'
+      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/apify-webhook': {
@@ -417,13 +478,17 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
   FavoritesRoute: FavoritesRoute,
+  McpRoute: McpRoute,
   OwnerRoute: OwnerRouteWithChildren,
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
+  Char91DotwellKnownChar93OauthProtectedResourceRoute:
+    Char91DotwellKnownChar93OauthProtectedResourceRoute,
   EmbedRegisterTruckRoute: EmbedRegisterTruckRoute,
   TruckIdRoute: TruckIdRoute,
+  DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   ApiPublicApifyWebhookRoute: ApiPublicApifyWebhookRoute,
   ApiPublicCalendarIdRoute: ApiPublicCalendarIdRoute,
   ApiPublicJobsFacebookDailyRoute: ApiPublicJobsFacebookDailyRoute,

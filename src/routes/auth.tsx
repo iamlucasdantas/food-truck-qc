@@ -5,7 +5,9 @@ import { z } from "zod";
 import { AuthForm } from "@/components/AuthForm";
 import { useAuth } from "@/hooks/use-auth";
 
-const safe = (p?: string) => (p && p.startsWith("/") && !p.startsWith("//") ? p : "/");
+import { oauthReturnPath } from "@/lib/oauth-return-path";
+
+const safe = (p?: string) => oauthReturnPath(p);
 
 export const Route = createFileRoute("/auth")({
   staticData: { sitemap: false },
