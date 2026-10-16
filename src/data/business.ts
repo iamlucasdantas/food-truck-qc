@@ -93,7 +93,7 @@ export interface NewTruckNotice {
   contact: OwnerContact;
   businessName: string;
   truckId: string; truckName: string; truckType: string; cuisine: string; city: string;
-  instagram?: string | null; facebook?: string | null; website?: string | null; description?: string;
+  instagram?: string | null | undefined; facebook?: string | null | undefined; website?: string | null | undefined; description?: string | undefined;
 }
 
 /** Flat payload for HIGHLEVEL_OWNER_WEBHOOK_URL, sent once per new pending truck from every path. */
