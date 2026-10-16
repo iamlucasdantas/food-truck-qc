@@ -4,15 +4,19 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { liveEnd, fmtCentral, LIVE_DEFAULT_MINUTES, QC_CENTER, type LiveChoice, type Truck } from "@/data/trucks";
 import { useStops, dayBounds } from "@/lib/queries";
+import { Button } from "@/components/ui/button";
+import { MapPin, Square } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { geocode } from "@/lib/geocode";
 const TruckMap = lazy(() => import("@/components/TruckMap"));
 const ok = (error: { message: string } | null, msg: string) => error ? (toast.error(error.message), false) : (toast.success(msg), true);
 export function OwnerLiveCard({ truck }: { truck: Truck }) {
+  const qc = useQueryClient();
   const [now, setNow] = useState<Date | null>(null);
-  useEffect(() => setNow(new Date()), []);
+  useEffect(() => { setNow(new Date()); const timer=setInterval(()=>setNow(new Date()),1000);return ()=>clearInterval(timer); }, []);
   const [from, to] = useMemo(() => (now ? dayBounds(now) : [null, null]), [now]);
   const { data: today = [] } = useStops(from, to, [truck.id]);
-  const live = today.find((s) => s.is_live && new Date(s.ends_at) > new Date());
+  const live = today.find((s) => s.is_live && new Date(s.ends_at) > new Date() && new Date(s.starts_at) <= new Date());
   const [mins, setMins] = useState<number | "custom">(LIVE_DEFAULT_MINUTES);
   const [customMode, setCustomMode] = useState<"length" | "until">("length");
   const [cH, setCH] = useState("2"); const [cM, setCM] = useState("0"); const [until, setUntil] = useState("");
@@ -35,6 +39,7 @@ export function OwnerLiveCard({ truck }: { truck: Truck }) {
       source: "owner", confidence: 1, is_live: true,
     });
     setBusy(false);
+    void qc.invalidateQueries({queryKey:["stops"]});
     if (ok(error, "You're live on the map!")) setFallback(false);
   }
 
@@ -55,6 +60,7 @@ export function OwnerLiveCard({ truck }: { truck: Truck }) {
     const max = Date.parse(stop.starts_at) + 12 * 3_600_000;
     if (next.getTime() > max) return void toast.error("A check-in can last 12 hours at most.");
     const { error } = await supabase.from("stops").update({ ends_at: next.toISOString() }).eq("id", stop.id);
+    void qc.invalidateQueries({queryKey:["stops"]});
     ok(error, `Extended until ${fmtCentral(next)}`);
   }
 
@@ -72,34 +78,34 @@ export function OwnerLiveCard({ truck }: { truck: Truck }) {
   }
 
   return (
-    <section className="panel space-y-3 p-5">
+    <div className="space-y-3">
       {live ? (
         <div className="rounded-xl bg-pin-open/30 p-3 text-sm">
-          <p><b>You're live</b> at {live.venue_name} until {fmtCentral(live.ends_at)}.</p>
+          <p className="mb-2 text-2xl font-semibold">{now ? `${Math.max(0,Math.ceil((Date.parse(live.ends_at)-now.getTime())/60000))} min remaining` : "Live"}</p><p><b>You're live</b> at {live.venue_name} until {fmtCentral(live.ends_at)}.</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {[30, 60].map((m) => (
-              <button key={m} onClick={() => void extend(live, m)} className="chip">+{m === 60 ? "1h" : "30 min"}</button>
+              <Button key={m} onClick={() => void extend(live, m)} className="chip">+{m === 60 ? "1h" : "30 min"}</Button>
             ))}
-            <button onClick={() => void supabase.from("stops").update({ ends_at: new Date().toISOString(), is_live: true }).eq("id", live.id).then(({ error }) => error ? supabase.from("stops").update({ cancelled: true }).eq("id", live.id).then(({ error: e2 }) => ok(e2, "Checked out")) : ok(null, "Checked out"))} className="chip">End now</button>
+            <Button onClick={() => void supabase.from("stops").update({ ends_at: new Date().toISOString(), is_live: true }).eq("id", live.id).then(({ error }) => error ? supabase.from("stops").update({ cancelled: true }).eq("id", live.id).then(({ error: e2 }) => ok(e2, "Checked out")) : ok(null, "Checked out")).then(()=>qc.invalidateQueries({queryKey:["stops"]}))} className="chip"><Square/>End now</Button>
           </div>
         </div>
       ) : null}
-      <button disabled={busy} onClick={imHere} className="w-full rounded-2xl border-2 border-border bg-primary py-6 text-2xl font-extrabold text-primary-foreground shadow-pop">
-        {busy ? "Locating…" : "📍 I'm here"}
-      </button>
+      <Button disabled={busy} onClick={imHere} className="w-full rounded-2xl border-2 border-border bg-primary py-6 text-2xl font-extrabold text-primary-foreground shadow-pop">
+        {busy ? "Locating…" : <><MapPin/>I'm here</>}
+      </Button>
       <fieldset className="space-y-2 text-sm">
         <legend className="font-semibold">How long will you be here?</legend>
         <div className="flex flex-wrap gap-2">
           {[60, 120, 180, 240].map((m) => (
-            <button key={m} type="button" onClick={() => setMins(m)} aria-pressed={mins === m} className={`chip min-h-10 ${mins === m ? "chip-active" : ""}`}>{m / 60}h</button>
+            <Button key={m} type="button" onClick={() => setMins(m)} aria-pressed={mins === m} className={`chip min-h-10 ${mins === m ? "chip-active" : ""}`}>{m / 60}h</Button>
           ))}
-          <button type="button" onClick={() => setMins("custom")} aria-pressed={mins === "custom"} className={`chip min-h-10 ${mins === "custom" ? "chip-active" : ""}`}>Custom</button>
+          <Button type="button" onClick={() => setMins("custom")} aria-pressed={mins === "custom"} className={`chip min-h-10 ${mins === "custom" ? "chip-active" : ""}`}>Custom</Button>
         </div>
         {mins === "custom" && (
           <div className="space-y-2 rounded-xl border-2 border-border p-3">
             <div className="flex gap-2">
-              <button type="button" onClick={() => setCustomMode("length")} aria-pressed={customMode === "length"} className={`chip ${customMode === "length" ? "chip-active" : ""}`}>For…</button>
-              <button type="button" onClick={() => setCustomMode("until")} aria-pressed={customMode === "until"} className={`chip ${customMode === "until" ? "chip-active" : ""}`}>Until…</button>
+              <Button type="button" onClick={() => setCustomMode("length")} aria-pressed={customMode === "length"} className={`chip ${customMode === "length" ? "chip-active" : ""}`}>For…</Button>
+              <Button type="button" onClick={() => setCustomMode("until")} aria-pressed={customMode === "until"} className={`chip ${customMode === "until" ? "chip-active" : ""}`}>Until…</Button>
             </div>
             {customMode === "length" ? (
               <div className="flex items-center gap-2">
@@ -118,7 +124,7 @@ export function OwnerLiveCard({ truck }: { truck: Truck }) {
         <div className="space-y-2">
           <div className="flex gap-2">
             <input className="field" placeholder="Address, e.g. 1200 River Dr, Moline" value={addr} onChange={(e) => setAddr(e.target.value)} />
-            <button onClick={findAddr} className="chip shrink-0">Find</button>
+            <Button onClick={findAddr} className="chip shrink-0">Find</Button>
           </div>
           <div className="h-56 overflow-hidden rounded-xl border-2 border-border">
             <ClientOnly fallback={null}>
@@ -127,10 +133,10 @@ export function OwnerLiveCard({ truck }: { truck: Truck }) {
               </Suspense>
             </ClientOnly>
           </div>
-          <button disabled={busy} onClick={() => void checkIn(pos, addr || "Live location")} className="chip w-full justify-center bg-primary py-2 text-primary-foreground">Check in at pin</button>
+          <Button disabled={busy} onClick={() => void checkIn(pos, addr || "Live location")} className="chip w-full justify-center bg-primary py-2 text-primary-foreground">Check in at pin</Button>
         </div>
       )}
-      <button onClick={closedToday} className="chip">🚫 Closed today</button>
-    </section>
+      <Button onClick={closedToday} className="chip">🚫 Closed today</Button>
+    </div>
   );
 }

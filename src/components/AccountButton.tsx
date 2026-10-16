@@ -33,7 +33,7 @@ export function AccountButton() {
             {ids.length > 0 && <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground">{ids.length}</span>}
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem asChild className="min-h-11"><Link to="/profile">Profile & settings</Link></DropdownMenuItem>
+        <DropdownMenuItem asChild className="min-h-11"><Link to="/profile" search={{section:"home",view:undefined}}>Profile & settings</Link></DropdownMenuItem>
         {(roles.includes("owner") || isAdmin) && <DropdownMenuItem asChild className="min-h-11"><Link to="/owner">Owner dashboard</Link></DropdownMenuItem>}
         {isAdmin && <DropdownMenuItem asChild className="min-h-11"><Link to="/admin">Admin</Link></DropdownMenuItem>}
         <DropdownMenuItem asChild className="min-h-11"><a href="https://foodtruckqc.com" target="_blank" rel="noopener noreferrer">About FoodTruckQC</a></DropdownMenuItem>

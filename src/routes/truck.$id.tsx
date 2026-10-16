@@ -11,6 +11,7 @@ import { TruckGallery } from "@/components/TruckGallery";
 import { effectivePayments, fmtCentral, fmtRange, ownerHandles, publicDescription, SOURCE_LABEL, stopBadge } from "@/data/trucks";
 import { useStops, dayBounds, useStopsRealtime } from "@/lib/queries";
 import { ClaimButton } from "@/components/ClaimButton";
+import { useProfileLibrary } from "@/hooks/use-profile-library";
 import { useFavorites } from "@/hooks/use-favorites";
 
 export const Route = createFileRoute("/truck/$id")({
@@ -34,6 +35,8 @@ export const Route = createFileRoute("/truck/$id")({
 function TruckPage() {
   const { id } = Route.useParams();
   const { isFav, toggle } = useFavorites();
+  const {recordView}=useProfileLibrary();
+  useEffect(()=>{recordView(id);},[id,recordView]);
   const { data: t, isLoading } = useQuery({
     queryKey: ["truck", id],
     queryFn: async () => (await supabase.from("trucks").select("*").eq("id", id).maybeSingle()).data,

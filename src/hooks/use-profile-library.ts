@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -16,5 +17,6 @@ export function useProfileLibrary() {
     const {error}=await supabase.from("profile_trucks").upsert({...patch,user_id:user.id,truck_id:truckId},{onConflict:"user_id,truck_id"});
     if(error)throw error;
   },onSuccess:()=>void qc.invalidateQueries({queryKey:key}),onError:()=>toast.error("Couldn't save. Please try again.")});
-  return {...query,rows:query.data??[],update:mutation.mutate,busy:mutation.isPending};
+  const recordView = useCallback((truckId:string) => { if(user) mutation.mutate({truckId,patch:{viewed_at:new Date().toISOString()}}); }, [user?.id, mutation.mutate]);
+  return {...query,rows:query.data??[],recordView,update:mutation.mutate,busy:mutation.isPending};
 }

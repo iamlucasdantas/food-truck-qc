@@ -1,3 +1,4 @@
+import { OwnerLiveCard as LiveCard } from "@/components/profile/OwnerLiveCard";
 import { Logo } from "@/components/Logo";
 import { OwnerSchedule } from "@/components/OwnerSchedule";
 import { OwnerPhotos } from "@/components/OwnerPhotos";
@@ -63,7 +64,7 @@ function Owner() {
       <div className="flex items-center justify-end">
         <Link to="/owner/new" className="chip">+ Add another truck</Link>
       </div>
-      <h1 className="text-3xl font-extrabold">Owner dashboard</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3"><h1 className="text-3xl font-extrabold">Owner dashboard</h1><Link to="/profile" search={{view:"owner",section:"home"}} className="chip">Your owner home →</Link></div>
       {ready && !user && (
         <div className="panel space-y-3 p-5">
           <p>Sign in to manage your truck.</p>
@@ -260,133 +261,6 @@ function SuggestedStops({ truck }: { truck: Truck }) {
   );
 }
 
-function LiveCard({ truck }: { truck: Truck }) {
-  const [now, setNow] = useState<Date | null>(null);
-  useEffect(() => setNow(new Date()), []);
-  const [from, to] = useMemo(() => (now ? dayBounds(now) : [null, null]), [now]);
-  const { data: today = [] } = useStops(from, to, [truck.id]);
-  const live = today.find((s) => s.is_live && new Date(s.ends_at) > new Date());
-  const [mins, setMins] = useState<number | "custom">(LIVE_DEFAULT_MINUTES);
-  const [customMode, setCustomMode] = useState<"length" | "until">("length");
-  const [cH, setCH] = useState("2"); const [cM, setCM] = useState("0"); const [until, setUntil] = useState("");
-  const choice: LiveChoice = mins !== "custom" ? { kind: "minutes", minutes: mins }
-    : customMode === "length" ? { kind: "minutes", minutes: (Number(cH) || 0) * 60 + (Number(cM) || 0) } : { kind: "until", time: until };
-  const [fallback, setFallback] = useState(false);
-  const [pos, setPos] = useState(QC_CENTER);
-  const [addr, setAddr] = useState("");
-  const [busy, setBusy] = useState(false);
-
-  async function checkIn(p: { lat: number; lng: number }, label = "Live location", city = "") {
-    const start = new Date();
-    const end = liveEnd(choice, start);
-    if (!end.ok) return void toast.error(end.error);
-    setBusy(true);
-    await supabase.from("stops").update({ cancelled: true }).eq("truck_id", truck.id).eq("is_live", true).eq("cancelled", false);
-    const { error } = await supabase.from("stops").insert({
-      truck_id: truck.id, venue_name: label, address: addr || null, city, lat: p.lat, lng: p.lng,
-      starts_at: start.toISOString(), ends_at: end.end.toISOString(),
-      source: "owner", confidence: 1, is_live: true,
-    });
-    setBusy(false);
-    if (ok(error, "You're live on the map!")) setFallback(false);
-  }
-
-  function imHere() {
-    const check = liveEnd(choice, new Date());
-    if (!check.ok) return void toast.error(check.error);
-    if (!navigator.geolocation) return setFallback(true);
-    setBusy(true);
-    navigator.geolocation.getCurrentPosition(
-      (p) => void checkIn({ lat: p.coords.latitude, lng: p.coords.longitude }),
-      () => { setBusy(false); setFallback(true); toast("Couldn't get your location — enter an address or drag the pin."); },
-      { enableHighAccuracy: true, timeout: 10000 },
-    );
-  }
-
-  async function extend(stop: { id: string; starts_at: string; ends_at: string }, m: number) {
-    const next = new Date(Date.parse(stop.ends_at) + m * 60_000);
-    const max = Date.parse(stop.starts_at) + 12 * 3_600_000;
-    if (next.getTime() > max) return void toast.error("A check-in can last 12 hours at most.");
-    const { error } = await supabase.from("stops").update({ ends_at: next.toISOString() }).eq("id", stop.id);
-    ok(error, `Extended until ${fmtCentral(next)}`);
-  }
-
-  async function findAddr() {
-    const g = await geocode(addr);
-    if (!g) { toast.error("Address not found"); return; }
-    setPos(g);
-  }
-
-  async function closedToday() {
-    if (!from || !to) return;
-    const { error } = await supabase.from("stops").update({ cancelled: true }).eq("truck_id", truck.id)
-      .gte("starts_at", from.toISOString()).lt("starts_at", to.toISOString());
-    ok(error, "Marked closed for today");
-  }
-
-  return (
-    <section className="panel space-y-3 p-5">
-      {live ? (
-        <div className="rounded-xl bg-pin-open/30 p-3 text-sm">
-          <p><b>You're live</b> at {live.venue_name} until {fmtCentral(live.ends_at)}.</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {[30, 60].map((m) => (
-              <button key={m} onClick={() => void extend(live, m)} className="chip">+{m === 60 ? "1h" : "30 min"}</button>
-            ))}
-            <button onClick={() => void supabase.from("stops").update({ ends_at: new Date().toISOString(), is_live: true }).eq("id", live.id).then(({ error }) => error ? supabase.from("stops").update({ cancelled: true }).eq("id", live.id).then(({ error: e2 }) => ok(e2, "Checked out")) : ok(null, "Checked out"))} className="chip">End now</button>
-          </div>
-        </div>
-      ) : null}
-      <button disabled={busy} onClick={imHere} className="w-full rounded-2xl border-2 border-border bg-primary py-6 text-2xl font-extrabold text-primary-foreground shadow-pop">
-        {busy ? "Locating…" : "📍 I'm here"}
-      </button>
-      <fieldset className="space-y-2 text-sm">
-        <legend className="font-semibold">How long will you be here?</legend>
-        <div className="flex flex-wrap gap-2">
-          {[60, 120, 180, 240].map((m) => (
-            <button key={m} type="button" onClick={() => setMins(m)} aria-pressed={mins === m} className={`chip min-h-10 ${mins === m ? "chip-active" : ""}`}>{m / 60}h</button>
-          ))}
-          <button type="button" onClick={() => setMins("custom")} aria-pressed={mins === "custom"} className={`chip min-h-10 ${mins === "custom" ? "chip-active" : ""}`}>Custom</button>
-        </div>
-        {mins === "custom" && (
-          <div className="space-y-2 rounded-xl border-2 border-border p-3">
-            <div className="flex gap-2">
-              <button type="button" onClick={() => setCustomMode("length")} aria-pressed={customMode === "length"} className={`chip ${customMode === "length" ? "chip-active" : ""}`}>For…</button>
-              <button type="button" onClick={() => setCustomMode("until")} aria-pressed={customMode === "until"} className={`chip ${customMode === "until" ? "chip-active" : ""}`}>Until…</button>
-            </div>
-            {customMode === "length" ? (
-              <div className="flex items-center gap-2">
-                <label className="flex items-center gap-1"><input className="field w-20 text-base" type="number" min={0} max={12} inputMode="numeric" value={cH} onChange={(e) => setCH(e.target.value)} aria-label="Hours" /> h</label>
-                <label className="flex items-center gap-1"><input className="field w-20 text-base" type="number" min={0} max={59} step={5} inputMode="numeric" value={cM} onChange={(e) => setCM(e.target.value)} aria-label="Minutes" /> min</label>
-              </div>
-            ) : (
-              <label className="flex items-center gap-2">End time <input className="field w-36 text-base" type="time" value={until} onChange={(e) => setUntil(e.target.value)} aria-label="End time (Central)" /></label>
-            )}
-            <p className="text-xs text-muted-foreground">Between 15 minutes and 12 hours. Times are Central (Quad Cities).</p>
-          </div>
-        )}
-        {(() => { const r = liveEnd(choice, new Date()); return <p className="text-muted-foreground">{r.ok ? `Shows "Here until ${fmtCentral(r.end)}" and ends on its own.` : r.error}</p>; })()}
-      </fieldset>
-      {fallback && (
-        <div className="space-y-2">
-          <div className="flex gap-2">
-            <input className="field" placeholder="Address, e.g. 1200 River Dr, Moline" value={addr} onChange={(e) => setAddr(e.target.value)} />
-            <button onClick={findAddr} className="chip shrink-0">Find</button>
-          </div>
-          <div className="h-56 overflow-hidden rounded-xl border-2 border-border">
-            <ClientOnly fallback={null}>
-              <Suspense fallback={null}>
-                <TruckMap pins={[]} center={pos} radiusMi={0} zoom={15} showRadius={false} onSelect={() => {}} onCenterChange={setPos} />
-              </Suspense>
-            </ClientOnly>
-          </div>
-          <button disabled={busy} onClick={() => void checkIn(pos, addr || "Live location")} className="chip w-full justify-center bg-primary py-2 text-primary-foreground">Check in at pin</button>
-        </div>
-      )}
-      <button onClick={closedToday} className="chip">🚫 Closed today</button>
-    </section>
-  );
-}
 
 function useBusiness(ownerId: string | null | undefined) {
   return useQuery({
