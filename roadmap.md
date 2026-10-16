@@ -1,5 +1,10 @@
 # Roadmap
 
+## Mobile fixes and map preview
+- [ ] Fix profile header and quiet-hours input layout on phones
+- [ ] Simplify selected truck card to original post, directions, menu and profile
+- [ ] Verify phone layouts and links; do not publish
+
 ## Part K — Premium profiles (not published)
 - [x] Shared /profile hub, avatar crop, editable settings and account security
 - [x] Foodie lists, follows, visits, preferences and progress
