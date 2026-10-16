@@ -37,7 +37,7 @@ export default function TruckMap({ pins, center, radiusMi, onSelect, onCenterCha
       const icon = L.divIcon({
         className: "",
         iconSize: [40, 48], iconAnchor: [20, 46],
-        html: `<div style="width:40px;height:48px;position:relative"><svg width="40" height="48" viewBox="0 0 44 52" style="position:absolute;inset:0"><path d="M22 50 C22 50 4 30 4 19 A18 18 0 0 1 40 19 C40 30 22 50 22 50Z" fill="${PIN_VAR[p.status]}" stroke="var(--foreground)" stroke-width="2.5"/></svg><span style="position:absolute;top:7px;left:0;right:0;text-align:center;font-size:17px">${p.emoji}</span></div>`,
+        html: `<div style="width:40px;height:48px;position:relative"><svg width="40" height="48" viewBox="0 0 44 52" style="position:absolute;inset:0"><path d="M22 50 C22 50 4 30 4 19 A18 18 0 0 1 40 19 C40 30 22 50 22 50Z" style="fill:${PIN_VAR[p.status]};stroke:var(--foreground);stroke-width:2.5"/></svg><span style="position:absolute;top:7px;left:0;right:0;text-align:center;font-size:17px">${p.emoji}</span></div>`,
       });
       const m = L.marker([p.lat, p.lng], { icon, title: p.name, zIndexOffset: p.status === "open" ? 200 : p.status === "today" ? 100 : 0 });
       m.on("click", () => cbs.current.onSelect(p.id));
@@ -67,7 +67,7 @@ export default function TruckMap({ pins, center, radiusMi, onSelect, onCenterCha
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
           maxZoom: 19, subdomains: "abc", attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         }).on("tileload", () => { tileOk = true; }).on("tileerror", () => { if (!tileOk && ++tileErrors > 6) cbs.current.onFail?.(); }).addTo(map);
-        const ring = showRadius ? L.circle(latest.current.center, { radius: latest.current.radiusMi * 1609.34, color: "var(--primary)", weight: 2, fillOpacity: 0.06, interactive: false }).addTo(map) : null;
+        const ring = showRadius ? L.circle(latest.current.center, { radius: latest.current.radiusMi * 1609.34, color: getComputedStyle(document.documentElement).getPropertyValue("--primary").trim() || "#e85d2a", weight: 2, fillOpacity: 0.06, interactive: false }).addTo(map) : null;
         const ref = draggable ? L.marker(latest.current.center, {
           draggable: true, title: "Search from here", zIndexOffset: 1000,
           icon: L.divIcon({ className: "", iconSize: [28, 28], iconAnchor: [14, 14], html: `<div style="width:28px;height:28px;border-radius:9999px;background:var(--primary);border:3px solid var(--foreground);box-shadow:2px 2px 0 var(--foreground)"></div>` }),
