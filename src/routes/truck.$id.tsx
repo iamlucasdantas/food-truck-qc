@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { fmtRange, SOURCE_LABEL } from "@/data/trucks";
-import { useStops, dayBounds } from "@/lib/queries";
+import { useStops, dayBounds, useStopsRealtime } from "@/lib/queries";
+import { ClaimButton } from "@/components/ClaimButton";
 import { useFavorites } from "@/hooks/use-favorites";
 
 export const Route = createFileRoute("/truck/$id")({
@@ -34,6 +35,7 @@ function TruckPage() {
     const [a] = dayBounds(new Date()); const b = new Date(a); b.setDate(a.getDate() + 7); return [a, b];
   }, []);
   const { data: stops = [] } = useStops(from, to, [id]);
+  useStopsRealtime();
 
   if (isLoading) return <main className="p-10 text-center text-muted-foreground">Loading…</main>;
   if (!t) return <div className="p-10 text-center"><p>Truck not found.</p><Link to="/" className="chip mt-4">Back to map</Link></div>;
@@ -85,6 +87,7 @@ function TruckPage() {
         {t.phone && <a href={`tel:${t.phone}`} className="chip">📞 {t.phone}</a>}
         {t.instagram && <span className="chip">📸 {t.instagram}</span>}
       </section>
+      {!t.claimed_by && <ClaimButton truckId={t.id} />}
     </main>
   );
 }
