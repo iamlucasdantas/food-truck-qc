@@ -1,5 +1,9 @@
 # Roadmap
 
+## Automated Facebook scans
+- [ ] Replace the daily scan with six scans, every two hours 10:00–20:00 Chicago, DST-safe
+- [ ] Test timing and verify managed schedule configuration; no publishing without approval
+
 ## Mobile fixes and map preview
 - [x] Fix profile header and quiet-hours input layout on phones
 - [x] Simplify selected truck card to original post, directions, menu and profile
