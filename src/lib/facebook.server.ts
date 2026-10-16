@@ -52,7 +52,14 @@ async function syncTruckSources(db: DB) {
   if (rows.length) await db.from("social_sources").upsert(rows, { onConflict: "url", ignoreDuplicates: true });
 }
 
-async function startActor(kind: Kind, sources: Source[]): Promise<string> {
+function cleanUrl(raw: string): string | null {
+  const s = raw.trim().replace(/^\/\//, "");
+  try { const u = new URL(/^https?:\/\//i.test(s) ? s : `https://${s}`); return u.hostname.includes(".") ? u.toString() : null; } catch { return null; }
+}
+
+async function startActor(kind: Kind, all: Source[]): Promise<string> {
+  // Apify rejects the whole job if one link is malformed, so fix or skip bad ones.
+  const sources = all.flatMap((s) => { const url = cleanUrl(s.url); return url ? [{ ...s, url }] : []; });
   const input =
     kind === "page" ? { startUrls: sources.map((s) => ({ url: s.url })), resultsLimit: 5, onlyPostsNewerThan: "14 days" }
     : kind === "group" ? { startUrls: sources.map((s) => ({ url: s.url })), resultsLimit: 40, viewOption: "CHRONOLOGICAL", onlyPostsNewerThan: "7 days" }
