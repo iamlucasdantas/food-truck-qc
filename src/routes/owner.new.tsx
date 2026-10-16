@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { slugify } from "@/data/trucks";
 import { geocode } from "@/lib/geocode";
 import { StepHeader } from "@/components/StepHeader";
+import { contactLine, parseContact, sameName } from "@/data/business";
 
 export const Route = createFileRoute("/owner/new")({
   staticData: { sitemap: false },
@@ -30,6 +31,14 @@ function NewTruck() {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
 
+  // An owner who already has a business only answers truck questions (single step).
+  const [hasBiz, setHasBiz] = useState(false);
+  useEffect(() => {
+    if (!user) return;
+    void supabase.from("businesses").select("owner_id").eq("owner_id", user.id).maybeSingle().then(({ data }) => {
+      if (data) { setHasBiz(true); setStep(1); }
+    });
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (user?.email && !f.email) setF((p) => ({ ...p, email: user.email ?? "" })); }, [user?.email]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const step1Errors = () => {
@@ -61,8 +70,8 @@ function NewTruck() {
     setErr({});
     if (!user) return openAuth("Sign in to add your truck.");
     setBusy(true);
-    const { data: mine } = await supabase.from("trucks").select("name").or(`claimed_by.eq.${user.id},created_by.eq.${user.id}`);
-    if ((mine ?? []).some((t) => t.name.trim().toLowerCase() === f.name.trim().toLowerCase())) {
+    const { data: mine } = await supabase.from("trucks").select("name, description, created_at").or(`claimed_by.eq.${user.id},created_by.eq.${user.id}`);
+    if ((mine ?? []).some((t) => sameName(t.name, f.name))) {
       setBusy(false);
       return setErr({ name: "You already have a truck with that name — pick a unique one." });
     }
@@ -70,18 +79,24 @@ function NewTruck() {
     const id = `${slugify(f.name)}-${Math.random().toString(36).slice(2, 6)}`;
     // Business-level data goes to the owner's business profile, only filling fields that are still empty.
     const { data: biz } = await supabase.from("businesses").select("*").eq("owner_id", user.id).maybeSingle();
+    const linked = hasBiz || !!biz;
     const keep = (cur: string | null | undefined, v: string) => (cur && cur.trim() ? cur : v.trim() || null);
-    const { error: bizErr } = await supabase.from("businesses").upsert({
+    const { error: bizErr } = linked ? { error: null } : await supabase.from("businesses").upsert({
       owner_id: user.id,
       name: keep(biz?.name, f.businessName) ?? "",
       description: keep(biz?.description, f.description) ?? "",
       website: keep(biz?.website, f.website), instagram: keep(biz?.instagram, f.instagram), facebook: keep(biz?.facebook, f.facebook),
     }, { onConflict: "owner_id" });
     if (bizErr) console.error("[owner/new] business save failed", bizErr);
-    const contact = `Owner contact: ${[f.contactName.trim(), f.email.trim(), f.phone.trim()].filter(Boolean).join(" · ")}`;
+    // Additional trucks reuse the owner contact of the first truck so every webhook sends the same person.
+    const prev = [...(mine ?? [])].sort((a, b) => a.created_at.localeCompare(b.created_at)).map((t) => parseContact(t.description)).find((c) => c && c.name);
+    const contact = linked && prev
+      ? contactLine({ ...prev, email: prev.email || user.email || "" })
+      : contactLine({ name: f.contactName.trim() || (user.email ?? ""), email: f.email.trim() || (user.email ?? ""), phone: f.phone.trim() });
+    const bizLine = biz?.name ? `Business: ${biz.name}\n\n` : f.businessName.trim() ? `Business: ${f.businessName.trim()}\n\n` : "";
     const { error } = await supabase.from("trucks").insert({
-      id, name: f.name.trim(), category: f.category.trim(), emoji: f.emoji, phone: f.phone.trim() || null,
-      status: "pending", created_by: user.id, truck_type: f.truckType, description: contact,
+      id, name: f.name.trim(), category: f.category.trim(), emoji: f.emoji, phone: (linked ? prev?.phone : f.phone.trim()) || null,
+      status: "pending", created_by: user.id, truck_type: f.truckType, description: bizLine + contact,
       base_address: f.address || null, base_lat: g?.lat ?? null, base_lng: g?.lng ?? null,
     });
     if (!error) await supabase.from("claims").insert({ truck_id: id, user_id: user.id, user_email: user.email ?? null, message: "New truck submitted by owner" });
@@ -110,7 +125,9 @@ function NewTruck() {
         </div>
       ) : (
         <form onSubmit={step === 0 ? next : submit} className="panel space-y-3 p-4 sm:p-5" noValidate>
-          <StepHeader step={step} titles={["About you and your business", "Your truck"]} />
+          {hasBiz ? (
+            <div className="space-y-1"><h2 className="text-base font-bold">Your new truck</h2><p className="text-sm text-muted-foreground">It joins your business and uses its website, social links and payment methods.</p></div>
+          ) : <StepHeader step={step} titles={["About you and your business", "Your truck"]} />}
           {step === 0 ? (
             <>
               {field("contactName", "Your name")}
@@ -142,7 +159,7 @@ function NewTruck() {
             </>
           )}
           <div className="flex gap-2 pt-1">
-            {step === 1 && <button type="button" onClick={() => { setErr({}); setStep(0); }} className="min-h-11 rounded-full border border-input bg-card px-5 font-semibold">Back</button>}
+            {step === 1 && !hasBiz && <button type="button" onClick={() => { setErr({}); setStep(0); }} className="min-h-11 rounded-full border border-input bg-card px-5 font-semibold">Back</button>}
             <button disabled={busy} className="min-h-11 flex-1 rounded-full bg-primary px-5 font-bold text-primary-foreground">{step === 0 ? "Continue" : busy ? "Submitting…" : "Submit for review"}</button>
           </div>
         </form>
