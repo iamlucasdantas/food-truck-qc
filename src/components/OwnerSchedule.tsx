@@ -1,7 +1,7 @@
 import { ClientOnly } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { CalendarPlus, ChevronLeft, ChevronRight, Link2, Plus } from "lucide-react";
+import { Apple, CalendarDays, CalendarPlus, ChevronLeft, ChevronRight, Link2, Plus } from "lucide-react";
 import { lazy, Suspense, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -276,6 +276,35 @@ function StopEditor({ truck, target, done }: { truck: Truck; target: EditTarget;
   );
 }
 
+type Provider = "google" | "apple" | "other";
+const PROVIDERS: Record<Provider, { label: string; Icon: typeof CalendarDays; placeholder: string; steps: string[] }> = {
+  google: {
+    label: "Google Calendar", Icon: CalendarDays, placeholder: "https://calendar.google.com/…/basic.ics",
+    steps: [
+      "On a computer, open Google Calendar → Settings (gear icon) → pick your truck's calendar on the left.",
+      "Scroll to “Integrate calendar” and copy “Secret address in iCal format”.",
+      "Paste it below and tap Connect.",
+    ],
+  },
+  apple: {
+    label: "iCloud / Apple Calendar", Icon: Apple, placeholder: "webcal://p…-caldav.icloud.com/…",
+    steps: [
+      "In the Calendar app (or icloud.com), tap the ⓘ next to your truck's calendar.",
+      "Turn on “Public Calendar” and copy the webcal:// link it shows.",
+      "Paste it below and tap Connect.",
+    ],
+  },
+  other: {
+    label: "Other calendar (link)", Icon: Link2, placeholder: "https://….ics or webcal://…",
+    steps: [
+      "In your calendar app, look for “Share”, “Export” or “Subscribe link”.",
+      "Copy the private iCal link (it ends in .ics or starts with webcal://).",
+      "Paste it below and tap Connect.",
+    ],
+  },
+};
+const providerOf = (u: string): Provider => (/google\.com/i.test(u) ? "google" : /icloud\.com|apple\.com/i.test(u) ? "apple" : "other");
+
 type FeedEvent = { uid: string; title: string; start: string; end: string; allDay: boolean; location: string; recurrence: { freq: Freq; weekdays: number[]; month_nth: number | null; end_date: string | null } | null };
 
 function CalendarConnect({ truck, onImport }: { truck: Truck; onImport: (d: Draft) => void }) {
@@ -287,7 +316,8 @@ function CalendarConnect({ truck, onImport }: { truck: Truck; onImport: (d: Draf
     queryKey: ["feed", truck.id],
     queryFn: async () => (await supabase.from("calendar_feeds").select("id, url").eq("truck_id", truck.id).maybeSingle()).data,
   });
-  const { data: ev, isFetching, refetch } = useQuery({
+  const [provider, setProvider] = useState<Provider | null>(null);
+  const { data: ev, isFetching, refetch, dataUpdatedAt } = useQuery({
     queryKey: ["feed-events", truck.id, feed?.id],
     enabled: !!feed,
     queryFn: () => list({ data: { truckId: truck.id } }),
@@ -299,7 +329,7 @@ function CalendarConnect({ truck, onImport }: { truck: Truck; onImport: (d: Draf
 
   async function connect(e: React.FormEvent) {
     e.preventDefault();
-    try { await saveUrl({ data: { truckId: truck.id, url } }); setUrl(""); toast.success("Calendar connected"); void qc.invalidateQueries({ queryKey: ["feed", truck.id] }); }
+    try { await saveUrl({ data: { truckId: truck.id, url } }); setUrl(""); setProvider(null); toast.success("Calendar connected"); void qc.invalidateQueries({ queryKey: ["feed", truck.id] }); }
     catch (err) { toast.error(err instanceof Error ? err.message : "Couldn't connect"); }
   }
   async function disconnect() {
@@ -315,22 +345,52 @@ function CalendarConnect({ truck, onImport }: { truck: Truck; onImport: (d: Draf
     };
   };
 
+  const connected = feed ? providerOf(feed.url) : null;
+  const info = provider ? PROVIDERS[provider] : null;
+
   return (
     <div className="space-y-3 rounded-xl bg-secondary p-4">
       <div>
         <h3 className="flex items-center gap-2 font-semibold"><Link2 className="h-4 w-4" />Connect a calendar</h3>
-        <p className="text-xs text-muted-foreground">Paste a private calendar link (iCal / webcal). Apple Calendar: share the calendar as a public calendar and copy the link. Google Calendar: Settings → your calendar → "Secret address in iCal format". Events stay private until you import them.</p>
+        <p className="text-sm text-muted-foreground">Events stay private until you choose which ones to import.</p>
       </div>
       {!feed ? (
-        <form onSubmit={connect} className="flex gap-2">
-          <input className="field" type="url" required placeholder="webcal://… or https://….ics" value={url} onChange={(e) => setUrl(e.target.value.replace(/^webcal/i, "https"))} />
-          <button className="chip shrink-0">Connect</button>
-        </form>
+        <>
+          <div className="grid gap-2 sm:grid-cols-3" role="group" aria-label="Pick your calendar">
+            {(Object.keys(PROVIDERS) as Provider[]).map((k) => {
+              const P = PROVIDERS[k];
+              return (
+                <button key={k} type="button" aria-pressed={provider === k} onClick={() => setProvider(provider === k ? null : k)}
+                  className={`flex min-h-11 items-center gap-2 rounded-xl border-2 bg-card px-3 py-2 text-left text-sm font-semibold ${provider === k ? "border-primary" : "border-input"}`}>
+                  <P.Icon className="h-5 w-5 shrink-0" strokeWidth={2} />{P.label}
+                </button>
+              );
+            })}
+          </div>
+          {info && (
+            <div className="space-y-3 rounded-xl border border-input bg-card p-4">
+              <ol className="list-decimal space-y-1 pl-5 text-sm">
+                {info.steps.map((st) => <li key={st}>{st}</li>)}
+              </ol>
+              <form onSubmit={connect} className="flex flex-col gap-2 sm:flex-row">
+                <label className="sr-only" htmlFor="cal-url">Calendar link</label>
+                <input id="cal-url" className="field w-full text-base" type="url" required placeholder={info.placeholder} value={url} onChange={(e) => setUrl(e.target.value.trim().replace(/^webcal/i, "https"))} />
+                <button className="chip min-h-11 shrink-0 justify-center">Connect</button>
+              </form>
+            </div>
+          )}
+        </>
       ) : (
         <>
-          <div className="flex flex-wrap items-center gap-2 text-sm">
-            <span className="min-w-0 flex-1 truncate text-muted-foreground">Connected: {new URL(feed.url).hostname}</span>
-            <button onClick={() => void refetch()} className="chip">{isFetching ? "Loading…" : "Refresh"}</button>
+          <div className="flex flex-wrap items-center gap-3 rounded-xl border border-input bg-card p-3">
+            {connected && (() => { const P = PROVIDERS[connected]; return <P.Icon className="h-6 w-6 shrink-0" strokeWidth={2} aria-hidden="true" />; })()}
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-semibold">{connected ? PROVIDERS[connected].label : "Calendar"}</p>
+              <p className="truncate text-sm text-muted-foreground">
+                {new URL(feed.url).hostname} · {isFetching ? "Syncing…" : dataUpdatedAt ? `Last sync ${new Date(dataUpdatedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}` : "Not synced yet"}
+              </p>
+            </div>
+            <button onClick={() => void refetch()} className="chip">Refresh</button>
             <button onClick={disconnect} className="chip">Disconnect</button>
           </div>
           {ev?.error && <p className="text-sm text-destructive">{ev.error}</p>}
