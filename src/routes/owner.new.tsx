@@ -68,12 +68,21 @@ function NewTruck() {
     }
     const g = f.address ? await geocode(f.address) : null;
     const id = `${slugify(f.name)}-${Math.random().toString(36).slice(2, 6)}`;
-    const { address, truckType, contactName, email, businessName, description, ...rest } = f;
-    const contact = `Owner contact: ${[contactName.trim(), email.trim(), f.phone.trim()].filter(Boolean).join(" · ")}`;
+    // Business-level data goes to the owner's business profile, only filling fields that are still empty.
+    const { data: biz } = await supabase.from("businesses").select("*").eq("owner_id", user.id).maybeSingle();
+    const keep = (cur: string | null | undefined, v: string) => (cur && cur.trim() ? cur : v.trim() || null);
+    const { error: bizErr } = await supabase.from("businesses").upsert({
+      owner_id: user.id,
+      name: keep(biz?.name, f.businessName) ?? "",
+      description: keep(biz?.description, f.description) ?? "",
+      website: keep(biz?.website, f.website), instagram: keep(biz?.instagram, f.instagram), facebook: keep(biz?.facebook, f.facebook),
+    }, { onConflict: "owner_id" });
+    if (bizErr) console.error("[owner/new] business save failed", bizErr);
+    const contact = `Owner contact: ${[f.contactName.trim(), f.email.trim(), f.phone.trim()].filter(Boolean).join(" · ")}`;
     const { error } = await supabase.from("trucks").insert({
-      ...rest, id, status: "pending", created_by: user.id, truck_type: truckType,
-      description: [description.trim(), businessName.trim() && `Business: ${businessName.trim()}`, contact].filter(Boolean).join("\n\n"),
-      base_address: address || null, base_lat: g?.lat ?? null, base_lng: g?.lng ?? null,
+      id, name: f.name.trim(), category: f.category.trim(), emoji: f.emoji, phone: f.phone.trim() || null,
+      status: "pending", created_by: user.id, truck_type: f.truckType, description: contact,
+      base_address: f.address || null, base_lat: g?.lat ?? null, base_lng: g?.lng ?? null,
     });
     if (!error) await supabase.from("claims").insert({ truck_id: id, user_id: user.id, user_email: user.email ?? null, message: "New truck submitted by owner" });
     setBusy(false);
@@ -107,6 +116,10 @@ function NewTruck() {
               {field("contactName", "Your name")}
               <div className="grid gap-3 sm:grid-cols-2">{field("email", "Email", "email")}{field("phone", "Phone / WhatsApp (optional)", "tel")}</div>
               {field("businessName", "Business name (optional)")}
+              <label className="block space-y-1">
+                <span className="text-sm font-semibold">About your business (optional)</span>
+                <textarea className="field w-full text-base" rows={3} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} />
+              </label>
               <div className="grid gap-3 sm:grid-cols-3">{field("website", "Website (optional)")}{field("instagram", "Instagram (optional)")}{field("facebook", "Facebook (optional)")}</div>
             </>
           ) : (
@@ -126,10 +139,6 @@ function NewTruck() {
               </fieldset>
               <div className="grid grid-cols-[1fr_5rem] gap-2">{field("category", "Cuisine", "text", "e.g. Tacos")}{field("emoji", "Emoji")}</div>
               {field("address", f.truckType === "fixed" ? "Address of your fixed location" : "City or home base (optional)")}
-              <label className="block space-y-1">
-                <span className="text-sm font-semibold">Short description (optional)</span>
-                <textarea className="field w-full text-base" rows={3} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} />
-              </label>
             </>
           )}
           <div className="flex gap-2 pt-1">

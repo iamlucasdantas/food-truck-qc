@@ -209,3 +209,33 @@ export function keepExtraction(e: { confidence: number; date: string }, today: s
   const days = (Date.parse(e.date) - Date.parse(today)) / 86_400_000;
   return days >= 0 && days <= 30;
 }
+
+export type Business = Tables<"businesses">;
+export const PAYMENT_METHODS = ["Cash", "Credit/debit card", "Apple Pay", "Google Pay", "Venmo", "Cash App", "Zelle", "PayPal"] as const;
+
+/** Payment methods shown publicly: the truck's own list when "Same as business" is off, otherwise the business list. */
+export function effectivePayments(
+  truck: Pick<Truck, "payments_same_as_business" | "payment_methods" | "payment_other">,
+  business: Pick<Business, "payment_methods" | "payment_other"> | null | undefined,
+): string[] {
+  const src = !truck.payments_same_as_business || !business ? truck : business;
+  const other = src.payment_other.trim();
+  return [...src.payment_methods, ...(other ? [other] : [])];
+}
+
+/** Social handles that identify a truck's posts: the owner's business handles, falling back to legacy per-truck values. */
+export function ownerHandles(
+  truck: Pick<Truck, "facebook" | "instagram" | "reddit">,
+  business: Pick<Business, "facebook" | "instagram" | "reddit"> | null | undefined,
+) {
+  return {
+    facebook: business?.facebook || truck.facebook || null,
+    instagram: business?.instagram || truck.instagram || null,
+    reddit: business?.reddit || truck.reddit || null,
+  };
+}
+
+/** Public description without the private owner-contact / business lines stored by the signup form. */
+export function publicDescription(d: string | null | undefined): string {
+  return (d ?? "").split("\n").filter((l) => !/^(Owner contact|Business):/.test(l.trim())).join("\n").trim();
+}

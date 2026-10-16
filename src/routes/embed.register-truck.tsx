@@ -122,6 +122,10 @@ function EmbedForm() {
                 {input("contactName", "Your name")}
                 <div className="grid gap-3 sm:grid-cols-2">{input("email", "Email", "email")}{input("phone", "Phone / WhatsApp (optional)", "tel")}</div>
                 {input("businessName", "Business name (optional)")}
+                <label className="block space-y-1">
+                  <span className="text-sm font-semibold">About your business (optional)</span>
+                  <textarea className="field w-full text-base" rows={3} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} />
+                </label>
                 <div className="grid gap-3 sm:grid-cols-3">{input("website", "Website (optional)")}{input("instagram", "Instagram (optional)")}{input("facebook", "Facebook (optional)")}</div>
               </>
             ) : (
@@ -148,10 +152,6 @@ function EmbedForm() {
                   {err["category"] && <span className="text-sm text-destructive">{err["category"]}</span>}
                 </label>
                 {f.truckType === "fixed" ? input("city", "Address of your fixed location", "text", "123 Main St, Davenport, IA") : input("city", "City or usual spot (optional)", "text", "Davenport, IA")}
-                <label className="block space-y-1">
-                  <span className="text-sm font-semibold">Short description (optional)</span>
-                  <textarea className="field w-full text-base" rows={3} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} />
-                </label>
               </>
             )}
             <input tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" value={f.company} onChange={(e) => setF({ ...f, company: e.target.value })} />

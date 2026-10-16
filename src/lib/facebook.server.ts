@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { authorIsTruck, centralToUtc, chicagoDate, keepExtraction, matchTruckByName, slugify } from "@/data/trucks";
+import { authorIsTruck, ownerHandles, centralToUtc, chicagoDate, keepExtraction, matchTruckByName, slugify } from "@/data/trucks";
 
 type DB = SupabaseClient<Database>;
 type Kind = "page" | "group" | "reddit" | "instagram";
@@ -29,11 +29,15 @@ function apifyToken() {
 
 /** Every truck with a social URL/handle is also a source of that kind. */
 async function syncTruckSources(db: DB) {
-  const { data: trucks } = await db.from("trucks").select("id, name, facebook, instagram, reddit").eq("status", "active");
+  const { data: rawTrucks } = await db.from("trucks").select("id, name, claimed_by, facebook, instagram, reddit").eq("status", "active");
+  const { data: bizRows } = await db.from("businesses").select("owner_id, facebook, instagram, reddit");
+  const biz = new Map((bizRows ?? []).map((b) => [b.owner_id, b]));
+  // Business handles win over legacy per-truck values; one source per handle (first truck of the business).
+  const trucks = (rawTrucks ?? []).map((t) => ({ ...t, ...ownerHandles(t, t.claimed_by ? biz.get(t.claimed_by) : null) }));
   const { data: existing } = await db.from("social_sources").select("url");
   const have = new Set((existing ?? []).map((s) => normUrl(s.url)));
   const rows: { kind: string; url: string; name: string; truck_id: string }[] = [];
-  for (const t of trucks ?? []) {
+  for (const t of trucks) {
     if (t.facebook && /facebook\.com/i.test(t.facebook) && !have.has(normUrl(t.facebook)))
       rows.push({ kind: "page", url: t.facebook, name: t.name, truck_id: t.id });
     if (t.instagram) {
@@ -180,6 +184,11 @@ export async function processFacebookRun(db: DB, runId: string, budgetMs = 20_00
 
   const { data: allTrucks } = await db.from("trucks").select("id, name, claimed_by, phone, instagram, facebook, reddit").neq("status", "archived");
   const trucks = (allTrucks ?? []) as Pick<TruckRow, "id" | "name" | "claimed_by" | "phone" | "instagram" | "facebook" | "reddit">[];
+  const { data: bizRows } = await db.from("businesses").select("owner_id, facebook, instagram, reddit");
+  const bizByOwner = new Map((bizRows ?? []).map((b) => [b.owner_id, b]));
+  /** Handles that identify this truck's own posts: its owner's business handles (shared by all their trucks), else legacy truck values. */
+  const handlesOf = (t: (typeof trucks)[number]) => ownerHandles(t, t.claimed_by ? bizByOwner.get(t.claimed_by) : null);
+  const sameBusiness = (a: (typeof trucks)[number], b: (typeof trucks)[number]) => a.id === b.id || (!!a.claimed_by && a.claimed_by === b.claimed_by);
   const today = chicagoDate();
 
   for (const kind of KINDS) {
@@ -246,7 +255,9 @@ export async function processFacebookRun(db: DB, runId: string, budgetMs = 20_00
           const ex = await extract(p.text, p.time, p.url, owner?.name ?? null);
           for (const e of ex) {
             if (!keepExtraction(e, today)) continue;
-            let truck = owner ?? matchTruckByName(e.truck_name, trucks);
+            // A business page can post for any of its trucks: prefer the named truck of the same business.
+            const sibling = owner?.claimed_by ? matchTruckByName(e.truck_name, trucks.filter((t) => sameBusiness(t, owner))) : null;
+            let truck = sibling ?? owner ?? matchTruckByName(e.truck_name, trucks);
             if (!truck && (kind === "group" || kind === "reddit") && e.is_food_truck && e.truck_name.trim().length >= 3) {
               const id = `${slugify(e.truck_name)}-${Math.random().toString(36).slice(2, 7)}`;
               const { error } = await db.from("trucks").insert({ id, name: e.truck_name.trim(), status: "pending", source: `apify_${kind}` });
@@ -263,7 +274,7 @@ export async function processFacebookRun(db: DB, runId: string, budgetMs = 20_00
             const { count } = await db.from("stops").select("id", { count: "exact", head: true }).eq("truck_id", truck.id).eq("source", "owner")
               .eq("cancelled", false).lt("starts_at", ends.toISOString()).gt("ends_at", starts.toISOString());
             if (count) continue;
-            const own = authorIsTruck(p.author, truck) || (owner != null && truck.id === owner.id && kind !== "group" && kind !== "reddit");
+            const own = authorIsTruck(p.author, handlesOf(truck)) || (owner != null && sameBusiness(truck, owner) && kind !== "group" && kind !== "reddit");
             if (own) {
               // The truck posted it itself: auto-approved, straight onto the public calendar.
               const { error } = await db.from("stops").insert({
