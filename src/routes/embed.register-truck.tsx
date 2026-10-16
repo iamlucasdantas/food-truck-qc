@@ -85,7 +85,10 @@ function EmbedForm() {
     const k = await checkEmail(f.email);
     const e1 = stepErrors(0, k);
     setErr(e1);
-    if (Object.keys(e1).length === 0) setStep(1);
+    if (Object.keys(e1).length) return;
+    // First truck: its name starts as the business name (editable).
+    if (!k && !f.truckName.trim() && f.businessName.trim()) setF((p) => ({ ...p, truckName: p.businessName.trim() }));
+    setStep(1);
   }
 
   async function onSubmit(e: React.FormEvent) {
@@ -123,9 +126,14 @@ function EmbedForm() {
           </div>
         </div>
         {done ? (
-          <div className="panel space-y-2 p-5" role="status">
+          <div className="panel space-y-3 p-5" role="status">
             <p className="text-lg font-bold">Thanks! Your truck is in review.</p>
             <p className="text-muted-foreground">Look for an email with next steps once it's approved.</p>
+            <div className="space-y-2 rounded-xl bg-accent p-4">
+              <p className="font-bold">Next step: add your menu and photos</p>
+              <p className="text-sm">Create your free account with the same email (<b className="break-all">{f.email}</b>). Your truck links to it once you confirm that email.</p>
+              <a href={`/auth?mode=up&redirect=${encodeURIComponent("/owner/onboarding?step=3")}`} target="_blank" rel="noopener" className="inline-flex min-h-11 items-center rounded-full bg-primary px-5 font-bold text-primary-foreground">Create your free account</a>
+            </div>
           </div>
         ) : (
           <form onSubmit={step === 0 ? next : onSubmit} className="panel space-y-3 p-4 sm:p-5" noValidate>

@@ -71,6 +71,7 @@ export function buildSignup(d: SignupInput, existing: ExistingBusiness | null) {
     businessName,
     truck: {
       name: d.truckName.trim(),
+      business_name: businessName,
       category: d.category.trim(),
       truck_type: d.truckType,
       base_address: d.city.trim() || null,

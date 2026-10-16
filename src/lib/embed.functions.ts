@@ -103,3 +103,32 @@ export const notifyOwnerTruckAdded = createServerFn({ method: "POST" })
     });
     return { ok: true };
   });
+
+/**
+ * Signed-in owner: link trucks they submitted through the website form with their verified email.
+ * Pending ones become theirs to set up; approved ones get a pending claim for admin review.
+ * A typed email alone never links anything — the account email must be confirmed.
+ */
+export const linkMyEmbedTrucks = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: u } = await supabaseAdmin.auth.admin.getUserById(context.userId);
+    const email = u?.user?.email?.toLowerCase() ?? "";
+    if (!email || !u?.user?.email_confirmed_at) return { linked: [] as string[] };
+    const { data: rows } = await supabaseAdmin.from("trucks").select("id, status, description, created_by, claimed_by, created_at")
+      .eq("source", "embed_form").is("claimed_by", null).neq("status", "archived")
+      .ilike("description", `%${email.replace(/[%_]/g, "")}%`).order("created_at");
+    const mine = (rows ?? []).filter((t) => parseContact(t.description)?.email.toLowerCase() === email && (!t.created_by || t.created_by === context.userId));
+    const linked: string[] = [];
+    for (const t of mine) {
+      if (t.status === "pending") {
+        if (!t.created_by) await supabaseAdmin.from("trucks").update({ created_by: context.userId }).eq("id", t.id);
+      } else {
+        const { data: c } = await supabaseAdmin.from("claims").select("id").eq("truck_id", t.id).eq("user_id", context.userId).maybeSingle();
+        if (!c) await supabaseAdmin.from("claims").insert({ truck_id: t.id, user_id: context.userId, user_email: email, message: "Owner signed up with the email used on the website form" });
+      }
+      linked.push(t.id);
+    }
+    return { linked };
+  });

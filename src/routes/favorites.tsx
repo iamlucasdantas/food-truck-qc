@@ -1,4 +1,5 @@
 import { SiteFooter } from "@/components/SiteFooter";
+import { truckByline } from "@/data/onboarding";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Heart, Navigation } from "lucide-react";
@@ -110,6 +111,7 @@ function Favorites() {
                       </span>
                       <span className="min-w-0 flex-1 space-y-0.5">
                         <span className="block truncate font-bold">{r.t.name}</span>
+                        {truckByline(r.t.name, r.t.business_name) && <span className="block truncate text-xs text-muted-foreground">{truckByline(r.t.name, r.t.business_name)}</span>}
                         <span className="block truncate text-sm">{r.t.category}{Number.isFinite(r.dist) ? ` · ${r.dist.toFixed(1)} mi` : ""}</span>
                         <span className={`mt-1 inline-flex max-w-full items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold ${PILL[r.status]}`}>
                           <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${DOT[r.status]}`} /><span className="truncate">{r.label}</span>

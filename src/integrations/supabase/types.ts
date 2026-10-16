@@ -241,6 +241,7 @@ export type Database = {
           display_name: string
           id: string
           notify_favorites: boolean
+          onboarding: Json
         }
         Insert: {
           avatar_url?: string | null
@@ -249,6 +250,7 @@ export type Database = {
           display_name?: string
           id: string
           notify_favorites?: boolean
+          onboarding?: Json
         }
         Update: {
           avatar_url?: string | null
@@ -257,6 +259,7 @@ export type Database = {
           display_name?: string
           id?: string
           notify_favorites?: boolean
+          onboarding?: Json
         }
         Relationships: []
       }
@@ -594,6 +597,7 @@ export type Database = {
           base_address: string | null
           base_lat: number | null
           base_lng: number | null
+          business_name: string
           category: string
           claimed_by: string | null
           created_at: string
@@ -626,6 +630,7 @@ export type Database = {
           base_address?: string | null
           base_lat?: number | null
           base_lng?: number | null
+          business_name?: string
           category?: string
           claimed_by?: string | null
           created_at?: string
@@ -658,6 +663,7 @@ export type Database = {
           base_address?: string | null
           base_lat?: number | null
           base_lng?: number | null
+          business_name?: string
           category?: string
           claimed_by?: string | null
           created_at?: string

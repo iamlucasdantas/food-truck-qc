@@ -10,7 +10,9 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/use-auth";
-import { closingTime, fmtTime, QC_CENTER, PAYMENT_METHODS, effectivePayments, type Business, type Truck } from "@/data/trucks";
+import { closingTime, fmtTime, QC_CENTER, effectivePayments, type Business, type Truck } from "@/data/trucks";
+import { PaymentPicker } from "@/components/PaymentPicker";
+import { checklist, readProgress, showSetupCard } from "@/data/onboarding";
 import { useStops, dayBounds, useStopsRealtime } from "@/lib/queries";
 import { geocode, fileToLogo } from "@/lib/geocode";
 
@@ -66,9 +68,13 @@ function Owner() {
           <button onClick={() => openAuth("Sign in to manage your truck.")} className="chip bg-primary text-primary-foreground">Sign in</button>
         </div>
       )}
-      {pending.map((t) => <p key={t.id} className="panel p-3 text-sm"><b>{t.name}</b> is waiting for review and unlocks once approved.</p>)}
-      {user && data && mine.length === 0 && (
-        <p className="panel p-5 text-sm">No trucks linked to your account yet. Find your truck on the map and tap <b>"Claim it"</b>, or add a new one.</p>
+      {user && <SetupCard userId={user.id} />}
+      {pending.map((t) => <p key={t.id} className="panel p-3 text-sm"><b>{t.name}</b> is waiting for review. You can already add its menu, photos and schedule in <Link to="/owner/onboarding" className="font-semibold underline">setup</Link>.</p>)}
+      {user && data && mine.length === 0 && pending.length === 0 && (
+        <div className="panel space-y-3 p-5 text-sm">
+          <p>No trucks linked to your account yet. Set up your business and truck in a few short steps, or find your truck on the map and tap <b>"Claim it"</b>.</p>
+          <Link to="/owner/onboarding" className="inline-flex min-h-11 items-center rounded-full bg-primary px-5 font-bold text-primary-foreground">Start setup</Link>
+        </div>
       )}
       {mine.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
@@ -83,6 +89,53 @@ function Owner() {
       {truck && <TruckTools key={truck.id} truck={truck} siblings={mine.filter((t) => t.id !== truck.id).map((t) => t.name)} />}
       {user && mine.length > 0 && <BusinessForm ownerId={user.id} />}
     </main></div>
+  );
+}
+
+/** "Finish setting up" checklist until every onboarding step is done or the owner dismisses it. */
+function SetupCard({ userId }: { userId: string }) {
+  const qc = useQueryClient();
+  const { data: raw } = useQuery({
+    queryKey: ["me", "onboarding", userId],
+    queryFn: async () => {
+      const [{ data: prof }, { data: biz }, { data: trucks }] = await Promise.all([
+        supabase.from("profiles").select("onboarding").eq("id", userId).maybeSingle(),
+        supabase.from("businesses").select("name").eq("owner_id", userId).maybeSingle(),
+        supabase.from("trucks").select("id").or(`claimed_by.eq.${userId},created_by.eq.${userId}`).limit(1),
+      ]);
+      // Owners who set up before the wizard existed already have these done.
+      let p = readProgress(prof?.onboarding);
+      if (biz?.name) p = { ...p, done: Array.from(new Set([...p.done, "business" as const])) };
+      if (trucks?.length) p = { ...p, done: Array.from(new Set([...p.done, "truck" as const])) };
+      return p;
+    },
+  });
+  if (raw === undefined) return null;
+  const p = raw;
+  if (!showSetupCard(p)) return null;
+  const items = checklist(p);
+  const next = items.find((i) => !i.done);
+  async function dismiss() {
+    await supabase.from("profiles").update({ onboarding: { ...p, dismissed: true } }).eq("id", userId);
+    void qc.invalidateQueries({ queryKey: ["me", "onboarding", userId] });
+  }
+  return (
+    <section className="panel space-y-3 p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div><h2 className="text-xl font-bold">Finish setting up</h2><p className="text-sm text-muted-foreground">{items.filter((i) => i.done).length} of {items.length} done</p></div>
+        <button onClick={() => void dismiss()} className="chip">Dismiss</button>
+      </div>
+      <ul className="space-y-1 text-sm">
+        {items.map((i) => (
+          <li key={i.key}><Link to="/owner/onboarding" search={{ step: i.index + 1 }} className="flex min-h-11 items-center gap-2 rounded-xl px-2 hover:bg-muted">
+            <span aria-hidden className={`grid h-6 w-6 place-items-center rounded-full border-2 text-xs font-bold ${i.done ? "border-primary bg-primary text-primary-foreground" : "border-input"}`}>{i.done ? "✓" : ""}</span>
+            <span className={i.done ? "text-muted-foreground line-through" : "font-semibold"}>{i.title}</span>
+            <span className="sr-only">{i.done ? "done" : "not done yet"}</span>
+          </Link></li>
+        ))}
+      </ul>
+      {next && <Link to="/owner/onboarding" search={{ step: next.index + 1 }} className="chip">Continue setup →</Link>}
+    </section>
   );
 }
 
@@ -294,26 +347,6 @@ function useBusiness(ownerId: string | null | undefined) {
   });
 }
 
-/** Checkbox chips for accepted payment methods plus a free "other" field. */
-function PaymentPicker({ value, other, onChange, idPrefix }: { value: string[]; other: string; onChange: (v: string[], other: string) => void; idPrefix: string }) {
-  return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap gap-2">
-        {PAYMENT_METHODS.map((m) => {
-          const on = value.includes(m);
-          return (
-            <label key={m} className={`flex min-h-10 cursor-pointer items-center gap-2 rounded-full border-2 px-3 text-sm font-medium ${on ? "border-primary bg-accent" : "border-input bg-card"}`}>
-              <input type="checkbox" checked={on} onChange={() => onChange(on ? value.filter((x) => x !== m) : [...value, m], other)} />{m}
-            </label>
-          );
-        })}
-      </div>
-      <label className="block space-y-1 text-sm font-semibold" htmlFor={`${idPrefix}-other`}>Other (optional)
-        <input id={`${idPrefix}-other`} className="field w-full text-base font-normal" placeholder="e.g. Bitcoin, checks" value={other} onChange={(e) => onChange(value, e.target.value)} />
-      </label>
-    </div>
-  );
-}
 
 function BusinessForm({ ownerId }: { ownerId: string }) {
   const qc = useQueryClient();
