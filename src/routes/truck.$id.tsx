@@ -8,7 +8,7 @@ const TruckMap = lazy(() => import("@/components/TruckMap"));
 import { supabase } from "@/integrations/supabase/client";
 import type { MenuSection } from "@/data/menu";
 import { TruckGallery } from "@/components/TruckGallery";
-import { effectivePayments, fmtRange, ownerHandles, publicDescription, SOURCE_LABEL, stopBadge } from "@/data/trucks";
+import { effectivePayments, fmtCentral, fmtRange, ownerHandles, publicDescription, SOURCE_LABEL, stopBadge } from "@/data/trucks";
 import { useStops, dayBounds, useStopsRealtime } from "@/lib/queries";
 import { ClaimButton } from "@/components/ClaimButton";
 import { useFavorites } from "@/hooks/use-favorites";
@@ -50,6 +50,9 @@ function TruckPage() {
   const stops = allStops.filter((s) => s.source !== "apify_maps" || allStops.every((x) => x.source === "apify_maps")).slice(0, 20);
   useStopsRealtime();
   const [mapFailed, setMapFailed] = useState(false);
+  const [tick, setTick] = useState<number | null>(null);
+  useEffect(() => { setTick(Date.now()); const i = setInterval(() => setTick(Date.now()), 60_000); return () => clearInterval(i); }, []);
+  const live = tick ? allStops.find((s) => s.is_live && !s.cancelled && Date.parse(s.starts_at) <= tick && Date.parse(s.ends_at) > tick) : undefined;
 
   if (isLoading) return <main className="p-10 text-center text-muted-foreground">Loading…</main>;
   if (!t) return <div className="p-10 text-center"><p>Truck not found.</p><Link to="/" className="chip mt-4">Back to map</Link></div>;
@@ -70,6 +73,11 @@ function TruckPage() {
         </div>
         <button onClick={() => toggle(t.id)} aria-label={isFav(t.id) ? "Remove from favorites" : "Save to favorites"} aria-pressed={isFav(t.id)} className="chip h-11"><Heart className={`h-4 w-4 ${isFav(t.id) ? "fill-primary text-primary" : ""}`} />{isFav(t.id) ? "Saved" : "Save"}</button>
       </header>
+      {live && (
+        <p className="panel flex items-center gap-2 p-4 font-semibold" role="status">
+          <span className="h-2.5 w-2.5 rounded-full bg-pin-open" aria-hidden />Here until {fmtCentral(live.ends_at)} · {live.venue_name}
+        </p>
+      )}
       <TruckGallery truckId={t.id} name={t.name} />
       {(() => { const d = publicDescription(biz?.description || t.description); return d ? <p className="whitespace-pre-line">{d}</p> : null; })()}
       {(() => {
