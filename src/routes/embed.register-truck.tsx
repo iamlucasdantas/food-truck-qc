@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { submitTruckSignup, truckSignupSchema } from "@/lib/embed.functions";
 import { LogoMark } from "@/components/Logo";
 
@@ -31,6 +31,18 @@ function EmbedForm() {
   const [done, setDone] = useState(false);
   const [fail, setFail] = useState("");
 
+  // Report real content height to the host page so it can size the iframe exactly.
+  useEffect(() => {
+    if (window.parent === window) return;
+    const post = () =>
+      window.parent.postMessage({ type: "ftqc-embed-height", height: document.documentElement.scrollHeight }, "*");
+    post();
+    const ro = new ResizeObserver(post);
+    ro.observe(document.documentElement);
+    window.addEventListener("resize", post);
+    return () => { ro.disconnect(); window.removeEventListener("resize", post); };
+  }, [done]);
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     const r = truckSignupSchema.safeParse(f);
@@ -49,13 +61,13 @@ function EmbedForm() {
   const input = (k: keyof typeof f, label: string, type = "text", ph = "") => (
     <label className="block space-y-1">
       <span className="text-sm font-semibold">{label}</span>
-      <input className="field w-full" type={type} placeholder={ph} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} />
+      <input className="field w-full text-base" type={type} placeholder={ph} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} />
       {err[k] && <span className="text-sm text-destructive">{err[k]}</span>}
     </label>
   );
 
   return (
-    <main className="min-h-dvh bg-background p-4 text-foreground">
+    <main className="min-h-dvh overflow-x-hidden bg-background p-3 text-foreground sm:p-4">
       <div className="mx-auto w-full max-w-[620px] space-y-4">
         <div className="flex items-center gap-3">
           <div className="h-10 w-8"><LogoMark /></div>
@@ -70,13 +82,13 @@ function EmbedForm() {
             <p className="text-muted-foreground">Look for an email with next steps once it's approved.</p>
           </div>
         ) : (
-          <form onSubmit={onSubmit} className="panel space-y-3 p-5" noValidate>
+          <form onSubmit={onSubmit} className="panel space-y-3 p-4 sm:p-5" noValidate>
             {input("contactName", "Your name")}
             <div className="grid gap-3 sm:grid-cols-2">{input("email", "Email", "email")}{input("phone", "Phone / WhatsApp", "tel")}</div>
             {input("truckName", "Truck name")}
             <label className="block space-y-1">
               <span className="text-sm font-semibold">Category</span>
-              <select className="field w-full" value={f.category} onChange={(e) => setF({ ...f, category: e.target.value })}>
+              <select className="field w-full text-base" value={f.category} onChange={(e) => setF({ ...f, category: e.target.value })}>
                 <option value="">Pick one…</option>
                 {CATS.map((c) => <option key={c}>{c}</option>)}
               </select>
@@ -86,7 +98,7 @@ function EmbedForm() {
             <div className="grid gap-3 sm:grid-cols-3">{input("instagram", "Instagram")}{input("facebook", "Facebook")}{input("website", "Website")}</div>
             <label className="block space-y-1">
               <span className="text-sm font-semibold">Short description</span>
-              <textarea className="field w-full" rows={3} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} />
+              <textarea className="field w-full text-base" rows={3} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} />
             </label>
             <input tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" value={f.company} onChange={(e) => setF({ ...f, company: e.target.value })} />
             {fail && <p className="text-sm text-destructive">{fail}</p>}
