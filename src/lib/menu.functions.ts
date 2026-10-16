@@ -66,44 +66,6 @@ export const readMenuPhotos = createServerFn({ method: "POST" })
 
     return readMenuWithAI(key, data.images);
   });
-    if (!res.ok || !res.body) {
-      const body = await res.text().catch(() => "");
-      console.error(`[menu reader] gateway failed [${res.status}]: ${body}`);
-      const msg = res.status === 429 ? "The menu reader is busy — try again in a minute."
-        : res.status === 402 || res.status === 403 ? "The menu reader is unavailable right now (AI credits or access). Ask the site admin."
-        : "Couldn't read the menu right now. Please try again.";
-      return { sections: [], readable: false, problem: "", error: msg };
-    }
-
-    // Accumulate the streamed JSON text.
-    const reader = res.body.getReader();
-    const dec = new TextDecoder();
-    let buf = "", text = "", failed = "", refused = false;
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += dec.decode(value, { stream: true });
-      let i: number;
-      while ((i = buf.indexOf("\n\n")) >= 0) {
-        const frame = buf.slice(0, i); buf = buf.slice(i + 2);
-        const line = frame.split("\n").find((l) => l.startsWith("data:"));
-        if (!line) continue;
-        try {
-          const ev = JSON.parse(line.slice(5).trim()) as { type?: string; delta?: string; error?: { message?: string }; response?: { error?: { message?: string } } };
-          if (ev.type === "response.output_text.delta" && ev.delta) text += ev.delta;
-          else if (ev.type === "response.refusal.delta") refused = true;
-          else if (ev.type === "response.failed" || ev.type === "error") failed = ev.error?.message ?? ev.response?.error?.message ?? "failed";
-        } catch { /* partial / non-JSON frame */ }
-      }
-    }
-    if (refused) return { sections: [], readable: false, problem: "These photos couldn't be read as a menu." };
-    if (failed || !text.trim()) {
-      console.error("[menu reader] stream failed", failed || "empty output");
-      return { sections: [], readable: false, problem: "", error: "Couldn't read the menu right now. Please try again." };
-    }
-    try { return normalizeMenu(JSON.parse(text)); }
-    catch { return { sections: [], readable: false, problem: "The menu reader returned something unexpected. Try a clearer photo." }; }
-  });
 
 /** Calls the AI vision model and returns a normalized menu (or a friendly error). */
 export async function readMenuWithAI(key: string, images: string[]): Promise<MenuRead & { error?: string }> {
