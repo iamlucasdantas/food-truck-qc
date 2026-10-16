@@ -126,6 +126,14 @@ export const notifyCrmTruckDecision = createServerFn({ method: "POST" })
       email = u?.user?.email ?? "";
       name = name || (u?.user?.user_metadata?.["full_name"] as string) || (u?.user?.user_metadata?.["name"] as string) || "";
     }
+    // Same business name for every truck of a business: the owner's business profile, else the name saved with the submission.
+    let businessName = (t.description.match(/Business:\s*([^\n]+)/)?.[1] ?? "").trim();
+    const ownerId = t.claimed_by ?? t.created_by;
+    if (ownerId) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: biz } = await supabaseAdmin.from("businesses").select("name").eq("owner_id", ownerId).maybeSingle();
+      if (biz?.name) businessName = biz.name;
+    }
     const [first = "", ...rest] = name.trim().split(" ");
     const truckUrl = `https://app.foodtruckqc.com/truck/${t.id}`;
     const approved = data.decision === "approved";
@@ -137,6 +145,7 @@ export const notifyCrmTruckDecision = createServerFn({ method: "POST" })
       last_name: rest.join(" "),
       name: name.trim(),
       phone,
+      business_name: businessName,
       truck_name: t.name,
       truck_type: t.truck_type,
       cuisine: t.category,
