@@ -78,6 +78,13 @@
       "when": 1792166323904,
       "tag": "0010_add_truck_type",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792166569491,
+      "tag": "0011_suggested_stops_and_reddit_handle",
+      "breakpoints": true
     }
   ]
 }
