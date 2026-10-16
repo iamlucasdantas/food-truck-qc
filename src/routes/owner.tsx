@@ -1,5 +1,7 @@
 import { Logo } from "@/components/Logo";
 import { OwnerSchedule } from "@/components/OwnerSchedule";
+import { OwnerPhotos } from "@/components/OwnerPhotos";
+import { OwnerMenu } from "@/components/OwnerMenu";
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { ClientOnly } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -91,6 +93,8 @@ function TruckTools({ truck, siblings }: { truck: Truck; siblings: string[] }) {
       <SuggestedStops truck={truck} />
       <OwnerSchedule truck={truck} />
       <ProfileForm truck={truck} siblings={siblings} />
+      <OwnerPhotos truckId={truck.id} />
+      <OwnerMenu truck={truck} />
     </>
   );
 }

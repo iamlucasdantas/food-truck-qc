@@ -5,6 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { lazy, Suspense, useMemo, useState } from "react";
 const TruckMap = lazy(() => import("@/components/TruckMap"));
 import { supabase } from "@/integrations/supabase/client";
+import type { MenuSection } from "@/data/menu";
+import { TruckGallery } from "@/components/TruckGallery";
 import { effectivePayments, fmtRange, ownerHandles, publicDescription, SOURCE_LABEL, stopBadge } from "@/data/trucks";
 import { useStops, dayBounds, useStopsRealtime } from "@/lib/queries";
 import { ClaimButton } from "@/components/ClaimButton";
@@ -51,6 +53,7 @@ function TruckPage() {
   if (isLoading) return <main className="p-10 text-center text-muted-foreground">Loading…</main>;
   if (!t) return <div className="p-10 text-center"><p>Truck not found.</p><Link to="/" className="chip mt-4">Back to map</Link></div>;
   const menu = (t.menu as { item: string; price: number }[]) ?? [];
+  const sections = t.menu_sections as MenuSection[] | null;
 
   return (
     <main className="mx-auto w-full max-w-[1100px] min-w-0 space-y-5 p-4 pb-16">
@@ -65,6 +68,7 @@ function TruckPage() {
         </div>
         <button onClick={() => toggle(t.id)} aria-label={isFav(t.id) ? "Remove from favorites" : "Save to favorites"} aria-pressed={isFav(t.id)} className="chip h-11"><Heart className={`h-4 w-4 ${isFav(t.id) ? "fill-primary text-primary" : ""}`} />{isFav(t.id) ? "Saved" : "Save"}</button>
       </header>
+      <TruckGallery truckId={t.id} name={t.name} />
       {(() => { const d = publicDescription(biz?.description || t.description); return d ? <p className="whitespace-pre-line">{d}</p> : null; })()}
       {(() => {
         const pays = biz || t.payments_same_as_business === false ? effectivePayments(t, biz) : t.accepts_card ? ["Cash", "Credit/debit card"] : ["Cash"];
@@ -113,7 +117,33 @@ function TruckPage() {
         </ul>
       </section>
 
-      {menu.length > 0 && (
+      {sections?.length ? (
+        <section className="panel p-5" aria-labelledby="menu-h">
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+            <h2 id="menu-h" className="text-xl font-bold">Current menu</h2>
+            {t.menu_updated_at && <p className="text-sm text-muted-foreground">Updated by owner · {new Date(t.menu_updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>}
+          </div>
+          <div className="space-y-4">
+            {sections.map((sec) => (
+              <div key={sec.name}>
+                <h3 className="mb-1 font-bold">{sec.name}</h3>
+                <ul className="divide-y divide-border text-sm">
+                  {sec.items.map((m, i) => (
+                    <li key={m.name + i} className="flex justify-between gap-3 py-2">
+                      <span className="min-w-0">
+                        <span className="font-medium">{m.name}</span>
+                        {m.tags.length > 0 && <span className="ml-1 text-xs text-muted-foreground">· {m.tags.join(", ")}</span>}
+                        {m.description && <span className="block text-muted-foreground">{m.description}</span>}
+                      </span>
+                      {m.price != null && <span className="shrink-0 font-semibold">${m.price.toFixed(2)}</span>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : menu.length > 0 && (
         <section className="panel p-5">
           <h2 className="mb-3 text-xl font-bold">Menu</h2>
           <ul className="space-y-1 text-sm">

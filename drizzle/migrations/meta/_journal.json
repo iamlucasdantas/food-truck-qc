@@ -92,6 +92,13 @@
       "when": 1792167784643,
       "tag": "0012_business_profiles",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792168069874,
+      "tag": "0013_truck_photos_and_menu",
+      "breakpoints": true
     }
   ]
 }
