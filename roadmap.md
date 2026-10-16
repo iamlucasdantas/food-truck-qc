@@ -19,3 +19,4 @@
 ## Step 4 — done
 - [x] Public footer links to Privacy/Terms
 - [x] Apify Google Maps seed (admin tab, per-city runs, gray base stops, run logs)
+- [x] Step 5: Facebook scraping (sources tab, daily 6am CT)
