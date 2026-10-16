@@ -97,10 +97,21 @@ function SetupCard({ userId }: { userId: string }) {
   const qc = useQueryClient();
   const { data: raw } = useQuery({
     queryKey: ["me", "onboarding", userId],
-    queryFn: async () => (await supabase.from("profiles").select("onboarding").eq("id", userId).maybeSingle()).data?.onboarding ?? {},
+    queryFn: async () => {
+      const [{ data: prof }, { data: biz }, { data: trucks }] = await Promise.all([
+        supabase.from("profiles").select("onboarding").eq("id", userId).maybeSingle(),
+        supabase.from("businesses").select("name").eq("owner_id", userId).maybeSingle(),
+        supabase.from("trucks").select("id").or(`claimed_by.eq.${userId},created_by.eq.${userId}`).limit(1),
+      ]);
+      // Owners who set up before the wizard existed already have these done.
+      let p = readProgress(prof?.onboarding);
+      if (biz?.name) p = { ...p, done: Array.from(new Set([...p.done, "business" as const])) };
+      if (trucks?.length) p = { ...p, done: Array.from(new Set([...p.done, "truck" as const])) };
+      return p;
+    },
   });
   if (raw === undefined) return null;
-  const p = readProgress(raw);
+  const p = raw;
   if (!showSetupCard(p)) return null;
   const items = checklist(p);
   const next = items.find((i) => !i.done);
