@@ -17,7 +17,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [roles, setRoles] = useState<Role[]>([]);
   const [ready, setReady] = useState(false);
-  const [modal, setModal] = useState<{ open: boolean; reason?: string }>({ open: false });
+  const [modal, setModal] = useState<{ open: boolean; reason?: string | undefined }>({ open: false });
 
   const loadRoles = useCallback(async (u: User | null) => {
     if (!u) return setRoles([]);

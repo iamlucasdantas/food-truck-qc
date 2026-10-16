@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 
-export function AuthModal({ open, reason, onOpenChange }: { open: boolean; reason?: string; onOpenChange: (o: boolean) => void }) {
+export function AuthModal({ open, reason, onOpenChange }: { open: boolean; reason?: string | undefined; onOpenChange: (o: boolean) => void }) {
   const [mode, setMode] = useState<"in" | "up">("in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
