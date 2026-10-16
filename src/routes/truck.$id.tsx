@@ -3,7 +3,7 @@ import { truckByline } from "@/data/onboarding";
 import { SiteFooter } from "@/components/SiteFooter";
 import { createFileRoute, Link, ClientOnly } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { lazy, Suspense, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 const TruckMap = lazy(() => import("@/components/TruckMap"));
 import { supabase } from "@/integrations/supabase/client";
 import type { MenuSection } from "@/data/menu";
