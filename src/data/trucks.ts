@@ -61,3 +61,17 @@ export function fmtTime(iso: string | Date) {
 export function fmtRange(s: Stop) {
   return `${fmtTime(s.starts_at)}–${fmtTime(s.ends_at)}`;
 }
+
+/** Closing time for the owner's "I'm here" chips. Never more than 6h out (live stops auto-expire). */
+export function closingTime(choice: "+2h" | "+4h" | "9pm", now: Date): Date {
+  const d = new Date(now);
+  if (choice === "+2h") d.setHours(d.getHours() + 2);
+  else if (choice === "+4h") d.setHours(d.getHours() + 4);
+  else { d.setHours(21, 0, 0, 0); if (d <= now) d.setTime(now.getTime() + 60 * 60 * 1000); }
+  const cap = now.getTime() + 6 * 60 * 60 * 1000;
+  return d.getTime() > cap ? new Date(cap) : d;
+}
+
+export function slugify(s: string) {
+  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}

@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Stop, Truck } from "@/data/trucks";
 
@@ -40,4 +41,17 @@ export function dayBounds(d: Date) {
   const a = new Date(d); a.setHours(0, 0, 0, 0);
   const b = new Date(a); b.setDate(a.getDate() + 1);
   return [a, b] as const;
+}
+
+/** Refetch stop queries whenever any stop changes (owner check-ins, cancellations). */
+export function useStopsRealtime() {
+  const qc = useQueryClient();
+  useEffect(() => {
+    const ch = supabase.channel("stops-live")
+      .on("postgres_changes", { event: "*", schema: "public", table: "stops" }, () => {
+        void qc.invalidateQueries({ queryKey: ["stops"] });
+      })
+      .subscribe();
+    return () => { void supabase.removeChannel(ch); };
+  }, [qc]);
 }
