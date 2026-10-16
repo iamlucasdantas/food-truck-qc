@@ -125,7 +125,7 @@
 }
 
 @utility chip {
-  @apply inline-flex items-center gap-1 rounded-full border-2 border-border bg-card px-3 py-1 text-sm font-semibold transition-all;
+  @apply inline-flex min-h-11 items-center gap-1 rounded-full border-2 border-border bg-card px-3 py-1 text-sm font-semibold transition-all;
 }
 @utility chip-active {
   @apply bg-foreground text-background;
@@ -134,5 +134,9 @@
   @apply rounded-2xl border-2 border-border bg-card shadow-pop;
 }
 @utility field {
-  @apply w-full rounded-xl border-2 border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring;
+  @apply min-h-11 w-full min-w-0 rounded-xl border-2 border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring;
 }
+
+html, body { overflow-x: hidden; }
+.leaflet-container { font-family: var(--font-body); }
+.leaflet-control-zoom a { width: 44px !important; height: 44px !important; line-height: 44px !important; }

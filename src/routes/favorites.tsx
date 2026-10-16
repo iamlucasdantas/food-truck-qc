@@ -38,7 +38,7 @@ function Favorites() {
   const mine = trucks.filter((t) => ids.includes(t.id));
 
   return (
-    <main className="mx-auto max-w-2xl space-y-4 p-4">
+    <main className="mx-auto w-full max-w-[1100px] min-w-0 space-y-4 p-4">
       <Link to="/" className="chip">← Map</Link>
       <h1 className="text-3xl font-extrabold">My favorites</h1>
       {ready && !user && (

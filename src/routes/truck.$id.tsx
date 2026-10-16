@@ -43,7 +43,7 @@ function TruckPage() {
   const menu = (t.menu as { item: string; price: number }[]) ?? [];
 
   return (
-    <main className="mx-auto max-w-2xl space-y-5 p-4 pb-16">
+    <main className="mx-auto w-full max-w-[1100px] min-w-0 space-y-5 p-4 pb-16">
       <Link to="/" className="chip">← Map</Link>
       <header className="panel flex items-center gap-4 p-5">
         <div className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-2xl border-2 border-border bg-secondary text-5xl">

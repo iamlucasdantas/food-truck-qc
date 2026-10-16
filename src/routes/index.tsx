@@ -1,7 +1,7 @@
 import { SiteFooter } from "@/components/SiteFooter";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ClientOnly } from "@tanstack/react-router";
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import {
   pickStop, placeTruck, byStatusThenDistance, chooseCenter, milesBetween, fmtRange, QC_CENTER, SOURCE_LABEL,
   type Window, type Status, type Stop,
@@ -47,7 +47,9 @@ function Index() {
   const [onlyOpen, setOnlyOpen] = useState(false);
   const [card, setCard] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState(false);
+  const [mapFailed, setMapFailed] = useState(false);
+  const [sheetH, setSheetH] = useState<number | null>(null);
+  const drag = useRef<{ y: number; h: number } | null>(null);
   const { isFav, toggle } = useFavorites();
 
   useEffect(() => {
@@ -90,60 +92,117 @@ function Index() {
 
   const sel = results.find((r) => r.t.id === selected);
 
+  const snaps = () => { const vh = window.innerHeight; return [148, Math.round(vh * 0.45), Math.round(vh * 0.88)]; };
+  const onDown = (e: React.PointerEvent) => { (e.target as HTMLElement).setPointerCapture(e.pointerId); drag.current = { y: e.clientY, h: sheetH ?? snaps()[1]! }; };
+  const onMove = (e: React.PointerEvent) => { if (!drag.current) return; const [a, , c] = snaps(); setSheetH(Math.min(c!, Math.max(a!, drag.current.h + drag.current.y - e.clientY))); };
+  const onUp = (e: React.PointerEvent) => {
+    if (!drag.current) return;
+    const moved = Math.abs(e.clientY - drag.current.y) > 6;
+    const s = snaps(); const h = sheetH ?? s[1]!;
+    setSheetH(moved ? s.reduce((b, x) => (Math.abs(x - h) < Math.abs(b - h) ? x : b)) : (h >= s[2]! ? s[0]! : s[Math.min(2, s.findIndex((x) => x >= h) + 1)]!));
+    drag.current = null;
+  };
+
+  const dateSelect = (
+    <select value={dayIdx} onChange={(e) => setDayIdx(Number(e.target.value))} className="chip h-11 shrink-0 cursor-pointer" aria-label="Date">
+      {days.map((d, i) => (
+        <option key={i} value={i}>{i === 0 ? "Today" : i === 1 ? "Tomorrow" : d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</option>
+      ))}
+    </select>
+  );
+  const chipCls = (on: boolean) => `chip h-11 shrink-0 whitespace-nowrap ${on ? "chip-active" : ""}`;
+  const chips = (
+    <>
+      {dateSelect}
+      {(["now", "lunch", "dinner", "all"] as Window[]).filter((w) => dayIdx === 0 || w !== "now").map((w) => (
+        <button key={w} onClick={() => setWin(w)} className={chipCls(win === w || (dayIdx > 0 && win === "now" && w === "all"))}>
+          {w === "now" ? "Now" : w === "lunch" ? "Lunch 11–2" : w === "dinner" ? "Dinner 5–9" : "All day"}
+        </button>
+      ))}
+      {[1, 3, 5, 10, 25].map((r) => <button key={r} onClick={() => setRadius(r)} className={chipCls(radius === r)}>{r} mi</button>)}
+      <button onClick={() => setOnlyOpen(!onlyOpen)} className={chipCls(onlyOpen)}>Open now</button>
+      <button onClick={() => setOnlyFav(!onlyFav)} className={chipCls(onlyFav)}>Favorites only</button>
+      <button onClick={() => setCard(!card)} className={chipCls(card)}>Takes card</button>
+    </>
+  );
+  const brandRow = (
+    <div className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-2">
+      <h1 className="text-lg font-extrabold sm:text-xl"><span className="text-primary">FoodTruck</span>QC</h1>
+      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Tacos, BBQ, Moline…" aria-label="Search trucks"
+        className="h-11 w-full min-w-0 rounded-full border-2 border-border bg-background px-4 text-sm outline-none focus:ring-2 focus:ring-ring" />
+      <Link to="/favorites" className="chip h-11 w-11 shrink-0 justify-center" aria-label="My favorites">♥</Link>
+      <AccountButton />
+    </div>
+  );
+  const list = (
+    <ul className="space-y-2 px-3 pb-4">
+      {results.length === 0 && now && <li className="py-8 text-center text-sm text-muted-foreground">No trucks match. Try a bigger radius or another time.</li>}
+      {results.map((r) => (
+        <li key={r.t.id}>
+          <button onClick={() => setSelected(r.t.id)}
+            className={`flex min-h-11 w-full items-center gap-3 rounded-xl border-2 border-border p-2.5 text-left transition-all hover:shadow-pop-sm ${selected === r.t.id ? "bg-accent" : "bg-background"}`}>
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-secondary text-xl">{r.t.emoji}</span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate font-bold">{r.t.name}</span>
+              <span className="block truncate text-xs text-muted-foreground">{r.t.category} · {r.stop ? `${r.stop.venue_name}, ${r.stop.city}` : (r.t.base_address ?? "Base location")}</span>
+            </span>
+            <span className="max-w-[40%] shrink-0 text-right text-xs">
+              <span className="flex items-center justify-end gap-1 font-semibold">
+                <span className={`h-2 w-2 shrink-0 rounded-full ${STATUS_DOT[r.status]}`} /><span className="truncate">{r.stop ? fmtRange(r.stop) : "Not confirmed"}</span>
+              </span>
+              <span className="text-muted-foreground">{r.dist.toFixed(1)} mi</span>
+            </span>
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+  const countLine = <p className="px-3 text-sm font-semibold">{results.length} trucks within {radius} mi {!mapFailed && <span className="font-normal text-muted-foreground">· drag the orange dot to search elsewhere</span>}</p>;
+
   return (
     <div className="relative h-dvh w-full overflow-hidden">
-      <div className="absolute inset-0">
-        <ClientOnly fallback={<div className="h-full w-full bg-muted" />}>
-          <Suspense fallback={<div className="h-full w-full bg-muted" />}>
-            <TruckMap pins={pins} center={center} radiusMi={radius} onSelect={setSelected} onCenterChange={setCenter} />
-          </Suspense>
-        </ClientOnly>
+      {/* Map: full screen on mobile/tablet, right of the 420px column on desktop */}
+      {!mapFailed && (
+        <div className="absolute inset-0 min-[1200px]:left-[420px]">
+          <ClientOnly fallback={<div className="h-full w-full bg-muted" />}>
+            <Suspense fallback={<div className="h-full w-full bg-muted" />}>
+              <TruckMap pins={pins} center={center} radiusMi={radius} onSelect={setSelected} onCenterChange={setCenter} onFail={() => setMapFailed(true)} />
+            </Suspense>
+          </ClientOnly>
+        </div>
+      )}
+
+      {/* Mobile top bar */}
+      <div className="absolute inset-x-0 top-0 z-[1000] space-y-2 border-b-2 border-border bg-card p-2 md:hidden">
+        {brandRow}
+        <div className="-mx-2 flex gap-2 overflow-x-auto px-2 pb-1 [scrollbar-width:none]">{chips}</div>
       </div>
 
-      {/* Top controls */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 p-3">
-        <div className="pointer-events-auto panel mx-auto max-w-3xl space-y-2 p-3">
-          <div className="flex items-center gap-2">
-            <h1 className="shrink-0 text-xl font-extrabold"><span className="text-primary">FoodTruck</span>QC</h1>
-            <input
-              value={q} onChange={(e) => setQ(e.target.value)}
-              placeholder="Tacos, BBQ, Moline…"
-              className="min-w-0 flex-1 rounded-full border-2 border-border bg-background px-4 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
-            />
-            <Link to="/favorites" className="chip shrink-0" aria-label="My favorites">♥</Link>
-            <AccountButton />
-          </div>
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            <select
-              value={dayIdx} onChange={(e) => setDayIdx(Number(e.target.value))}
-              className="chip cursor-pointer" aria-label="Date"
-            >
-              {days.map((d, i) => (
-                <option key={i} value={i}>
-                  {i === 0 ? "Today" : i === 1 ? "Tomorrow" : d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
-                </option>
-              ))}
-            </select>
-            {(["now", "lunch", "dinner", "all"] as Window[]).filter((w) => dayIdx === 0 || w !== "now").map((w) => (
-              <button key={w} onClick={() => setWin(w)} className={`chip ${(win === w || (dayIdx > 0 && win === "now" && w === "all")) ? "chip-active" : ""}`}>
-                {w === "now" ? "Now" : w === "lunch" ? "Lunch 11–2" : w === "dinner" ? "Dinner 5–9" : "All day"}
-              </button>
-            ))}
-            <span className="mx-1 w-px shrink-0 bg-border" />
-            {[1, 3, 5, 10].map((r) => (
-              <button key={r} onClick={() => setRadius(r)} className={`chip ${radius === r ? "chip-active" : ""}`}>{r} mi</button>
-            ))}
-            <span className="mx-1 w-px shrink-0 bg-border" />
-            <button onClick={() => setOnlyOpen(!onlyOpen)} className={`chip whitespace-nowrap ${onlyOpen ? "chip-active" : ""}`}>Open now</button>
-            <button onClick={() => setOnlyFav(!onlyFav)} className={`chip whitespace-nowrap ${onlyFav ? "chip-active" : ""}`}>Favorites only</button>
-            <button onClick={() => setCard(!card)} className={`chip whitespace-nowrap ${card ? "chip-active" : ""}`}>Takes card</button>
-          </div>
-        </div>
+      {/* Mobile bottom sheet (full screen list if the map fails) */}
+      <div className={`absolute inset-x-0 bottom-0 z-[1000] flex flex-col rounded-t-3xl border-2 border-b-0 border-border bg-card md:hidden ${mapFailed ? "top-[118px] rounded-none" : ""}`}
+        style={mapFailed ? undefined : { height: sheetH ?? "45dvh", transition: drag.current ? "none" : "height .25s" }}>
+        {!mapFailed && (
+          <button onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} aria-label="Drag to resize list"
+            className="flex h-11 shrink-0 touch-none flex-col items-center justify-center gap-1">
+            <span className="h-1.5 w-12 rounded-full bg-muted-foreground/40" />
+          </button>
+        )}
+        {countLine}
+        <div className="mt-2 flex-1 overflow-y-auto overscroll-contain">{list}<SiteFooter /></div>
       </div>
+
+      {/* Tablet side panel (360px) / desktop column (420px); full width if the map fails */}
+      <aside className={`absolute inset-y-0 left-0 z-[1000] hidden flex-col border-r-2 border-border bg-card md:flex ${mapFailed ? "w-full" : "w-[360px] min-[1200px]:w-[420px]"}`}>
+        <div className={`space-y-3 border-b-2 border-border p-3 ${mapFailed ? "mx-auto w-full max-w-[1100px]" : ""}`}>
+          {brandRow}
+          <div className="flex flex-wrap gap-2">{chips}</div>
+        </div>
+        <div className={`flex-1 overflow-y-auto pt-3 ${mapFailed ? "mx-auto w-full max-w-[1100px]" : ""}`}>{countLine}<div className="mt-2">{list}</div><SiteFooter /></div>
+      </aside>
 
       {/* Selected truck card */}
       {sel && (
-        <div className="absolute inset-x-0 bottom-[calc(40px+30vh)] z-20 px-3 sm:bottom-auto sm:right-3 sm:top-36 sm:left-auto sm:w-96">
+        <div className="absolute inset-x-0 bottom-[calc(45dvh+8px)] z-[1001] px-3 md:bottom-auto md:left-auto md:right-3 md:top-3 md:w-96 md:px-0">
           <div className="panel p-4">
             <div className="flex items-start gap-3">
               <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border-2 border-border bg-secondary text-2xl">{sel.t.emoji}</div>
@@ -156,54 +215,19 @@ function Index() {
                 </p>
                 {sel.stop && <p className="mt-0.5 text-xs text-muted-foreground">{SOURCE_LABEL[sel.stop.source]}</p>}
               </div>
-              <button onClick={() => setSelected(null)} aria-label="Close" className="text-muted-foreground">✕</button>
+              <button onClick={() => setSelected(null)} aria-label="Close" className="grid h-11 w-11 shrink-0 place-items-center text-muted-foreground">✕</button>
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
-              <button onClick={() => toggle(sel.t.id)} className={`chip ${isFav(sel.t.id) ? "chip-active" : ""}`}>♥ {isFav(sel.t.id) ? "Saved" : "Save"}</button>
-              <a target="_blank" rel="noreferrer" className="chip"
-                href={`https://www.google.com/maps/dir/?api=1&destination=${sel.lat},${sel.lng}`}>Directions</a>
-              {sel.t.phone && <a className="chip" href={`tel:${sel.t.phone}`}>Call</a>}
-              {sel.t.website && <a target="_blank" rel="noreferrer" className="chip" href={sel.t.website}>Website</a>}
-              {sel.t.instagram && <a target="_blank" rel="noreferrer" className="chip" href={sel.t.instagram.startsWith("http") ? sel.t.instagram : `https://instagram.com/${sel.t.instagram.replace(/^@/, "")}`}>Instagram</a>}
-              <Link to="/truck/$id" params={{ id: sel.t.id }} className="chip ml-auto bg-primary text-primary-foreground">Details →</Link>
+              <button onClick={() => toggle(sel.t.id)} className={`chip h-11 ${isFav(sel.t.id) ? "chip-active" : ""}`}>♥ {isFav(sel.t.id) ? "Saved" : "Save"}</button>
+              <a target="_blank" rel="noreferrer" className="chip h-11" href={`https://www.google.com/maps/dir/?api=1&destination=${sel.lat},${sel.lng}`}>Directions</a>
+              {sel.t.phone && <a className="chip h-11" href={`tel:${sel.t.phone}`}>Call</a>}
+              {sel.t.website && <a target="_blank" rel="noreferrer" className="chip h-11" href={sel.t.website}>Website</a>}
+              {sel.t.instagram && <a target="_blank" rel="noreferrer" className="chip h-11" href={sel.t.instagram.startsWith("http") ? sel.t.instagram : `https://instagram.com/${sel.t.instagram.replace(/^@/, "")}`}>Instagram</a>}
+              <Link to="/truck/$id" params={{ id: sel.t.id }} className="chip ml-auto h-11 bg-primary text-primary-foreground">Details →</Link>
             </div>
           </div>
         </div>
       )}
-
-      {/* Bottom sheet list */}
-      <div className={`absolute inset-x-0 bottom-0 z-10 transition-all duration-300 ${expanded ? "h-[70vh]" : "h-[calc(40px+30vh)]"}`}>
-        <div className="mx-auto flex h-full max-w-3xl flex-col rounded-t-3xl border-2 border-b-0 border-border bg-card">
-          <button onClick={() => setExpanded(!expanded)} className="flex flex-col items-center gap-1 py-2">
-            <span className="h-1.5 w-12 rounded-full bg-muted-foreground/40" />
-            <span className="text-sm font-semibold">{results.length} trucks within {radius} mi <span className="text-muted-foreground">· drag the pin to search elsewhere</span></span>
-          </button>
-          <ul className="flex-1 space-y-2 overflow-y-auto px-3 pb-6">
-            {results.length === 0 && now && (
-              <li className="py-8 text-center text-sm text-muted-foreground">No trucks match. Try a bigger radius or another time.</li>
-            )}
-            {results.map((r) => (
-              <li key={r.t.id}>
-                <button onClick={() => setSelected(r.t.id)}
-                  className={`flex w-full items-center gap-3 rounded-xl border-2 border-border p-2.5 text-left transition-all hover:shadow-pop-sm ${selected === r.t.id ? "bg-accent" : "bg-background"}`}>
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-secondary text-xl">{r.t.emoji}</span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate font-bold">{r.t.name}</span>
-                    <span className="block truncate text-xs text-muted-foreground">{r.t.category} · {r.stop ? `${r.stop.venue_name}, ${r.stop.city}` : (r.t.base_address ?? "Base location")}</span>
-                  </span>
-                  <span className="shrink-0 text-right text-xs">
-                    <span className="flex items-center justify-end gap-1 font-semibold">
-                      <span className={`h-2 w-2 rounded-full ${STATUS_DOT[r.status]}`} />{r.stop ? fmtRange(r.stop) : "Location not confirmed"}
-                    </span>
-                    <span className="text-muted-foreground">{r.dist.toFixed(1)} mi</span>
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-          <SiteFooter />
-        </div>
-      </div>
     </div>
   );
 }

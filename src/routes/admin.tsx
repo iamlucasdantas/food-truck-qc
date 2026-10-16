@@ -32,7 +32,7 @@ function Admin() {
   const { user, ready, isAdmin, openAuth } = useAuth();
   const [tab, setTab] = useState<(typeof TABS)[number]>("Claims");
   return (
-    <main className="mx-auto max-w-4xl space-y-4 p-4 pb-16">
+    <main className="mx-auto w-full max-w-[1100px] min-w-0 space-y-4 p-4 pb-16">
       <Link to="/" className="chip">← Map</Link>
       <h1 className="text-3xl font-extrabold">Admin</h1>
       {ready && !user && <button className="chip" onClick={() => openAuth()}>Sign in</button>}
