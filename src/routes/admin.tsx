@@ -54,7 +54,7 @@ function Admin() {
           {tab === "Logs" && <Logs />}
         </>
       )}
-    </main>
+    </main></div>
   );
 }
 

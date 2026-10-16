@@ -71,7 +71,7 @@ function Owner() {
         </select>
       )}
       {truck && <TruckTools key={truck.id} truck={truck} />}
-    </main>
+    </main></div>
   );
 }
 
