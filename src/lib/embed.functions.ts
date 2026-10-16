@@ -9,6 +9,7 @@ export const truckSignupSchema = z.object({
   phone: opt(30),
   truckName: z.string().trim().min(1, "Enter the truck name").max(100),
   category: z.string().trim().min(1, "Pick a category").max(50),
+  truckType: z.string().trim().refine((v) => v === "fixed" || v === "mobile", "Pick fixed location or mobile"),
   city: opt(120),
   instagram: opt(200),
   facebook: opt(200),
@@ -38,6 +39,7 @@ export const submitTruckSignup = createServerFn({ method: "POST" })
       description: [data.description, contact].filter(Boolean).join("\n\n"),
       status: "pending",
       source: "embed_form",
+      truck_type: data.truckType,
     });
     if (error) {
       console.error("[embed signup] insert failed", error);
@@ -52,7 +54,7 @@ export const submitTruckSignup = createServerFn({ method: "POST" })
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             event: "owner_signup", email: data.email, first_name: first, last_name: rest.join(" "), name: data.contactName,
-            phone: data.phone, truck_name: data.truckName, cuisine: data.category, city: data.city,
+            phone: data.phone, truck_name: data.truckName, cuisine: data.category, city: data.city, truck_type: data.truckType,
             instagram: data.instagram, facebook: data.facebook, website: data.website, description: data.description,
             truck_url: `https://app.foodtruckqc.com/truck/${id}`, tags: ["owner"],
           }),
