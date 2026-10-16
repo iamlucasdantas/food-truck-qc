@@ -48,7 +48,7 @@ function Owner() {
   useStopsRealtime();
 
   return (
-    <main className="mx-auto max-w-2xl space-y-4 p-4 pb-16">
+    <main className="mx-auto w-full max-w-[1100px] min-w-0 space-y-4 p-4 pb-16">
       <div className="flex items-center justify-between">
         <Link to="/" className="chip">← Map</Link>
         <Link to="/owner/new" className="chip">+ Add a truck</Link>
@@ -160,7 +160,7 @@ function LiveCard({ truck }: { truck: Truck }) {
           <div className="h-56 overflow-hidden rounded-xl border-2 border-border">
             <ClientOnly fallback={null}>
               <Suspense fallback={null}>
-                <TruckMap pins={[]} center={pos} radiusMi={0.05} onSelect={() => {}} onCenterChange={setPos} />
+                <TruckMap pins={[]} center={pos} radiusMi={0} zoom={15} showRadius={false} onSelect={() => {}} onCenterChange={setPos} />
               </Suspense>
             </ClientOnly>
           </div>

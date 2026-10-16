@@ -32,16 +32,16 @@ function Admin() {
   const { user, ready, isAdmin, openAuth } = useAuth();
   const [tab, setTab] = useState<(typeof TABS)[number]>("Claims");
   return (
-    <main className="mx-auto max-w-4xl space-y-4 p-4 pb-16">
+    <main className="mx-auto w-full max-w-[1100px] min-w-0 space-y-4 p-4 pb-16">
       <Link to="/" className="chip">← Map</Link>
       <h1 className="text-3xl font-extrabold">Admin</h1>
       {ready && !user && <button className="chip" onClick={() => openAuth()}>Sign in</button>}
       {ready && user && !isAdmin && <p className="panel p-5">This area is for admins only.</p>}
       {isAdmin && (
         <>
-          <div className="flex flex-wrap gap-2">
+          <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
             {TABS.map((t) => (
-              <button key={t} onClick={() => setTab(t)} className={`chip ${tab === t ? "bg-primary text-primary-foreground" : ""}`}>{t}</button>
+              <button key={t} onClick={() => setTab(t)} className={`chip shrink-0 whitespace-nowrap ${tab === t ? "bg-primary text-primary-foreground" : ""}`}>{t}</button>
             ))}
           </div>
           {tab === "Claims" && <Claims />}
@@ -243,7 +243,7 @@ function Logs() {
   if (!data.length) return <p className="panel p-5 text-muted-foreground">No imports yet.</p>;
   return (
     <div className="panel overflow-x-auto">
-      <table className="w-full text-left text-sm">
+      <table className="w-full min-w-[640px] text-left text-sm">
         <thead><tr className="border-b">{["Started", "Source", "Status", "Found", "Created", "Notes / error"].map((h) => <th key={h} className="p-2">{h}</th>)}</tr></thead>
         <tbody>
           {data.map((r) => (

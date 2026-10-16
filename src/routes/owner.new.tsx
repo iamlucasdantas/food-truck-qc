@@ -48,7 +48,7 @@ function NewTruck() {
   );
 
   return (
-    <main className="mx-auto max-w-xl space-y-4 p-4">
+    <main className="mx-auto w-full max-w-[1100px] min-w-0 space-y-4 p-4">
       <Link to="/owner" className="chip">← Owner dashboard</Link>
       <h1 className="text-3xl font-extrabold">Add your truck</h1>
       {done ? (
