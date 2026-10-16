@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { signTruckPhotos } from "@/lib/photos.functions";
 
 export const PHOTO_BUCKET = "truck-photos";
 export const MAX_PHOTOS = 12;
@@ -16,12 +16,6 @@ export function useTruckPhotos(truckId: string | undefined) {
     queryKey: ["truck-photos", truckId],
     enabled: !!truckId,
     staleTime: 30 * 60_000,
-    queryFn: async (): Promise<TruckPhoto[]> => {
-      const { data: rows } = await supabase.from("truck_photos").select("id, path, position, is_cover").eq("truck_id", truckId!).order("position");
-      if (!rows?.length) return [];
-      const { data: signed } = await supabase.storage.from(PHOTO_BUCKET).createSignedUrls(rows.map((r) => r.path), 60 * 60);
-      const byPath = new Map((signed ?? []).map((s) => [s.path, s.signedUrl]));
-      return rows.map((r) => ({ ...r, url: byPath.get(r.path) ?? "" })).filter((r) => r.url);
-    },
+    queryFn: async (): Promise<TruckPhoto[]> => signTruckPhotos({ data: { truckId: truckId! } }),
   });
 }
