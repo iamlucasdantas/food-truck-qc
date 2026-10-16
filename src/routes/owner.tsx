@@ -14,6 +14,7 @@ import { liveEnd, fmtCentral, LIVE_DEFAULT_MINUTES, type LiveChoice, fmtTime, QC
 import { PaymentPicker } from "@/components/PaymentPicker";
 import { ClaimSuggestions } from "@/components/ClaimSuggestions";
 import { checklist, readProgress, showSetupCard } from "@/data/onboarding";
+import { DashboardTour } from "@/components/onboarding/DashboardTour";
 import { useStops, dayBounds, useStopsRealtime } from "@/lib/queries";
 import { geocode, fileToLogo } from "@/lib/geocode";
 
@@ -71,6 +72,7 @@ function Owner() {
       )}
       {user && <ClaimSuggestions userId={user.id} />}
       {user && <SetupCard userId={user.id} />}
+      {user && mine.length > 0 && <DashboardTour />}
       {pending.map((t) => <p key={t.id} className="panel p-3 text-sm"><b>{t.name}</b> is waiting for review. You can already add its menu, photos and schedule in <Link to="/owner/onboarding" className="font-semibold underline">setup</Link>.</p>)}
       {user && data && mine.length === 0 && pending.length === 0 && (
         <div className="panel space-y-3 p-5 text-sm">
@@ -124,7 +126,10 @@ function SetupCard({ userId }: { userId: string }) {
   return (
     <section className="panel space-y-3 p-5">
       <div className="flex items-start justify-between gap-3">
-        <div><h2 className="text-xl font-bold">Finish setting up</h2><p className="text-sm text-muted-foreground">{items.filter((i) => i.done).length} of {items.length} done</p></div>
+        <div>
+          <h2 className="text-xl font-bold">Finish setting up</h2>
+          <p className="text-sm text-muted-foreground">{items.filter((i) => i.done).length} of {items.length} done{next ? ` — next up: ${next.title}. Trucks with a complete profile get more visits.` : ""}</p>
+        </div>
         <button onClick={() => void dismiss()} className="chip">Dismiss</button>
       </div>
       <ul className="space-y-1 text-sm">
