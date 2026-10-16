@@ -14,16 +14,290 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      claims: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          reviewed_at: string | null
+          status: Database["public"]["Enums"]["claim_status"]
+          truck_id: string
+          user_email: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message?: string
+          reviewed_at?: string | null
+          status?: Database["public"]["Enums"]["claim_status"]
+          truck_id: string
+          user_email?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          reviewed_at?: string | null
+          status?: Database["public"]["Enums"]["claim_status"]
+          truck_id?: string
+          user_email?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claims_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "trucks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      favorites: {
+        Row: {
+          created_at: string
+          truck_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          truck_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          truck_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorites_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "trucks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ingestion_runs: {
+        Row: {
+          error: string | null
+          finished_at: string | null
+          id: string
+          items_created: number
+          items_found: number
+          notes: string | null
+          source: string
+          started_at: string
+          status: string
+        }
+        Insert: {
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          items_created?: number
+          items_found?: number
+          notes?: string | null
+          source: string
+          started_at?: string
+          status?: string
+        }
+        Update: {
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          items_created?: number
+          items_found?: number
+          notes?: string | null
+          source?: string
+          started_at?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      stops: {
+        Row: {
+          address: string | null
+          cancelled: boolean
+          city: string
+          confidence: number
+          created_at: string
+          ends_at: string
+          id: string
+          is_live: boolean
+          lat: number
+          lng: number
+          repeat_group: string | null
+          source: Database["public"]["Enums"]["stop_source"]
+          starts_at: string
+          truck_id: string
+          venue_name: string
+        }
+        Insert: {
+          address?: string | null
+          cancelled?: boolean
+          city?: string
+          confidence?: number
+          created_at?: string
+          ends_at: string
+          id?: string
+          is_live?: boolean
+          lat: number
+          lng: number
+          repeat_group?: string | null
+          source?: Database["public"]["Enums"]["stop_source"]
+          starts_at: string
+          truck_id: string
+          venue_name?: string
+        }
+        Update: {
+          address?: string | null
+          cancelled?: boolean
+          city?: string
+          confidence?: number
+          created_at?: string
+          ends_at?: string
+          id?: string
+          is_live?: boolean
+          lat?: number
+          lng?: number
+          repeat_group?: string | null
+          source?: Database["public"]["Enums"]["stop_source"]
+          starts_at?: string
+          truck_id?: string
+          venue_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stops_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "trucks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trucks: {
+        Row: {
+          accepts_card: boolean
+          base_address: string | null
+          base_lat: number | null
+          base_lng: number | null
+          category: string
+          claimed_by: string | null
+          created_at: string
+          created_by: string | null
+          description: string
+          emoji: string
+          facebook: string | null
+          id: string
+          instagram: string | null
+          logo_url: string | null
+          menu: Json
+          merged_into: string | null
+          name: string
+          phone: string | null
+          status: Database["public"]["Enums"]["truck_status"]
+          website: string | null
+        }
+        Insert: {
+          accepts_card?: boolean
+          base_address?: string | null
+          base_lat?: number | null
+          base_lng?: number | null
+          category?: string
+          claimed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          emoji?: string
+          facebook?: string | null
+          id: string
+          instagram?: string | null
+          logo_url?: string | null
+          menu?: Json
+          merged_into?: string | null
+          name: string
+          phone?: string | null
+          status?: Database["public"]["Enums"]["truck_status"]
+          website?: string | null
+        }
+        Update: {
+          accepts_card?: boolean
+          base_address?: string | null
+          base_lat?: number | null
+          base_lng?: number | null
+          category?: string
+          claimed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          emoji?: string
+          facebook?: string | null
+          id?: string
+          instagram?: string | null
+          logo_url?: string | null
+          menu?: Json
+          merged_into?: string | null
+          name?: string
+          phone?: string | null
+          status?: Database["public"]["Enums"]["truck_status"]
+          website?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      merge_trucks: {
+        Args: { _dup: string; _keep: string }
+        Returns: undefined
+      }
+      owns_truck: { Args: { _truck_id: string }; Returns: boolean }
+      review_claim: {
+        Args: { _approve: boolean; _claim_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "owner" | "consumer"
+      claim_status: "pending" | "approved" | "rejected"
+      stop_source:
+        | "owner"
+        | "apify_event"
+        | "apify_post"
+        | "apify_maps"
+        | "estimated"
+      truck_status: "active" | "pending" | "archived"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +424,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "owner", "consumer"],
+      claim_status: ["pending", "approved", "rejected"],
+      stop_source: [
+        "owner",
+        "apify_event",
+        "apify_post",
+        "apify_maps",
+        "estimated",
+      ],
+      truck_status: ["active", "pending", "archived"],
+    },
   },
 } as const
