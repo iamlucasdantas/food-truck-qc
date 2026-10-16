@@ -1,5 +1,11 @@
 # Roadmap
 
+## Part K — Premium profiles (not published)
+- [ ] Shared /profile hub, avatar crop, editable settings and account security
+- [ ] Foodie lists, follows, visits, preferences and progress
+- [ ] Owner home, real summaries, business preview and existing tool links
+- [ ] Persist under RLS, calculation tests and signed-in screen verification
+
 ## Step 1 (current)
 - [x] Lovable Cloud, roles table + has_role, first user = admin
 - [x] trucks / stops / favorites / claims tables with RLS, sample trucks in DB
