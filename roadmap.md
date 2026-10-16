@@ -7,7 +7,7 @@
 - [x] Favorites: heart, /favorites with next stop + distance, favorites-only toggle
 
 ## Later (waiting for go-ahead)
-- Owner area /owner (I'm here, Closed today, schedule, calendar, profile + logo) and /owner/new
-- Claim flow on truck page + admin approval
+- [x] Step 2: owner area, /owner/new, claim button, owner stops override imports, live updates
+- Admin approval of claims (step 3)
 - Admin /admin: claims, trucks edit/archive/merge, CSV import, ingestion logs
 - PWA manifest, /privacy, /terms

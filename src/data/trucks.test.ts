@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { milesBetween, pickStop, QC_CENTER, type Stop } from "./trucks";
+import { milesBetween, pickStop, closingTime, slugify, QC_CENTER, type Stop } from "./trucks";
 
 const stop = (start: Date, end: Date, extra: Partial<Stop> = {}): Stop => ({
   id: "s", truck_id: "t", venue_name: "Park", address: null, city: "Moline", lat: 0, lng: 0,
@@ -26,4 +26,12 @@ describe("truck rules", () => {
     const s = stop(new Date(2026, 9, 14, 17), new Date(2026, 9, 14, 20));
     expect(pickStop([s], now, "now", now).status).toBe("today");
   });
+  it("closing chips: +2h, and 9pm capped at 6 hours", () => {
+    const noon = new Date(2026, 9, 14, 12, 0);
+    expect(closingTime("+2h", noon).getHours()).toBe(14);
+    expect(closingTime("+4h", noon).getHours()).toBe(16);
+    expect(closingTime("9pm", noon).getHours()).toBe(18);
+    expect(closingTime("9pm", new Date(2026, 9, 14, 17, 0)).getHours()).toBe(21);
+  });
+  it("slugifies truck names", () => expect(slugify("Cluckin' Good!")).toBe("cluckin-good"));
 });

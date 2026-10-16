@@ -14,6 +14,7 @@ export function AccountButton() {
         <DropdownMenuLabel className="truncate">{user.email}{isAdmin && " · admin"}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild><Link to="/favorites">♥ My favorites</Link></DropdownMenuItem>
+        <DropdownMenuItem asChild><Link to="/owner">🚚 Owner dashboard</Link></DropdownMenuItem>
         <DropdownMenuItem onClick={() => void signOut()}>Sign out</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

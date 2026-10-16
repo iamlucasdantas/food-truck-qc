@@ -6,7 +6,7 @@ import {
   type Window, type Status, type Stop,
 } from "@/data/trucks";
 import { useFavorites } from "@/hooks/use-favorites";
-import { useTrucks, useStops, groupBy, dayBounds } from "@/lib/queries";
+import { useTrucks, useStops, groupBy, dayBounds, useStopsRealtime } from "@/lib/queries";
 import { AccountButton } from "@/components/AccountButton";
 
 const TruckMap = lazy(() => import("@/components/TruckMap"));
@@ -63,6 +63,7 @@ function Index() {
   const [from, to] = date ? dayBounds(date) : [null, null];
   const { data: trucks = [] } = useTrucks();
   const { data: stops = [] } = useStops(from, to);
+  useStopsRealtime();
   const byTruck = useMemo(() => groupBy(stops, (s) => s.truck_id), [stops]);
 
   const results = useMemo(() => {
