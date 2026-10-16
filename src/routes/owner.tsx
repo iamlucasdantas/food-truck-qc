@@ -1,4 +1,5 @@
 import { Logo } from "@/components/Logo";
+import { OwnerSchedule } from "@/components/OwnerSchedule";
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { ClientOnly } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -6,7 +7,7 @@ import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
-import { closingTime, fmtRange, fmtTime, QC_CENTER, type Stop, type Truck } from "@/data/trucks";
+import { closingTime, fmtTime, QC_CENTER, type Truck } from "@/data/trucks";
 import { useStops, dayBounds, useStopsRealtime } from "@/lib/queries";
 import { geocode, fileToLogo } from "@/lib/geocode";
 
@@ -80,8 +81,7 @@ function TruckTools({ truck }: { truck: Truck }) {
   return (
     <>
       <LiveCard truck={truck} />
-      <ScheduleForm truck={truck} />
-      <WeekList truck={truck} />
+      <OwnerSchedule truck={truck} />
       <ProfileForm truck={truck} />
     </>
   );
@@ -171,96 +171,6 @@ function LiveCard({ truck }: { truck: Truck }) {
       )}
       <button onClick={closedToday} className="chip">🚫 Closed today</button>
     </section>
-  );
-}
-
-function ScheduleForm({ truck }: { truck: Truck }) {
-  const [f, setF] = useState({ date: "", start: "11:00", end: "14:00", venue: "", address: "", weeks: 0 });
-  const [busy, setBusy] = useState(false);
-  useEffect(() => setF((x) => ({ ...x, date: isoLocal(new Date()).slice(0, 10) })), []);
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    const g = await geocode(f.address);
-    if (!g) { setBusy(false); return void toast.error("Address not found"); }
-    const group = f.weeks > 0 ? crypto.randomUUID() : null;
-    const rows = Array.from({ length: f.weeks + 1 }, (_, i) => {
-      const s = new Date(`${f.date}T${f.start}`); s.setDate(s.getDate() + 7 * i);
-      const en = new Date(`${f.date}T${f.end}`); en.setDate(en.getDate() + 7 * i);
-      return {
-        truck_id: truck.id, venue_name: f.venue || f.address, address: f.address, city: g.city, lat: g.lat, lng: g.lng,
-        starts_at: s.toISOString(), ends_at: en.toISOString(), source: "owner" as const, confidence: 1, repeat_group: group,
-      };
-    });
-    const { error } = await supabase.from("stops").insert(rows);
-    setBusy(false);
-    if (ok(error, `Added ${rows.length} stop${rows.length > 1 ? "s" : ""}`)) setF({ ...f, venue: "", address: "" });
-  }
-
-  const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-    setF({ ...f, [k]: k === "weeks" ? Number(e.target.value) : e.target.value });
-
-  return (
-    <form onSubmit={submit} className="panel grid grid-cols-2 gap-2 p-5">
-      <h2 className="col-span-2 text-xl font-bold">Schedule a stop</h2>
-      <input className="field col-span-2" type="date" required value={f.date} onChange={set("date")} />
-      <input className="field" type="time" required value={f.start} onChange={set("start")} />
-      <input className="field" type="time" required value={f.end} onChange={set("end")} />
-      <input className="field col-span-2" placeholder="Venue name (optional)" value={f.venue} onChange={set("venue")} />
-      <input className="field col-span-2" placeholder="Address" required value={f.address} onChange={set("address")} />
-      <select className="field" value={f.weeks} onChange={set("weeks")}>
-        <option value={0}>Just once</option>
-        {[3, 7, 11].map((w) => <option key={w} value={w}>Weekly for {w + 1} weeks</option>)}
-      </select>
-      <button disabled={busy} className="chip justify-center bg-primary text-primary-foreground">{busy ? "Saving…" : "Add stop"}</button>
-    </form>
-  );
-}
-
-function WeekList({ truck }: { truck: Truck }) {
-  const [range, setRange] = useState<[Date, Date] | null>(null);
-  useEffect(() => { const [a] = dayBounds(new Date()); const b = new Date(a); b.setDate(a.getDate() + 7); setRange([a, b]); }, []);
-  const { data: stops = [] } = useStops(range?.[0] ?? null, range?.[1] ?? null, [truck.id]);
-  const [edit, setEdit] = useState<string | null>(null);
-
-  return (
-    <section className="panel p-5">
-      <h2 className="mb-2 text-xl font-bold">Next 7 days</h2>
-      {stops.length === 0 && <p className="text-sm text-muted-foreground">Nothing scheduled.</p>}
-      <ul className="divide-y-2 divide-muted">
-        {stops.map((s) => edit === s.id ? <EditRow key={s.id} s={s} done={() => setEdit(null)} /> : (
-          <li key={s.id} className="flex items-center gap-2 py-2 text-sm">
-            <span className="w-24 font-semibold">{new Date(s.starts_at).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</span>
-            <span className="min-w-0 flex-1 truncate">{s.venue_name} · {fmtRange(s)}{s.source !== "owner" && <span className="text-muted-foreground"> · imported</span>}</span>
-            <button onClick={() => setEdit(s.id)} className="chip">Edit</button>
-            <button onClick={() => void supabase.from("stops").update({ cancelled: true }).eq("id", s.id).then(({ error }) => ok(error, "Stop cancelled"))} className="chip">Cancel</button>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-function EditRow({ s, done }: { s: Stop; done: () => void }) {
-  const t = (iso: string) => isoLocal(new Date(iso)).slice(11, 16);
-  const day = isoLocal(new Date(s.starts_at)).slice(0, 10);
-  const [v, setV] = useState({ venue: s.venue_name, start: t(s.starts_at), end: t(s.ends_at) });
-  async function save() {
-    const { error } = await supabase.from("stops").update({
-      venue_name: v.venue, source: "owner", confidence: 1,
-      starts_at: new Date(`${day}T${v.start}`).toISOString(), ends_at: new Date(`${day}T${v.end}`).toISOString(),
-    }).eq("id", s.id);
-    if (ok(error, "Stop updated")) done();
-  }
-  return (
-    <li className="grid grid-cols-2 gap-2 py-2">
-      <input className="field col-span-2" value={v.venue} onChange={(e) => setV({ ...v, venue: e.target.value })} />
-      <input className="field" type="time" value={v.start} onChange={(e) => setV({ ...v, start: e.target.value })} />
-      <input className="field" type="time" value={v.end} onChange={(e) => setV({ ...v, end: e.target.value })} />
-      <button onClick={save} className="chip justify-center bg-primary text-primary-foreground">Save</button>
-      <button onClick={done} className="chip justify-center">Back</button>
-    </li>
   );
 }
 

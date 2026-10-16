@@ -24,6 +24,7 @@ import { Route as EmbedRegisterTruckRouteImport } from './routes/embed.register-
 import { Route as OwnerNewRouteImport } from './routes/owner.new'
 import { Route as TruckIdRouteImport } from './routes/truck.$id'
 import { Route as ApiPublicApifyWebhookRouteImport } from './routes/api/public/apify-webhook'
+import { Route as ApiPublicCalendarIdRouteImport } from './routes/api/public/calendar.$id'
 import { Route as ApiPublicJobsFacebookDailyRouteImport } from './routes/api/public/jobs/facebook-daily'
 
 const IndexRoute = IndexRouteImport.update({
@@ -100,6 +101,11 @@ const ApiPublicApifyWebhookRoute = ApiPublicApifyWebhookRouteImport.update({
   path: '/api/public/apify-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicCalendarIdRoute = ApiPublicCalendarIdRouteImport.update({
+  id: '/api/public/calendar/$id',
+  path: '/api/public/calendar/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicJobsFacebookDailyRoute =
   ApiPublicJobsFacebookDailyRouteImport.update({
     id: '/api/public/jobs/facebook-daily',
@@ -122,6 +128,7 @@ export interface FileRoutesByFullPath {
   '/owner/new': typeof OwnerNewRoute
   '/truck/$id': typeof TruckIdRoute
   '/api/public/apify-webhook': typeof ApiPublicApifyWebhookRoute
+  '/api/public/calendar/$id': typeof ApiPublicCalendarIdRoute
   '/api/public/jobs/facebook-daily': typeof ApiPublicJobsFacebookDailyRoute
 }
 export interface FileRoutesByTo {
@@ -139,6 +146,7 @@ export interface FileRoutesByTo {
   '/owner/new': typeof OwnerNewRoute
   '/truck/$id': typeof TruckIdRoute
   '/api/public/apify-webhook': typeof ApiPublicApifyWebhookRoute
+  '/api/public/calendar/$id': typeof ApiPublicCalendarIdRoute
   '/api/public/jobs/facebook-daily': typeof ApiPublicJobsFacebookDailyRoute
 }
 export interface FileRoutesById {
@@ -158,6 +166,7 @@ export interface FileRoutesById {
   '/owner/new': typeof OwnerNewRoute
   '/truck/$id': typeof TruckIdRoute
   '/api/public/apify-webhook': typeof ApiPublicApifyWebhookRoute
+  '/api/public/calendar/$id': typeof ApiPublicCalendarIdRoute
   '/api/public/jobs/facebook-daily': typeof ApiPublicJobsFacebookDailyRoute
 }
 export interface FileRouteTypes {
@@ -177,6 +186,7 @@ export interface FileRouteTypes {
     | '/owner/new'
     | '/truck/$id'
     | '/api/public/apify-webhook'
+    | '/api/public/calendar/$id'
     | '/api/public/jobs/facebook-daily'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -194,6 +204,7 @@ export interface FileRouteTypes {
     | '/owner/new'
     | '/truck/$id'
     | '/api/public/apify-webhook'
+    | '/api/public/calendar/$id'
     | '/api/public/jobs/facebook-daily'
   id:
     | '__root__'
@@ -212,6 +223,7 @@ export interface FileRouteTypes {
     | '/owner/new'
     | '/truck/$id'
     | '/api/public/apify-webhook'
+    | '/api/public/calendar/$id'
     | '/api/public/jobs/facebook-daily'
   fileRoutesById: FileRoutesById
 }
@@ -229,6 +241,7 @@ export interface RootRouteChildren {
   EmbedRegisterTruckRoute: typeof EmbedRegisterTruckRoute
   TruckIdRoute: typeof TruckIdRoute
   ApiPublicApifyWebhookRoute: typeof ApiPublicApifyWebhookRoute
+  ApiPublicCalendarIdRoute: typeof ApiPublicCalendarIdRoute
   ApiPublicJobsFacebookDailyRoute: typeof ApiPublicJobsFacebookDailyRoute
 }
 
@@ -339,6 +352,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicApifyWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/calendar/$id': {
+      id: '/api/public/calendar/$id'
+      path: '/api/public/calendar/$id'
+      fullPath: '/api/public/calendar/$id'
+      preLoaderRoute: typeof ApiPublicCalendarIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/jobs/facebook-daily': {
       id: '/api/public/jobs/facebook-daily'
       path: '/api/public/jobs/facebook-daily'
@@ -384,6 +404,7 @@ const rootRouteChildren: RootRouteChildren = {
   EmbedRegisterTruckRoute: EmbedRegisterTruckRoute,
   TruckIdRoute: TruckIdRoute,
   ApiPublicApifyWebhookRoute: ApiPublicApifyWebhookRoute,
+  ApiPublicCalendarIdRoute: ApiPublicCalendarIdRoute,
   ApiPublicJobsFacebookDailyRoute: ApiPublicJobsFacebookDailyRoute,
 }
 export const routeTree = rootRouteImport

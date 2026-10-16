@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      calendar_feeds: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          kind: string
+          truck_id: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          kind?: string
+          truck_id: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          kind?: string
+          truck_id?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_feeds_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "trucks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       claims: {
         Row: {
           created_at: string
@@ -253,6 +288,77 @@ export type Database = {
           },
         ]
       }
+      stop_series: {
+        Row: {
+          address: string | null
+          city: string
+          created_at: string
+          end_date: string | null
+          end_time: string
+          external_uid: string | null
+          freq: string
+          id: string
+          lat: number
+          lng: number
+          month_nth: number | null
+          note: string | null
+          skip_dates: string[]
+          start_date: string
+          start_time: string
+          truck_id: string
+          venue_name: string
+          weekdays: number[]
+        }
+        Insert: {
+          address?: string | null
+          city?: string
+          created_at?: string
+          end_date?: string | null
+          end_time: string
+          external_uid?: string | null
+          freq: string
+          id?: string
+          lat: number
+          lng: number
+          month_nth?: number | null
+          note?: string | null
+          skip_dates?: string[]
+          start_date: string
+          start_time: string
+          truck_id: string
+          venue_name?: string
+          weekdays?: number[]
+        }
+        Update: {
+          address?: string | null
+          city?: string
+          created_at?: string
+          end_date?: string | null
+          end_time?: string
+          external_uid?: string | null
+          freq?: string
+          id?: string
+          lat?: number
+          lng?: number
+          month_nth?: number | null
+          note?: string | null
+          skip_dates?: string[]
+          start_date?: string
+          start_time?: string
+          truck_id?: string
+          venue_name?: string
+          weekdays?: number[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stop_series_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "trucks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stops: {
         Row: {
           address: string | null
@@ -265,7 +371,10 @@ export type Database = {
           is_live: boolean
           lat: number
           lng: number
+          note: string | null
+          occurrence_date: string | null
           repeat_group: string | null
+          series_id: string | null
           source: Database["public"]["Enums"]["stop_source"]
           source_url: string | null
           starts_at: string
@@ -283,7 +392,10 @@ export type Database = {
           is_live?: boolean
           lat: number
           lng: number
+          note?: string | null
+          occurrence_date?: string | null
           repeat_group?: string | null
+          series_id?: string | null
           source?: Database["public"]["Enums"]["stop_source"]
           source_url?: string | null
           starts_at: string
@@ -301,7 +413,10 @@ export type Database = {
           is_live?: boolean
           lat?: number
           lng?: number
+          note?: string | null
+          occurrence_date?: string | null
           repeat_group?: string | null
+          series_id?: string | null
           source?: Database["public"]["Enums"]["stop_source"]
           source_url?: string | null
           starts_at?: string
@@ -309,6 +424,13 @@ export type Database = {
           venue_name?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "stops_series_id_fkey"
+            columns: ["series_id"]
+            isOneToOne: false
+            referencedRelation: "stop_series"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "stops_truck_id_fkey"
             columns: ["truck_id"]

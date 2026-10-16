@@ -36,9 +36,10 @@ function TruckPage() {
     queryFn: async () => (await supabase.from("trucks").select("*").eq("id", id).maybeSingle()).data,
   });
   const [from, to] = useMemo(() => {
-    const [a] = dayBounds(new Date()); const b = new Date(a); b.setDate(a.getDate() + 7); return [a, b];
+    const [a] = dayBounds(new Date()); const b = new Date(a); b.setDate(a.getDate() + 30); return [a, b];
   }, []);
-  const { data: stops = [] } = useStops(from, to, [id]);
+  const { data: allStops = [] } = useStops(from, to, [id]);
+  const stops = allStops.filter((s) => s.source !== "apify_maps" || allStops.every((x) => x.source === "apify_maps")).slice(0, 20);
   useStopsRealtime();
   const [mapFailed, setMapFailed] = useState(false);
 
@@ -83,7 +84,7 @@ function TruckPage() {
       })()}
 
       <section className="panel p-5">
-        <h2 className="mb-3 text-xl font-bold">Next 7 days</h2>
+        <h2 className="mb-3 text-xl font-bold">Upcoming stops</h2>
         {stops.length === 0 && <p className="text-sm text-muted-foreground">No stops scheduled.</p>}
         <ul className="divide-y-2 divide-muted">
           {stops.map((s) => (
