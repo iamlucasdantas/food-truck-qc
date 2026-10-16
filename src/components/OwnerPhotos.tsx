@@ -5,13 +5,13 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { PhotoDrop } from "@/components/PhotoDrop";
 import { checkPhoto, prepareImage } from "@/lib/images";
-import { MAX_PHOTOS, PHOTO_BUCKET, orderPhotos, useTruckPhotos, type TruckPhoto } from "@/lib/photos";
+import { MAX_PHOTOS, PHOTO_BUCKET, useTruckPhotos, type TruckPhoto } from "@/lib/photos";
 
 export function OwnerPhotos({ truckId }: { truckId: string }) {
   const qc = useQueryClient();
   const { data: photos = [] } = useTruckPhotos(truckId);
   const [busy, setBusy] = useState("");
-  const list = orderPhotos(photos);
+  const list = [...photos].sort((a, b) => a.position - b.position);
   const refresh = () => qc.invalidateQueries({ queryKey: ["truck-photos", truckId] });
 
   async function upload(files: File[]) {
