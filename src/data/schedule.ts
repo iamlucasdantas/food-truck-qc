@@ -20,8 +20,8 @@ export function occursOn(s: Pick<Series, "freq" | "weekdays" | "month_nth" | "st
   if (s.freq === "weekly") return true;
   if (s.freq === "biweekly") {
     const start = parseYmd(s.start_date); start.setDate(start.getDate() - start.getDay());
-    const weeks = Math.round((parseYmd(key).getTime() - start.getTime()) / (7 * 864e5) - 0.5 + 0.5);
-    return Math.floor(weeks) % 2 === 0;
+    const cur = parseYmd(key); cur.setDate(cur.getDate() - wd);
+    return Math.round((cur.getTime() - start.getTime()) / (7 * 864e5)) % 2 === 0;
   }
   const nth = s.month_nth ?? 1;
   if (nth === -1) { const n = new Date(day); n.setDate(day.getDate() + 7); return n.getMonth() !== day.getMonth(); }
