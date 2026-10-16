@@ -17,6 +17,8 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as OwnerNewRouteImport } from './routes/owner.new'
 import { Route as TruckIdRouteImport } from './routes/truck.$id'
+import { Route as ApiPublicApifyWebhookRouteImport } from './routes/api/public/apify-webhook'
+import { Route as ApiPublicJobsFacebookDailyRouteImport } from './routes/api/public/jobs/facebook-daily'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -58,6 +60,17 @@ const TruckIdRoute = TruckIdRouteImport.update({
   path: '/truck/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicApifyWebhookRoute = ApiPublicApifyWebhookRouteImport.update({
+  id: '/api/public/apify-webhook',
+  path: '/api/public/apify-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicJobsFacebookDailyRoute =
+  ApiPublicJobsFacebookDailyRouteImport.update({
+    id: '/api/public/jobs/facebook-daily',
+    path: '/api/public/jobs/facebook-daily',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -68,6 +81,8 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/owner/new': typeof OwnerNewRoute
   '/truck/$id': typeof TruckIdRoute
+  '/api/public/apify-webhook': typeof ApiPublicApifyWebhookRoute
+  '/api/public/jobs/facebook-daily': typeof ApiPublicJobsFacebookDailyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -78,6 +93,8 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/owner/new': typeof OwnerNewRoute
   '/truck/$id': typeof TruckIdRoute
+  '/api/public/apify-webhook': typeof ApiPublicApifyWebhookRoute
+  '/api/public/jobs/facebook-daily': typeof ApiPublicJobsFacebookDailyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -89,6 +106,8 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/owner/new': typeof OwnerNewRoute
   '/truck/$id': typeof TruckIdRoute
+  '/api/public/apify-webhook': typeof ApiPublicApifyWebhookRoute
+  '/api/public/jobs/facebook-daily': typeof ApiPublicJobsFacebookDailyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -101,6 +120,8 @@ export interface FileRouteTypes {
     | '/terms'
     | '/owner/new'
     | '/truck/$id'
+    | '/api/public/apify-webhook'
+    | '/api/public/jobs/facebook-daily'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -111,6 +132,8 @@ export interface FileRouteTypes {
     | '/terms'
     | '/owner/new'
     | '/truck/$id'
+    | '/api/public/apify-webhook'
+    | '/api/public/jobs/facebook-daily'
   id:
     | '__root__'
     | '/'
@@ -121,6 +144,8 @@ export interface FileRouteTypes {
     | '/terms'
     | '/owner/new'
     | '/truck/$id'
+    | '/api/public/apify-webhook'
+    | '/api/public/jobs/facebook-daily'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -131,6 +156,8 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   TermsRoute: typeof TermsRoute
   TruckIdRoute: typeof TruckIdRoute
+  ApiPublicApifyWebhookRoute: typeof ApiPublicApifyWebhookRoute
+  ApiPublicJobsFacebookDailyRoute: typeof ApiPublicJobsFacebookDailyRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -191,6 +218,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TruckIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/apify-webhook': {
+      id: '/api/public/apify-webhook'
+      path: '/api/public/apify-webhook'
+      fullPath: '/api/public/apify-webhook'
+      preLoaderRoute: typeof ApiPublicApifyWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/jobs/facebook-daily': {
+      id: '/api/public/jobs/facebook-daily'
+      path: '/api/public/jobs/facebook-daily'
+      fullPath: '/api/public/jobs/facebook-daily'
+      preLoaderRoute: typeof ApiPublicJobsFacebookDailyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -212,6 +253,8 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   TermsRoute: TermsRoute,
   TruckIdRoute: TruckIdRoute,
+  ApiPublicApifyWebhookRoute: ApiPublicApifyWebhookRoute,
+  ApiPublicJobsFacebookDailyRoute: ApiPublicJobsFacebookDailyRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
