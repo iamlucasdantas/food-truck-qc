@@ -12,7 +12,7 @@ type Place = {
 /** Admin-only: scrape one city from Google Maps via Apify and upsert trucks + 30 days of gray base stops. */
 export const seedCity = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { city: string; runId?: string }) => {
+  .inputValidator((d: { city: string; runId?: string | undefined }) => {
     if (!SEED_CITIES.includes(d.city)) throw new Error("Unknown city");
     return d;
   })
