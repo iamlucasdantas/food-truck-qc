@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      businesses: {
+        Row: {
+          created_at: string
+          description: string
+          facebook: string | null
+          instagram: string | null
+          logo_url: string | null
+          name: string
+          owner_id: string
+          payment_methods: string[]
+          payment_other: string
+          reddit: string | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          facebook?: string | null
+          instagram?: string | null
+          logo_url?: string | null
+          name?: string
+          owner_id: string
+          payment_methods?: string[]
+          payment_other?: string
+          reddit?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          facebook?: string | null
+          instagram?: string | null
+          logo_url?: string | null
+          name?: string
+          owner_id?: string
+          payment_methods?: string[]
+          payment_other?: string
+          reddit?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       calendar_feeds: {
         Row: {
           created_at: string
@@ -525,6 +570,9 @@ export type Database = {
           menu: Json
           merged_into: string | null
           name: string
+          payment_methods: string[]
+          payment_other: string
+          payments_same_as_business: boolean
           phone: string | null
           reddit: string | null
           source: string
@@ -551,6 +599,9 @@ export type Database = {
           menu?: Json
           merged_into?: string | null
           name: string
+          payment_methods?: string[]
+          payment_other?: string
+          payments_same_as_business?: boolean
           phone?: string | null
           reddit?: string | null
           source?: string
@@ -577,6 +628,9 @@ export type Database = {
           menu?: Json
           merged_into?: string | null
           name?: string
+          payment_methods?: string[]
+          payment_other?: string
+          payments_same_as_business?: boolean
           phone?: string | null
           reddit?: string | null
           source?: string
