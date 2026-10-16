@@ -124,7 +124,7 @@ export const notifyCrmTruckDecision = createServerFn({ method: "POST" })
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { data: u } = await supabaseAdmin.auth.admin.getUserById(t.created_by);
       email = u?.user?.email ?? "";
-      name = name || (u?.user?.user_metadata?.full_name as string) || (u?.user?.user_metadata?.name as string) || "";
+      name = name || (u?.user?.user_metadata?.["full_name"] as string) || (u?.user?.user_metadata?.["name"] as string) || "";
     }
     const [first = "", ...rest] = name.trim().split(" ");
     const truckUrl = `https://app.foodtruckqc.com/truck/${t.id}`;
