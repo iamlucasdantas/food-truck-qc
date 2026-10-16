@@ -32,3 +32,6 @@
 - Claim suggestions are computed server-side (src/lib/claims.functions.ts) with the pure matcher in src/data/claims.ts; only public-safe fields leave the server and pending trucks are only suggested on a confirmed-email match.
 - Search/filter rules (text, dish, cuisine, city, type, status, open) live in src/data/filters.ts and are shared by the map and Admin; filter state lives in URL params so views can be shared.
 - "I'm here" end times come from liveEnd() in src/data/trucks.ts (15 min–12 h, Central time); the DB trigger caps live stops at 12 h.
+- Post → stops: deterministic helpers in src/data/posts.ts (time ranges, several venues per post, post date, venue matching; unit-tested) feed hints to the AI and fill stops it misses; ingestPost in facebook.server.ts is the single path used by the scraper and the Admin paste/screenshot tool.
+- Venue addresses resolve via saved venues → confirmed owner stops → Google Places (Maps connector, server-side, Quad Cities bias) and are cached in venues; low-confidence matches become suggested_stops with needs_address_check, even for own posts, so nothing unverified goes public.
+- Optional logged-in Facebook scraping reads the FACEBOOK_COOKIES_JSON secret (entered by the admin in Settings) and passes it as the Apify `cookies` input; per-source run results are stored on social_sources (last_status/posts/stops/reason).
