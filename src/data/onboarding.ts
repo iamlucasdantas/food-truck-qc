@@ -150,9 +150,10 @@ export function parseSocialLink(raw: string): SocialPrefill | null {
   return null;
 }
 
-/** Guess a display name from a social handle: "taco.one_qc" → "Taco One Qc". */
+/** Guess a display name from a social handle: "taco.one_qc" → "Taco One Qc", "SkinnysFiyaTruck" → "Skinnys Fiya Truck". */
 export function nameFromHandle(handle: string): string {
   return handle
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
     .replace(/[._-]+/g, " ")
     .trim()
     .replace(/\b\w/g, (ch) => ch.toUpperCase());
