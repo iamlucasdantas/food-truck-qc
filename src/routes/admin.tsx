@@ -352,7 +352,7 @@ function FacebookTab() {
     if (!/facebook\.com\//i.test(url)) return toast.error("Paste a facebook.com URL");
     const { error } = await supabase.from("social_sources").insert({ kind, url: url.trim(), name: url.trim().split("/").filter(Boolean).pop() ?? "" });
     if (error) return toast.error(error.message);
-    setUrl(""); inv();
+    setUrl(""); inv(); return undefined;
   };
   const loop = async (runId: string) => {
     for (let i = 0; i < 60; i++) {
@@ -361,6 +361,7 @@ function FacebookTab() {
       if (out.done) return toast.success("Facebook update finished");
       await new Promise((r) => setTimeout(r, out.remaining > 0 ? 1000 : 10000));
     }
+    return undefined;
   };
   const run = async (resume: boolean) => {
     setBusy(true);

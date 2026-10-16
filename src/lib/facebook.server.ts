@@ -174,10 +174,10 @@ export async function processFacebookRun(db: DB, runId: string, budgetMs = 20_00
       // Fill missing contact info on the page owner's truck (never on claimed trucks).
       if (owner && !owner.claimed_by) {
         const p = posts[0]!;
-        const fill: Record<string, string> = {};
-        if (!owner.facebook) fill["facebook"] = src.url;
-        if (!owner.phone && p.phone) fill["phone"] = p.phone;
-        if (!owner.instagram && p.instagram) fill["instagram"] = p.instagram;
+        const fill: { facebook?: string; phone?: string; instagram?: string } = {};
+        if (!owner.facebook) fill.facebook = src.url;
+        if (!owner.phone && p.phone) fill.phone = p.phone;
+        if (!owner.instagram && p.instagram) fill.instagram = p.instagram;
         if (Object.keys(fill).length) { await db.from("trucks").update(fill).eq("id", owner.id); Object.assign(owner, fill); }
       }
       let left = 0;
