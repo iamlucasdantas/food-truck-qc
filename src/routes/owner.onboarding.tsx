@@ -11,6 +11,7 @@ import { PaymentPicker } from "@/components/PaymentPicker";
 import { OwnerMenu } from "@/components/OwnerMenu";
 import { OwnerPhotos } from "@/components/OwnerPhotos";
 import { OwnerSchedule } from "@/components/OwnerSchedule";
+import { ClaimSuggestions } from "@/components/ClaimSuggestions";
 import { slugify, type Truck } from "@/data/trucks";
 import { contactLine, sameName } from "@/data/business";
 import { ONBOARDING_STEPS, FINISH_STEP, checklist, completeStep, defaultTruckName, readProgress, resumeStep, skipStep, type Progress, type StepKey } from "@/data/onboarding";
@@ -115,6 +116,7 @@ function Wizard({ userId, email }: { userId: string; email: string }) {
         if (error) return void toast.error(error.message);
         setBiz(b); void qc.invalidateQueries({ queryKey: ["business"] }); finish("business");
       }} />}
+      {step === 1 && <ClaimSuggestions userId={userId} />}
       {step === 1 && (p.truckId && truck
         ? <Submitted truck={truck} onBack={() => go(0)} onNext={() => finish("truck")} />
         : <TruckStep businessName={biz.name} existing={trucks} onBack={() => go(0)} onDone={async (f) => {

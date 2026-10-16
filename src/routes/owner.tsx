@@ -12,6 +12,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/use-auth";
 import { closingTime, fmtTime, QC_CENTER, effectivePayments, type Business, type Truck } from "@/data/trucks";
 import { PaymentPicker } from "@/components/PaymentPicker";
+import { ClaimSuggestions } from "@/components/ClaimSuggestions";
 import { checklist, readProgress, showSetupCard } from "@/data/onboarding";
 import { useStops, dayBounds, useStopsRealtime } from "@/lib/queries";
 import { geocode, fileToLogo } from "@/lib/geocode";
@@ -47,7 +48,7 @@ function Owner() {
   const { data } = useQuery({
     queryKey: ["me", "owner-trucks", user?.id],
     enabled: !!user,
-    queryFn: async () => (await supabase.from("trucks").select("*").or(`claimed_by.eq.${user!.id},created_by.eq.${user!.id}`).order("name")).data ?? [],
+    queryFn: async () => (await supabase.from("trucks").select("*").or(`claimed_by.eq.${user!.id},created_by.eq.${user!.id}`).is("deleted_at", null).order("name")).data ?? [],
   });
   const mine = (data ?? []).filter((t) => t.claimed_by === user?.id);
   const pending = (data ?? []).filter((t) => t.claimed_by !== user?.id && t.status === "pending");
@@ -68,6 +69,7 @@ function Owner() {
           <button onClick={() => openAuth("Sign in to manage your truck.")} className="chip bg-primary text-primary-foreground">Sign in</button>
         </div>
       )}
+      {user && <ClaimSuggestions userId={user.id} />}
       {user && <SetupCard userId={user.id} />}
       {pending.map((t) => <p key={t.id} className="panel p-3 text-sm"><b>{t.name}</b> is waiting for review. You can already add its menu, photos and schedule in <Link to="/owner/onboarding" className="font-semibold underline">setup</Link>.</p>)}
       {user && data && mine.length === 0 && pending.length === 0 && (
