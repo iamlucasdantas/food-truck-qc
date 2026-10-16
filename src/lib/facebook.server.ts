@@ -1,16 +1,23 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { centralToUtc, chicagoDate, keepExtraction, matchTruckByName, slugify } from "@/data/trucks";
+import { authorIsTruck, centralToUtc, chicagoDate, keepExtraction, matchTruckByName, slugify } from "@/data/trucks";
 
 type DB = SupabaseClient<Database>;
-type Kind = "page" | "group";
+type Kind = "page" | "group" | "reddit" | "instagram";
 type Source = Database["public"]["Tables"]["social_sources"]["Row"];
+type TruckRow = Database["public"]["Tables"]["trucks"]["Row"];
 type Meta = { runs?: Partial<Record<Kind, string>>; total?: number; aiPaused?: string };
 
 /** Webhooks must reach the published app. */
 export const PUBLIC_ORIGIN = "https://app.foodtruckqc.com";
-const ACTORS: Record<Kind, string> = { page: "apify~facebook-posts-scraper", group: "apify~facebook-groups-scraper" };
+const ACTORS: Record<Kind, string> = {
+  page: "apify~facebook-posts-scraper",
+  group: "apify~facebook-groups-scraper",
+  reddit: "apify~reddit-scraper-lite",
+  instagram: "apify~instagram-scraper",
+};
 const MODEL = "google/gemini-2.5-flash";
+const KINDS: Kind[] = ["page", "group", "reddit", "instagram"];
 
 const normUrl = (u: string) => u.trim().toLowerCase().replace(/^https?:\/\/(www\.|m\.|web\.)?/, "").replace(/[?#].*$/, "").replace(/\/+$/, "");
 
@@ -20,20 +27,33 @@ function apifyToken() {
   return t;
 }
 
-/** Every truck with a Facebook URL is also a page source. */
-async function syncTruckPages(db: DB) {
-  const { data: trucks } = await db.from("trucks").select("id, name, facebook").eq("status", "active").not("facebook", "is", null);
+/** Every truck with a social URL/handle is also a source of that kind. */
+async function syncTruckSources(db: DB) {
+  const { data: trucks } = await db.from("trucks").select("id, name, facebook, instagram, reddit").eq("status", "active");
   const { data: existing } = await db.from("social_sources").select("url");
   const have = new Set((existing ?? []).map((s) => normUrl(s.url)));
-  const rows = (trucks ?? []).filter((t) => t.facebook && /facebook\.com/i.test(t.facebook) && !have.has(normUrl(t.facebook)))
-    .map((t) => ({ kind: "page", url: t.facebook!, name: t.name, truck_id: t.id }));
+  const rows: { kind: string; url: string; name: string; truck_id: string }[] = [];
+  for (const t of trucks ?? []) {
+    if (t.facebook && /facebook\.com/i.test(t.facebook) && !have.has(normUrl(t.facebook)))
+      rows.push({ kind: "page", url: t.facebook, name: t.name, truck_id: t.id });
+    if (t.instagram) {
+      const url = /^https?:\/\//i.test(t.instagram) ? t.instagram : `https://www.instagram.com/${t.instagram.replace(/^@/, "")}/`;
+      if (/instagram\.com/i.test(url) && !have.has(normUrl(url))) rows.push({ kind: "instagram", url, name: t.name, truck_id: t.id });
+    }
+    if (t.reddit) {
+      const url = /^https?:\/\//i.test(t.reddit) ? t.reddit : `https://www.reddit.com/user/${t.reddit.replace(/^@/, "")}/`;
+      if (/reddit\.com/i.test(url) && !have.has(normUrl(url))) rows.push({ kind: "reddit", url, name: t.name, truck_id: t.id });
+    }
+  }
   if (rows.length) await db.from("social_sources").upsert(rows, { onConflict: "url", ignoreDuplicates: true });
 }
 
 async function startActor(kind: Kind, sources: Source[]): Promise<string> {
-  const input = kind === "page"
-    ? { startUrls: sources.map((s) => ({ url: s.url })), resultsLimit: 5, onlyPostsNewerThan: "14 days" }
-    : { startUrls: sources.map((s) => ({ url: s.url })), resultsLimit: 40, viewOption: "CHRONOLOGICAL", onlyPostsNewerThan: "7 days" };
+  const input =
+    kind === "page" ? { startUrls: sources.map((s) => ({ url: s.url })), resultsLimit: 5, onlyPostsNewerThan: "14 days" }
+    : kind === "group" ? { startUrls: sources.map((s) => ({ url: s.url })), resultsLimit: 40, viewOption: "CHRONOLOGICAL", onlyPostsNewerThan: "7 days" }
+    : kind === "reddit" ? { startUrls: sources.map((s) => ({ url: s.url })), maxItems: 30, sort: "new" }
+    : { directUrls: sources.map((s) => s.url), resultsType: "posts", resultsLimit: 10 };
   const hooks = btoa(JSON.stringify([{ eventTypes: ["ACTOR.RUN.SUCCEEDED", "ACTOR.RUN.FAILED", "ACTOR.RUN.TIMED_OUT", "ACTOR.RUN.ABORTED"], requestUrl: `${PUBLIC_ORIGIN}/api/public/apify-webhook` }]));
   const res = await fetch(`https://api.apify.com/v2/acts/${ACTORS[kind]}/runs?webhooks=${hooks}`, {
     method: "POST", headers: { Authorization: `Bearer ${apifyToken()}`, "Content-Type": "application/json" }, body: JSON.stringify(input),
@@ -42,25 +62,54 @@ async function startActor(kind: Kind, sources: Source[]): Promise<string> {
   return ((await res.json()) as { data: { id: string } }).data.id;
 }
 
-/** Create a run and start (at most) two Apify jobs: one for pages, one for groups. Fast — safe for cron. */
+/** Create a run and start one Apify job per source kind. Fast — safe for cron. */
 export async function startFacebookRun(db: DB) {
-  await syncTruckPages(db);
+  await syncTruckSources(db);
   const { data: sources = [] } = await db.from("social_sources").select("*").eq("active", true);
   const list = sources ?? [];
-  if (!list.length) throw new Error("No active Facebook sources");
+  if (!list.length) throw new Error("No active social sources");
   const meta: Meta = { runs: {}, total: list.length };
-  for (const kind of ["page", "group"] as Kind[]) {
+  for (const kind of KINDS) {
     const s = list.filter((x) => x.kind === kind);
     if (s.length) meta.runs![kind] = await startActor(kind, s);
   }
   const { data: run, error } = await db.from("ingestion_runs").insert({
-    source: "apify_facebook", notes: `Facebook update · 0/${list.length} sources`, cities_total: list.map((s) => s.id), meta,
+    source: "apify_facebook", notes: `Social update · 0/${list.length} sources`, cities_total: list.map((s) => s.id), meta,
   }).select().single();
   if (error) throw new Error(error.message);
   return run;
 }
 
-type Item = { url?: string; postUrl?: string; topLevelUrl?: string; text?: string; time?: string; inputUrl?: string; facebookUrl?: string; pageName?: string; groupTitle?: string; user?: { name?: string }; phone?: string; instagram?: string };
+/** Raw dataset item from any of the four actors. */
+type Item = Record<string, unknown> & {
+  url?: string; postUrl?: string; topLevelUrl?: string; text?: string; time?: string; inputUrl?: string; facebookUrl?: string;
+  pageName?: string; groupTitle?: string; user?: { name?: string }; phone?: string; instagram?: string;
+  title?: string; body?: string; createdAt?: string; username?: string; author?: string; communityName?: string;
+  caption?: string; timestamp?: string; ownerUsername?: string;
+};
+
+/** Normalized post across Facebook, Reddit and Instagram items. */
+type Post = { url: string; text: string; time: string; author: string; inputUrl: string };
+
+function normalizeItem(kind: Kind, it: Item): Post | null {
+  if (kind === "reddit") {
+    const text = [it.title, it.body].filter(Boolean).join("\n").trim();
+    const url = it.url ?? it.postUrl;
+    if (!url || !text) return null;
+    return { url, text, time: it.createdAt ?? "", author: String(it.username ?? it.author ?? ""), inputUrl: it.inputUrl ?? "" };
+  }
+  if (kind === "instagram") {
+    const text = (it.caption ?? "").trim();
+    const url = it.url ?? it.postUrl;
+    if (!url || !text) return null;
+    return { url, text, time: it.timestamp ?? "", author: it.ownerUsername ?? "", inputUrl: it.inputUrl ?? "" };
+  }
+  const url = it.url ?? it.postUrl ?? it.topLevelUrl;
+  const text = (it.text ?? "").trim();
+  if (!url || !text) return null;
+  return { url, text, time: it.time ?? "", author: it.user?.name ?? it.pageName ?? "", inputUrl: it.inputUrl ?? it.facebookUrl ?? "" };
+}
+
 type Extracted = { truck_name: string; is_food_truck: boolean; date: string; start: string; end: string; venue: string; address: string; city: string; confidence: number };
 
 const SCHEMA = {
@@ -85,7 +134,7 @@ async function extract(text: string, postDate: string, url: string, pageOwner: s
       model: MODEL,
       response_format: { type: "json_schema", json_schema: { name: "stops", strict: true, schema: SCHEMA } },
       messages: [
-        { role: "system", content: "Extract upcoming food truck stops from a Quad Cities (Iowa/Illinois) Facebook post. Return one entry per date/location announced. Resolve relative dates (today, tomorrow, Friday) against the post date. Times are local Central time, 24h HH:MM; if no end time, assume 3 hours after start. confidence 0-1 = how sure you are the truck will be at that place at that time. If the post announces no specific stop, return an empty list. is_food_truck = the truck is clearly a mobile food truck/trailer/cart." },
+        { role: "system", content: "Extract upcoming food truck stops from a Quad Cities (Iowa/Illinois) social media post. Return one entry per date/location announced. Resolve relative dates (today, tomorrow, Friday) against the post date. Times are local Central time, 24h HH:MM; if no end time, assume 3 hours after start. confidence 0-1 = how sure you are the truck will be at that place at that time. If the post announces no specific stop, return an empty list. is_food_truck = the truck is clearly a mobile food truck/trailer/cart." },
         { role: "user", content: `Today: ${chicagoDate()}\nPost date: ${postDate}\nPost URL: ${url}\n${pageOwner ? `Posted by the truck: ${pageOwner}\n` : ""}Post:\n${text.slice(0, 4000)}` },
       ],
     }),
@@ -129,11 +178,11 @@ export async function processFacebookRun(db: DB, runId: string, budgetMs = 20_00
   const errors = run.error ? run.error.split("\n") : [];
   let found = run.items_found, created = run.items_created, remaining = 0, pending = false;
 
-  const { data: allTrucks } = await db.from("trucks").select("id, name, claimed_by, phone, instagram, facebook").neq("status", "archived");
-  const trucks = allTrucks ?? [];
+  const { data: allTrucks } = await db.from("trucks").select("id, name, claimed_by, phone, instagram, facebook, reddit").neq("status", "archived");
+  const trucks = (allTrucks ?? []) as Pick<TruckRow, "id" | "name" | "claimed_by" | "phone" | "instagram" | "facebook" | "reddit">[];
   const today = chicagoDate();
 
-  for (const kind of ["page", "group"] as Kind[]) {
+  for (const kind of KINDS) {
     const kindSources = sources.filter((s) => s.kind === kind);
     if (!kindSources.length || kindSources.every((s) => done.has(s.id))) continue;
     const apifyId = meta.runs?.[kind];
@@ -148,13 +197,19 @@ export async function processFacebookRun(db: DB, runId: string, budgetMs = 20_00
 
     const itemsRes = await fetch(`https://api.apify.com/v2/datasets/${ar.defaultDatasetId}/items?clean=true&limit=2000`, { headers: { Authorization: `Bearer ${apifyToken()}` } });
     const items = itemsRes.ok ? ((await itemsRes.json()) as Item[]) : [];
-    const bySource = new Map<string, Item[]>();
+    const bySource = new Map<string, Post[]>();
+    const allPosts: { src: Source; post: Post }[] = [];
     for (const it of items) {
-      const u = normUrl(it.inputUrl ?? it.facebookUrl ?? "");
-      const s = kindSources.find((x) => u && (normUrl(x.url) === u || u.startsWith(normUrl(x.url))));
-      if (s) bySource.set(s.id, [...(bySource.get(s.id) ?? []), it]);
+      const post = normalizeItem(kind, it);
+      if (!post) continue;
+      const u = normUrl(post.inputUrl);
+      const s = kindSources.find((x) => u && (normUrl(x.url) === u || u.startsWith(normUrl(x.url)) || normUrl(x.url).startsWith(u)));
+      const src = s ?? (kindSources.length === 1 ? kindSources[0] : undefined);
+      if (!src) continue;
+      bySource.set(src.id, [...(bySource.get(src.id) ?? []), post]);
+      allPosts.push({ src, post });
     }
-    const urls = items.map((i) => i.url ?? i.postUrl ?? i.topLevelUrl).filter(Boolean) as string[];
+    const urls = allPosts.map((p) => p.post.url);
     const seen = new Set<string>();
     for (let i = 0; i < urls.length; i += 200) {
       const { data } = await db.from("social_posts").select("url").in("url", urls.slice(i, i + 200));
@@ -170,32 +225,32 @@ export async function processFacebookRun(db: DB, runId: string, budgetMs = 20_00
         await db.from("social_sources").update({ last_run_at: new Date().toISOString() }).eq("id", src.id);
         continue;
       }
-      const owner = kind === "page" ? (trucks.find((t) => t.id === src.truck_id) ?? matchTruckByName(posts[0]?.pageName ?? src.name, trucks)) : null;
+      // A page/instagram/reddit source tied to a truck is that truck's own profile.
+      const owner = kind !== "group" ? (trucks.find((t) => t.id === src.truck_id) ?? matchTruckByName(posts[0]?.author ?? src.name, trucks)) : null;
       // Fill missing contact info on the page owner's truck (never on claimed trucks).
-      if (owner && !owner.claimed_by) {
-        const p = posts[0]!;
+      if (owner && !owner.claimed_by && kind === "page") {
+        const raw = items.find((it) => (it.url ?? it.postUrl ?? it.topLevelUrl) === posts[0]?.url);
         const fill: { facebook?: string; phone?: string; instagram?: string } = {};
         if (!owner.facebook) fill.facebook = src.url;
-        if (!owner.phone && p.phone) fill.phone = p.phone;
-        if (!owner.instagram && p.instagram) fill.instagram = p.instagram;
+        if (!owner.phone && raw?.phone) fill.phone = raw.phone;
+        if (!owner.instagram && raw?.instagram) fill.instagram = raw.instagram;
         if (Object.keys(fill).length) { await db.from("trucks").update(fill).eq("id", owner.id); Object.assign(owner, fill); }
       }
       let left = 0;
       for (const p of posts) {
-        const url = p.url ?? p.postUrl ?? p.topLevelUrl;
-        if (!url || seen.has(url) || !p.text?.trim()) continue;
+        if (seen.has(p.url)) continue;
         if (Date.now() - t0 > budgetMs || meta.aiPaused) { left++; continue; }
         found++;
         let stopsMade = 0;
         try {
-          const ex = await extract(p.text, p.time ?? "", url, owner?.name ?? null);
+          const ex = await extract(p.text, p.time, p.url, owner?.name ?? null);
           for (const e of ex) {
             if (!keepExtraction(e, today)) continue;
-            let truck: { id: string } | null = owner ?? matchTruckByName(e.truck_name, trucks);
-            if (!truck && kind === "group" && e.is_food_truck && e.truck_name.trim().length >= 3) {
+            let truck = owner ?? matchTruckByName(e.truck_name, trucks);
+            if (!truck && (kind === "group" || kind === "reddit") && e.is_food_truck && e.truck_name.trim().length >= 3) {
               const id = `${slugify(e.truck_name)}-${Math.random().toString(36).slice(2, 7)}`;
-              const { error } = await db.from("trucks").insert({ id, name: e.truck_name.trim(), status: "pending", source: "apify_facebook" });
-              if (!error) { truck = { id }; trucks.push({ id, name: e.truck_name.trim(), claimed_by: null, phone: null, instagram: null, facebook: null }); }
+              const { error } = await db.from("trucks").insert({ id, name: e.truck_name.trim(), status: "pending", source: `apify_${kind}` });
+              if (!error) { truck = { id, name: e.truck_name.trim(), claimed_by: null, phone: null, instagram: null, facebook: null, reddit: null }; trucks.push(truck); }
             }
             if (!truck) continue;
             const q = [e.address || e.venue, e.city || "Quad Cities"].filter(Boolean).join(", ");
@@ -208,17 +263,33 @@ export async function processFacebookRun(db: DB, runId: string, budgetMs = 20_00
             const { count } = await db.from("stops").select("id", { count: "exact", head: true }).eq("truck_id", truck.id).eq("source", "owner")
               .eq("cancelled", false).lt("starts_at", ends.toISOString()).gt("ends_at", starts.toISOString());
             if (count) continue;
-            const { error } = await db.from("stops").insert({
-              truck_id: truck.id, venue_name: e.venue || e.address || "Posted on Facebook", address: e.address || null, city: e.city || geo.city || "",
-              lat: geo.lat, lng: geo.lng, starts_at: starts.toISOString(), ends_at: ends.toISOString(), source: "apify_post", confidence: e.confidence, source_url: url,
-            });
-            if (!error) { stopsMade++; created++; }
+            const own = authorIsTruck(p.author, truck) || (owner != null && truck.id === owner.id && kind !== "group" && kind !== "reddit");
+            if (own) {
+              // The truck posted it itself: auto-approved, straight onto the public calendar.
+              const { error } = await db.from("stops").insert({
+                truck_id: truck.id, venue_name: e.venue || e.address || "From their own post", address: e.address || null, city: e.city || geo.city || "",
+                lat: geo.lat, lng: geo.lng, starts_at: starts.toISOString(), ends_at: ends.toISOString(), source: "own_post", confidence: e.confidence, source_url: p.url,
+              });
+              if (!error) { stopsMade++; created++; }
+            } else {
+              // Someone else posted it: pending suggestion for the owner (or the admin queue for unclaimed trucks).
+              const { data: dup } = await db.from("suggested_stops").select("id").eq("truck_id", truck.id).eq("source_url", p.url)
+                .gte("starts_at", starts.toISOString()).lte("starts_at", ends.toISOString()).neq("status", "rejected").limit(1);
+              if (!dup?.length) {
+                const { error } = await db.from("suggested_stops").insert({
+                  truck_id: truck.id, source: kind, source_url: p.url, author: p.author || null, excerpt: p.text.slice(0, 500),
+                  venue_name: e.venue || e.address || "", address: e.address || null, city: e.city || geo.city || "",
+                  lat: geo.lat, lng: geo.lng, starts_at: starts.toISOString(), ends_at: ends.toISOString(),
+                });
+                if (!error) { stopsMade++; created++; }
+              }
+            }
           }
-          await db.from("social_posts").upsert({ url, source_id: src.id, run_id: runId, stops_created: stopsMade });
-          seen.add(url);
+          await db.from("social_posts").upsert({ url: p.url, source_id: src.id, run_id: runId, stops_created: stopsMade });
+          seen.add(p.url);
         } catch (e) {
           if (e instanceof AiStop) { meta.aiPaused = e.message; errors.push(e.message); left++; }
-          else errors.push(`${url}: ${e instanceof Error ? e.message : String(e)}`);
+          else errors.push(`${p.url}: ${e instanceof Error ? e.message : String(e)}`);
         }
       }
       if (left) remaining += left;
@@ -231,7 +302,7 @@ export async function processFacebookRun(db: DB, runId: string, budgetMs = 20_00
   const errs = errors.slice(-30);
   await db.from("ingestion_runs").update({
     cities_done: [...done], items_found: found, items_created: created, meta, error: errs.join("\n") || null,
-    notes: `Facebook update · ${done.size}/${total} sources`,
+    notes: `Social update · ${done.size}/${total} sources`,
     ...(finished ? { status: errs.length ? "partial" : "success", finished_at: new Date().toISOString() } : {}),
   }).eq("id", runId);
   return { done: finished, remaining, pending, sourcesDone: done.size, total };
