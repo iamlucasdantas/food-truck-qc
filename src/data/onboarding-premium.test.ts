@@ -71,7 +71,7 @@ describe("social link prefill parsing", () => {
   });
   it("guesses a display name from a handle", () => {
     expect(nameFromHandle("taco.one_qc")).toBe("Taco One Qc");
-    expect(nameFromHandle("SkinnysFiyaTruck")).toBe("Skinnysfiyatruck");
+    expect(nameFromHandle("SkinnysFiyaTruck")).toBe("Skinnys Fiya Truck");
   });
 });
 
