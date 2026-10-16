@@ -15,7 +15,7 @@
 - Auth is a modal opened via `useAuth().openAuth()`; pages stay public and RLS protects data — no route-level gate.
 - Roles only come from `user_roles` + `has_role()`; never from profile/user metadata.
 - Truck logos are stored as small data URLs on the truck row because the workspace blocks public storage buckets.
-- Facebook ingestion: one async Apify job per kind (pages/groups) per run; an Apify webhook + admin Continue process posts in time-boxed batches, deduped via social_posts, so work survives reloads and timeouts.
+- Social ingestion (Facebook pages/groups, Reddit, Instagram): one async Apify job per kind per run; an Apify webhook + admin Continue process posts in time-boxed batches, deduped via social_posts, so work survives reloads and timeouts. Stops from the truck's own handle (authorIsTruck vs trucks.facebook/instagram/reddit) auto-approve as source own_post; anyone else's post becomes a pending suggested_stops row the owner approves/edits/rejects — nothing public until approved.
 - Guest hearts live in localStorage and merge into favorites on sign-in (FavoritesSync); signed-in-only pages go under src/routes/_authenticated (client-side gate), so public pages stay crawlable.
 - Sitemap is router-derived (src/lib/sitemap.ts + sitemap[.]xml route); every route must set staticData.sitemap, and truck pages come from active trucks — keeps Google's page list in sync automatically.
 - Only auth emails come from Lovable Cloud; every other email is sent by the owner's HighLevel CRM. App code only POSTs flat snake_case JSON to one inbound-webhook URL per flow (HIGHLEVEL_USER_WEBHOOK_URL, HIGHLEVEL_OWNER_WEBHOOK_URL, HIGHLEVEL_ALERT_WEBHOOK_URL secrets) and fails quietly when unset.

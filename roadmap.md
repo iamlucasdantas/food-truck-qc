@@ -31,3 +31,10 @@
 - [x] Public map, truck page "Upcoming stops" use scheduled stops; .ics export
 - [x] Calendar link import (Apple/iCloud, Google secret iCal address), choose events to import, disconnect
 - [ ] Google Calendar sign-in (OAuth) — waiting on owner's Google OAuth client
+
+## Step 8 — Detected posts (done, not published)
+- [x] suggested_stops table + RLS; trucks.reddit handle; stop_source 'own_post'
+- [x] Pipeline generalized to Reddit + Instagram (apify~reddit-scraper-lite, apify~instagram-scraper)
+- [x] Own-handle posts auto-approve to public calendar; community posts pending in owner inbox (Approve/Edit/Reject)
+- [x] Source badges on stops (own post / community / calendar / manual)
+- [ ] Verify on screen as a signed-in owner; Instagram needs public profiles (no login-only content)
