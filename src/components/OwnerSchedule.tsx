@@ -19,9 +19,9 @@ const ok = (error: { message: string } | null, msg: string) => (error ? (toast.e
 type Draft = {
   date: string; start: string; end: string; venue: string; address: string; note: string;
   pos: { lat: number; lng: number } | null; city: string;
-  repeat: "none" | Freq; weekdays: number[]; nth: number; until: string; externalUid?: string;
+  repeat: "none" | Freq; weekdays: number[]; nth: number; until: string; externalUid?: string | undefined;
 };
-type EditTarget = { draft: Draft; stop?: Stop; series?: Series };
+type EditTarget = { draft: Draft; stop?: Stop | undefined; series?: Series | undefined };
 
 export function OwnerSchedule({ truck }: { truck: Truck }) {
   const [view, setView] = useState<"month" | "week">("month");
