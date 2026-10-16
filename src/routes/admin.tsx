@@ -114,7 +114,7 @@ function PendingTrucks() {
     <ul className="space-y-2">
       {data.map((t) => (
         <li key={t.id} className="panel flex flex-wrap items-center justify-between gap-2 p-4">
-          <div><b>{t.emoji} {t.name}</b><p className="text-sm text-muted-foreground">{t.category} · {t.base_address ?? "no address"}</p></div>
+          <div><b>{t.emoji} {t.name}</b> <span className="chip">{t.truck_type === "fixed" ? "🏠 Fixed" : "🚚 Mobile"}</span><p className="text-sm text-muted-foreground">{t.category} · {t.base_address ?? "no address"}</p></div>
           <div className="flex gap-2">
             <button className="chip bg-primary text-primary-foreground" onClick={() => set(t.id, "active")}>Approve</button>
             <button className="chip" onClick={() => set(t.id, "archived")}>Reject</button>
@@ -132,14 +132,15 @@ function Trucks() {
   const [merge, setMerge] = useState<string | null>(null);
   const { data = [] } = useQuery({
     queryKey: ["admin", "trucks"],
-    queryFn: async () => (await supabase.from("trucks").select("id,name,category,phone,website,instagram,facebook,status,merged_into").order("name")).data ?? [],
+    queryFn: async () => (await supabase.from("trucks").select("id,name,category,phone,website,instagram,facebook,status,merged_into,truck_type").order("name")).data ?? [],
   });
   const list = data.filter((t) => t.name.toLowerCase().includes(q.toLowerCase()));
   const active = data.filter((t) => t.status !== "archived");
 
   const save = async (id: string, f: FormData) => {
     const g = (k: string) => String(f.get(k) ?? "").trim() || null;
-    const { error } = await supabase.from("trucks").update({ name: g("name") ?? "Untitled", category: g("category") ?? "Other", phone: g("phone"), website: g("website"), instagram: g("instagram"), facebook: g("facebook") }).eq("id", id);
+    const truckType = g("truck_type");
+    const { error } = await supabase.from("trucks").update({ name: g("name") ?? "Untitled", category: g("category") ?? "Other", phone: g("phone"), website: g("website"), instagram: g("instagram"), facebook: g("facebook"), ...(truckType === "fixed" || truckType === "mobile" ? { truck_type: truckType } : {}) }).eq("id", id);
     if (!err(error)) { toast.success("Saved"); setEdit(null); inv(); }
   };
   const archive = async (id: string, status: "archived" | "active") => {
@@ -158,7 +159,7 @@ function Trucks() {
         {list.map((t) => (
           <li key={t.id} className="panel space-y-2 p-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div><b>{t.name}</b> <span className="text-xs uppercase text-muted-foreground">{t.status}{t.merged_into && ` → ${t.merged_into}`}</span></div>
+              <div><b>{t.name}</b> <span className="text-xs uppercase text-muted-foreground">{t.status}{t.merged_into && ` → ${t.merged_into}`} · {t.truck_type}</span></div>
               <div className="flex flex-wrap gap-1">
                 <button className="chip" onClick={() => setEdit(edit === t.id ? null : t.id)}>Edit</button>
                 <button className="chip" onClick={() => setMerge(merge === t.id ? null : t.id)}>Merge…</button>
@@ -170,6 +171,10 @@ function Trucks() {
                 {(["name", "category", "phone", "website", "instagram", "facebook"] as const).map((k) => (
                   <input key={k} name={k} className="field" placeholder={k} defaultValue={t[k] ?? ""} />
                 ))}
+                <select name="truck_type" className="field" defaultValue={t.truck_type} aria-label="Truck type">
+                  <option value="mobile">🚚 Mobile</option>
+                  <option value="fixed">🏠 Fixed location</option>
+                </select>
                 <button className="chip bg-primary text-primary-foreground sm:col-span-2">Save</button>
               </form>
             )}

@@ -54,7 +54,7 @@ function Owner() {
     <div className="min-h-dvh bg-sidebar text-sidebar-foreground"><header className="border-b border-sidebar-border bg-sidebar"><div className="mx-auto flex w-full max-w-[1100px] items-center justify-between gap-3 p-4"><Logo /><Link to="/" className="chip">← Map</Link></div></header>
     <main className="mx-auto w-full max-w-[1100px] min-w-0 space-y-4 p-4 pb-16">
       <div className="flex items-center justify-end">
-        <Link to="/owner/new" className="chip">+ Add a truck</Link>
+        <Link to="/owner/new" className="chip">+ Add another truck</Link>
       </div>
       <h1 className="text-3xl font-extrabold">Owner dashboard</h1>
       {ready && !user && (
@@ -67,22 +67,27 @@ function Owner() {
       {user && data && mine.length === 0 && (
         <p className="panel p-5 text-sm">No trucks linked to your account yet. Find your truck on the map and tap <b>"Claim it"</b>, or add a new one.</p>
       )}
-      {mine.length > 1 && (
-        <select className="field" value={truck?.id} onChange={(e) => setSel(e.target.value)}>
-          {mine.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-        </select>
+      {mine.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          {mine.map((t) => (
+            <button key={t.id} onClick={() => setSel(t.id)} className={`chip ${truck?.id === t.id ? "chip-active" : ""}`}>
+              {t.truck_type === "fixed" ? "🏠" : "🚚"} {t.name}
+            </button>
+          ))}
+          <Link to="/owner/new" className="chip">+ Add another truck</Link>
+        </div>
       )}
-      {truck && <TruckTools key={truck.id} truck={truck} />}
+      {truck && <TruckTools key={truck.id} truck={truck} siblings={mine.filter((t) => t.id !== truck.id).map((t) => t.name)} />}
     </main></div>
   );
 }
 
-function TruckTools({ truck }: { truck: Truck }) {
+function TruckTools({ truck, siblings }: { truck: Truck; siblings: string[] }) {
   return (
     <>
       <LiveCard truck={truck} />
       <OwnerSchedule truck={truck} />
-      <ProfileForm truck={truck} />
+      <ProfileForm truck={truck} siblings={siblings} />
     </>
   );
 }
@@ -174,18 +179,20 @@ function LiveCard({ truck }: { truck: Truck }) {
   );
 }
 
-function ProfileForm({ truck }: { truck: Truck }) {
+function ProfileForm({ truck, siblings }: { truck: Truck; siblings: string[] }) {
   const qc = useQueryClient();
   const [f, setF] = useState({
     name: truck.name, category: truck.category, emoji: truck.emoji, description: truck.description,
     phone: truck.phone ?? "", website: truck.website ?? "", instagram: truck.instagram ?? "", facebook: truck.facebook ?? "",
-    accepts_card: truck.accepts_card, logo_url: truck.logo_url,
+    accepts_card: truck.accepts_card, logo_url: truck.logo_url, truck_type: truck.truck_type,
   });
   const txt = (k: "name" | "category" | "emoji" | "description" | "phone" | "website" | "instagram" | "facebook", ph: string) => (
     <input className="field" placeholder={ph} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} />
   );
   async function save(e: React.FormEvent) {
     e.preventDefault();
+    if (!f.name.trim()) return void toast.error("The truck name is required.");
+    if (siblings.some((n) => n.trim().toLowerCase() === f.name.trim().toLowerCase())) return void toast.error("You already have a truck with that name — pick a unique one.");
     const { error } = await supabase.from("trucks").update(f).eq("id", truck.id);
     if (ok(error, "Profile saved")) { void qc.invalidateQueries({ queryKey: ["me"] }); void qc.invalidateQueries({ queryKey: ["trucks"] }); void qc.invalidateQueries({ queryKey: ["truck", truck.id] }); }
   }
@@ -202,6 +209,12 @@ function ProfileForm({ truck }: { truck: Truck }) {
       </div>
       {txt("name", "Truck name")}
       <div className="grid grid-cols-[1fr_5rem] gap-2">{txt("category", "Category")}{txt("emoji", "Emoji")}</div>
+      <label className="block space-y-1 text-sm font-semibold">Fixed or mobile?
+        <select className="field" value={f.truck_type} onChange={(e) => setF({ ...f, truck_type: e.target.value as "fixed" | "mobile" })}>
+          <option value="mobile">🚚 Mobile — shows at scheduled stops or “I'm here”</option>
+          <option value="fixed">🏠 Fixed location — always on the map during your hours</option>
+        </select>
+      </label>
       <textarea className="field" rows={3} placeholder="Description" value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} />
       <div className="grid grid-cols-2 gap-2">{txt("phone", "Phone")}{txt("website", "Website")}{txt("instagram", "Instagram")}{txt("facebook", "Facebook")}</div>
       <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={f.accepts_card} onChange={(e) => setF({ ...f, accepts_card: e.target.checked })} /> Accepts cards</label>

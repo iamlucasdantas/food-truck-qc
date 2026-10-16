@@ -463,6 +463,7 @@ export type Database = {
           phone: string | null
           source: string
           status: Database["public"]["Enums"]["truck_status"]
+          truck_type: string
           website: string | null
         }
         Insert: {
@@ -487,6 +488,7 @@ export type Database = {
           phone?: string | null
           source?: string
           status?: Database["public"]["Enums"]["truck_status"]
+          truck_type?: string
           website?: string | null
         }
         Update: {
@@ -511,6 +513,7 @@ export type Database = {
           phone?: string | null
           source?: string
           status?: Database["public"]["Enums"]["truck_status"]
+          truck_type?: string
           website?: string | null
         }
         Relationships: []

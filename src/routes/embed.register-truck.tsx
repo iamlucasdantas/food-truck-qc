@@ -21,7 +21,7 @@ export const Route = createFileRoute("/embed/register-truck")({
 });
 
 const CATS = ["Tacos", "BBQ", "Burgers", "Asian", "Pizza", "Dessert", "Coffee", "Other"];
-const empty = { contactName: "", email: "", phone: "", truckName: "", category: "", city: "", instagram: "", facebook: "", website: "", description: "", company: "" };
+const empty = { contactName: "", email: "", phone: "", truckName: "", category: "", truckType: "", city: "", instagram: "", facebook: "", website: "", description: "", company: "" };
 
 function EmbedForm() {
   const submit = useServerFn(submitTruckSignup);
@@ -94,6 +94,18 @@ function EmbedForm() {
               </select>
               {err["category"] && <span className="text-sm text-destructive">{err["category"]}</span>}
             </label>
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-semibold">Is it fixed or mobile?</legend>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {([["fixed", "🏠 Fixed location", "Restaurant, brewery, market stall"], ["mobile", "🚚 Mobile", "Moves around the Quad Cities"]] as const).map(([v, label, hint]) => (
+                  <label key={v} className={`flex min-h-11 cursor-pointer items-start gap-2 rounded-xl border-2 p-3 text-base ${f.truckType === v ? "border-primary bg-accent" : "border-input bg-card"}`}>
+                    <input type="radio" name="truckType" className="mt-1" checked={f.truckType === v} onChange={() => setF({ ...f, truckType: v })} />
+                    <span><b>{label}</b><br /><span className="text-sm text-muted-foreground">{hint}</span></span>
+                  </label>
+                ))}
+              </div>
+              {err["truckType"] && <span className="text-sm text-destructive">{err["truckType"]}</span>}
+            </fieldset>
             {input("city", "City or usual spot", "text", "Davenport, IA")}
             <div className="grid gap-3 sm:grid-cols-3">{input("instagram", "Instagram")}{input("facebook", "Facebook")}{input("website", "Website")}</div>
             <label className="block space-y-1">

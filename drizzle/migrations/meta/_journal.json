@@ -71,6 +71,13 @@
       "when": 1792164686554,
       "tag": "0009_owner_schedule_series",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792166323904,
+      "tag": "0010_add_truck_type",
+      "breakpoints": true
     }
   ]
 }

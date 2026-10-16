@@ -62,8 +62,15 @@ t2("Apify filter keeps food trucks and drops dealers", () => {
 
 import { placeTruck, byStatusThenDistance, chooseCenter, QC_CENTER as QC } from "./trucks";
 describe("map placement", () => {
-  it("shows a truck with no stop as gray at its base", () => {
-    expect(placeTruck({ base_lat: 41.5, base_lng: -90.5 }, { stop: null, status: "none" })).toMatchObject({ lat: 41.5, status: "none" });
+  it("shows a fixed truck with no stop as gray at its base", () => {
+    expect(placeTruck({ base_lat: 41.5, base_lng: -90.5, truck_type: "fixed" }, { stop: null, status: "none" })).toMatchObject({ lat: 41.5, status: "none" });
+  });
+  it("hides a mobile truck with no stop", () => {
+    expect(placeTruck({ base_lat: 41.5, base_lng: -90.5, truck_type: "mobile" }, { stop: null, status: "none" })).toBeNull();
+  });
+  it("shows a mobile truck at its stop", () => {
+    const stop = { lat: 41.6, lng: -90.6 } as never;
+    expect(placeTruck({ base_lat: 41.5, base_lng: -90.5, truck_type: "mobile" }, { stop, status: "open" })).toMatchObject({ lat: 41.6, status: "open" });
   });
   it("sorts live, then scheduled, then gray, then distance", () => {
     const r = [{ status: "none" as const, dist: 1 }, { status: "today" as const, dist: 5 }, { status: "open" as const, dist: 9 }, { status: "today" as const, dist: 2 }].sort(byStatusThenDistance);
