@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { lazy, Suspense, useMemo, useState } from "react";
 const TruckMap = lazy(() => import("@/components/TruckMap"));
 import { supabase } from "@/integrations/supabase/client";
-import { fmtRange, SOURCE_LABEL } from "@/data/trucks";
+import { fmtRange, SOURCE_LABEL, stopBadge } from "@/data/trucks";
 import { useStops, dayBounds, useStopsRealtime } from "@/lib/queries";
 import { ClaimButton } from "@/components/ClaimButton";
 import { useFavorites } from "@/hooks/use-favorites";
@@ -92,7 +92,7 @@ function TruckPage() {
               <span className="w-24 shrink-0 font-semibold sm:w-28">{new Date(s.starts_at).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</span>
               <span className="min-w-0 flex-1 text-right">
                 {s.venue_name}, {s.city} · {fmtRange(s)}
-                <span className="block text-xs text-muted-foreground">{SOURCE_LABEL[s.source]}</span>
+                <span className="mt-1 inline-block rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">{stopBadge(s)} · {SOURCE_LABEL[s.source]}</span>
               </span>
             </li>
           ))}
