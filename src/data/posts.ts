@@ -32,7 +32,7 @@ function rangeFrom(m: RegExpExecArray): { start: string; end: string } | null {
 }
 
 export type VenueHint = { venue: string; start: string; end: string };
-const LEAD = /^(?:[\s,;:.!&+@|/-]|and\b|then\b|at\b|@)+/i;
+const LEAD = /^(?:[\s,;:.!&+@|/-]|and\b|then\b|at\b|today\b|tonight\b|tomorrow\b|(?:mon|tues|wednes|thurs|fri|satur|sun)day\b|we'?re\b|we are\b|find us\b|catch us\b)+/i;
 const TRAIL = /(?:[\s,;:.!&+@|/-]|from\b|at\b|@)+$/i;
 
 /** One entry per "<venue> <time range>" pair: "Jumpin Joey's 11-2 & Adventurous Brewing LLC 4-8pm" → two venues. */
