@@ -70,49 +70,53 @@
   --font-sans: var(--font-body);
 }
 
+/* FoodTruckQC Brand Guide v1.1 — single source of truth. Light theme only. */
 :root {
   --radius: 1rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.22 0.03 40);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.22 0.03 40);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.22 0.03 40);
-  --primary: oklch(0.645 0.205 37);
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.973 0.004 75);
-  --secondary-foreground: oklch(0.22 0.03 40);
-  --muted: oklch(0.973 0.004 75);
-  --muted-foreground: oklch(0.52 0.01 60);
-  --accent: oklch(0.96 0.03 45);
-  --accent-foreground: oklch(0.22 0.03 40);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.99 0 0);
-  --border: oklch(0.91 0.006 75);
-  --input: oklch(0.91 0.006 75);
-  --ring: oklch(0.645 0.205 37);
-  --pin-open: oklch(0.72 0.17 150);
-  --pin-today: oklch(0.8 0.16 75);
-  --pin-today-soft: oklch(0.96 0.06 85);
-  --pin-open-soft: oklch(0.95 0.06 150);
-  --pin-none: oklch(0.8 0.01 80);
-  --shadow-pop: 0 2px 8px rgb(0 0 0 / 0.06);
-  --shadow-pop-sm: 0 2px 8px rgb(0 0 0 / 0.08);
+  --background: #ffffff;
+  --foreground: #271610;
+  --card: #ffffff;
+  --card-foreground: #271610;
+  --popover: #ffffff;
+  --popover-foreground: #271610;
+  --primary: #ef4f18;
+  --primary-foreground: #ffffff;
+  --brand-red: #d62f22;
+  --secondary: #f8f6f3;
+  --secondary-foreground: #271610;
+  --muted: #f8f6f3;
+  --muted-foreground: #6d6863;
+  --accent: #ffece2;
+  --accent-foreground: #271610;
+  --destructive: #e7000b;
+  --destructive-foreground: #ffffff;
+  --border: #e4e1dd;
+  --input: #e4e1dd;
+  --ring: #ef4f18;
+  --pin-open: #3fc168;
+  --pin-open-soft: #d3fbda;
+  --pin-today: #f9ad26;
+  --pin-today-soft: #fff0c5;
+  --pin-none: #c1bdb7;
+  --shadow-pop: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-pop-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
   --font-display: "Inter", system-ui, sans-serif;
   --font-body: "Inter", system-ui, sans-serif;
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.975 0.018 85);
-  --sidebar-foreground: oklch(0.22 0.03 40);
-  --sidebar-primary: oklch(0.62 0.2 35);
-  --sidebar-primary-foreground: oklch(0.99 0.01 85);
-  --sidebar-accent: oklch(0.93 0.02 85);
-  --sidebar-accent-foreground: oklch(0.22 0.03 40);
-  --sidebar-border: oklch(0.91 0.006 75);
-  --sidebar-ring: oklch(0.62 0.2 35);
+  --default-transition-duration: 150ms;
+  --default-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  --chart-1: #ef4f18;
+  --chart-2: #3fc168;
+  --chart-3: #f9ad26;
+  --chart-4: #6d6863;
+  --chart-5: #c1bdb7;
+  --sidebar: #fcf6e9;
+  --sidebar-foreground: #271610;
+  --sidebar-primary: #e5481e;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eee7d9;
+  --sidebar-accent-foreground: #271610;
+  --sidebar-border: #e4e1dd;
+  --sidebar-ring: #ef4f18;
 }
 
 @layer base {
@@ -124,8 +128,15 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-body);
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
   }
-  h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; }
+  h1, h2, h3 { font-family: var(--font-display); }
+  .font-extrabold { letter-spacing: -0.025em; }
+  em, i { font-style: normal; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; }
+  }
 }
 
 @utility chip {
