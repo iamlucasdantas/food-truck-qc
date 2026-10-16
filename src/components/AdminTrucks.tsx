@@ -180,7 +180,7 @@ export function AdminTrucks({ search }: { search: Record<string, unknown> }) {
             </tr></thead>
             <tbody>
               {shown.map((t) => (
-                <FragmentRow key={t.id} extra={extra(t)}>
+                <FragmentRow key={t.id} extra={edit === t.id || merge === t.id ? extra(t) : null}>
                   <td className="p-2"><input type="checkbox" aria-label={`Select ${t.name}`} checked={picked.includes(t.id)} onChange={() => setPicked(toggle(picked, t.id))} /></td>
                   <td className="p-2 font-semibold">{t.name}</td>
                   <td className="p-2">{t.business_name || "—"}</td>

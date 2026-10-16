@@ -11,9 +11,11 @@ import { useServerFn } from "@tanstack/react-start";
 import { seedCity, SEED_CITIES } from "@/lib/apify.functions";
 import { startFacebookUpdate, continueFacebookUpdate } from "@/lib/facebook.functions";
 import { notifyCrmTruckDecision } from "@/lib/crm.functions";
+import { AdminTrucks } from "@/components/AdminTrucks";
 
 export const Route = createFileRoute("/admin")({
   staticData: { sitemap: false },
+  validateSearch: (s: Record<string, unknown>) => s as Record<string, string | number | undefined>,
   head: () => ({
     meta: [
       { title: "Admin | FoodTruckQC" },
@@ -33,8 +35,11 @@ const err = (e: { message: string } | null) => (e ? (toast.error(e.message), tru
 
 function Admin() {
   const { user, ready, isAdmin, openAuth } = useAuth();
-  const [tab, setTab] = useState<(typeof TABS)[number]>("Claims");
-  useEffect(() => { if (new URLSearchParams(window.location.search).get("tab") === "pending") setTab("Pending trucks"); }, []);
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const TAB_KEY: Record<string, (typeof TABS)[number]> = { pending: "Pending trucks", trucks: "Trucks" };
+  const tab: (typeof TABS)[number] = TAB_KEY[String(search.tab ?? "")] ?? (TABS.find((t) => t === search.tab) ?? "Claims");
+  const setTab = (t: (typeof TABS)[number]) => void navigate({ search: { tab: t === "Pending trucks" ? "pending" : t === "Trucks" ? "trucks" : t === "Claims" ? undefined : t } });
   return (
     <div className="min-h-dvh bg-sidebar text-sidebar-foreground"><header className="border-b border-sidebar-border bg-sidebar"><div className="mx-auto flex w-full max-w-[1100px] items-center justify-between gap-3 p-4"><Logo /><Link to="/" className="chip">← Map</Link></div></header>
     <main className="mx-auto w-full max-w-[1100px] min-w-0 space-y-4 p-4 pb-16">
@@ -50,7 +55,7 @@ function Admin() {
           </div>
           {tab === "Claims" && <Claims />}
           {tab === "Pending trucks" && <PendingTrucks />}
-          {tab === "Trucks" && <Trucks />}
+          {tab === "Trucks" && <AdminTrucks search={search} />}
           {tab === "CSV import" && <CsvImport />}
           {tab === "Apify" && <ApifySeed />}
           {tab === "Facebook" && <FacebookTab />}
@@ -141,75 +146,6 @@ function PendingTrucks() {
         </li>
       ))}
     </ul>
-  );
-}
-
-function Trucks() {
-  const inv = useInvalidate();
-  const [q, setQ] = useState("");
-  const [edit, setEdit] = useState<string | null>(null);
-  const [merge, setMerge] = useState<string | null>(null);
-  const { data = [] } = useQuery({
-    queryKey: ["admin", "trucks"],
-    queryFn: async () => (await supabase.from("trucks").select("id,name,category,phone,website,instagram,facebook,status,merged_into,truck_type").order("name")).data ?? [],
-  });
-  const list = data.filter((t) => t.name.toLowerCase().includes(q.toLowerCase()));
-  const active = data.filter((t) => t.status !== "archived");
-
-  const save = async (id: string, f: FormData) => {
-    const g = (k: string) => String(f.get(k) ?? "").trim() || null;
-    const truckType = g("truck_type");
-    const { error } = await supabase.from("trucks").update({ name: g("name") ?? "Untitled", category: g("category") ?? "Other", phone: g("phone"), website: g("website"), instagram: g("instagram"), facebook: g("facebook"), ...(truckType === "fixed" || truckType === "mobile" ? { truck_type: truckType } : {}) }).eq("id", id);
-    if (!err(error)) { toast.success("Saved"); setEdit(null); inv(); }
-  };
-  const archive = async (id: string, status: "archived" | "active") => {
-    if (!err((await supabase.from("trucks").update({ status }).eq("id", id)).error)) inv();
-  };
-  const doMerge = async (dup: string, keep: string) => {
-    if (!keep || !confirm("Move favorites and stops into the master truck and archive this one?")) return;
-    if (!err((await supabase.rpc("merge_trucks", { _keep: keep, _dup: dup })).error)) { toast.success("Merged"); setMerge(null); inv(); }
-  };
-
-  return (
-    <div className="space-y-2">
-      <input className="field w-full" placeholder="Search trucks…" value={q} onChange={(e) => setQ(e.target.value)} />
-      <p className="text-sm text-muted-foreground">{list.length} trucks</p>
-      <ul className="space-y-2">
-        {list.map((t) => (
-          <li key={t.id} className="panel space-y-2 p-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div><b>{t.name}</b> <span className="text-xs uppercase text-muted-foreground">{t.status}{t.merged_into && ` → ${t.merged_into}`} · {t.truck_type}</span></div>
-              <div className="flex flex-wrap gap-1">
-                <button className="chip" onClick={() => setEdit(edit === t.id ? null : t.id)}>Edit</button>
-                <button className="chip" onClick={() => setMerge(merge === t.id ? null : t.id)}>Merge…</button>
-                <button className="chip" onClick={() => archive(t.id, t.status === "archived" ? "active" : "archived")}>{t.status === "archived" ? "Restore" : "Archive"}</button>
-              </div>
-            </div>
-            {edit === t.id && (
-              <form className="grid gap-2 sm:grid-cols-2" onSubmit={(e) => { e.preventDefault(); void save(t.id, new FormData(e.currentTarget)); }}>
-                {(["name", "category", "phone", "website", "instagram", "facebook"] as const).map((k) => (
-                  <input key={k} name={k} className="field" placeholder={k} defaultValue={t[k] ?? ""} />
-                ))}
-                <select name="truck_type" className="field" defaultValue={t.truck_type} aria-label="Truck type">
-                  <option value="mobile">🚚 Mobile</option>
-                  <option value="fixed">🏠 Fixed location</option>
-                </select>
-                <button className="chip bg-primary text-primary-foreground sm:col-span-2">Save</button>
-              </form>
-            )}
-            {merge === t.id && (
-              <div className="flex flex-wrap items-center gap-2 text-sm">
-                Duplicate of:
-                <select className="field" defaultValue="" onChange={(e) => void doMerge(t.id, e.target.value)}>
-                  <option value="" disabled>Pick the master truck</option>
-                  {active.filter((o) => o.id !== t.id).map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
-                </select>
-              </div>
-            )}
-          </li>
-        ))}
-      </ul>
-    </div>
   );
 }
 
