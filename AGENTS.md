@@ -17,6 +17,7 @@
 - Roles only come from `user_roles` + `has_role()`; never from profile/user metadata.
 - Truck logos are stored as small data URLs on the truck row because the workspace blocks public storage buckets.
 - Guest hearts live in localStorage and merge into favorites on sign-in (FavoritesSync); signed-in-only pages go under src/routes/_authenticated (client-side gate), so public pages stay crawlable.
+- App MCP server lives in src/lib/mcp (one tool per file, OAuth via managed auth, caller-scoped RLS client); generated /mcp routes are never hand-edited.
 - Sitemap is router-derived (src/lib/sitemap.ts + sitemap[.]xml route); every route must set staticData.sitemap, and truck pages come from active trucks — keeps Google's page list in sync automatically.
 - Only auth emails come from Lovable Cloud; every other email is sent by the owner's HighLevel CRM. App code only POSTs flat snake_case JSON to one inbound-webhook URL per flow (HIGHLEVEL_USER_WEBHOOK_URL, HIGHLEVEL_OWNER_WEBHOOK_URL, HIGHLEVEL_ALERT_WEBHOOK_URL secrets) and fails quietly when unset.
 - Repeating stops are stored as rules in stop_series and expanded on read (src/data/schedule.ts, unit-tested) — no pre-generated rows; editing one date adds it to skip_dates plus a concrete stops row.
