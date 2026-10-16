@@ -1,8 +1,8 @@
 # Roadmap
 
 ## Automated Facebook scans
-- [ ] Replace the daily scan with six scans, every two hours 10:00–20:00 Chicago, DST-safe
-- [ ] Test timing and verify managed schedule configuration; no publishing without approval
+- [x] Prepare six daily scan times, every two hours 10:00–20:00 Chicago, DST-safe; retain old daily callback contract
+- [ ] Activate replacement managed schedule after publication approval (current live schedule remains 6am)
 
 ## Mobile fixes and map preview
 - [x] Fix profile header and quiet-hours input layout on phones
