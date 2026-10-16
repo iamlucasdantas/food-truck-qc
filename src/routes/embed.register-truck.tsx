@@ -67,7 +67,7 @@ function EmbedForm() {
     const r = truckSignupSchema.safeParse(f);
     if (r.success) return {};
     const keys = SIGNUP_STEPS[s] as readonly string[];
-    return Object.fromEntries(r.error.issues.map((i) => [String(i.path[0]), i.message]).filter(([k]) => keys.includes(k)));
+    return Object.fromEntries(r.error.issues.map((i) => [String(i.path[0]), i.message]).filter(([k]) => keys.includes(k ?? "")));
   }
 
   function next(e: React.FormEvent) {

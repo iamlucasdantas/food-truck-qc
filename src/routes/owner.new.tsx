@@ -34,16 +34,16 @@ function NewTruck() {
 
   const step1Errors = () => {
     const e: Record<string, string> = {};
-    if (!f.contactName.trim()) e.contactName = "Enter your name";
-    if (!/^\S+@\S+\.\S+$/.test(f.email.trim())) e.email = "Enter a valid email";
+    if (!f.contactName.trim()) e["contactName"] = "Enter your name";
+    if (!/^\S+@\S+\.\S+$/.test(f.email.trim())) e["email"] = "Enter a valid email";
     return e;
   };
   const step2Errors = () => {
     const e: Record<string, string> = {};
-    if (!f.name.trim()) e.name = "Enter the truck name";
-    if (!f.truckType) e.truckType = "Pick fixed location or mobile";
-    if (!f.category.trim()) e.category = "Enter a cuisine";
-    if (f.truckType === "fixed" && !f.address.trim()) e.address = "A fixed location needs its address";
+    if (!f.name.trim()) e["name"] = "Enter the truck name";
+    if (!f.truckType) e["truckType"] = "Pick fixed location or mobile";
+    if (!f.category.trim()) e["category"] = "Enter a cuisine";
+    if (f.truckType === "fixed" && !f.address.trim()) e["address"] = "A fixed location needs its address";
     return e;
   };
 
@@ -122,7 +122,7 @@ function NewTruck() {
                     </label>
                   ))}
                 </div>
-                {err.truckType && <span className="text-sm text-destructive">{err.truckType}</span>}
+                {err["truckType"] && <span className="text-sm text-destructive">{err["truckType"]}</span>}
               </fieldset>
               <div className="grid grid-cols-[1fr_5rem] gap-2">{field("category", "Cuisine", "text", "e.g. Tacos")}{field("emoji", "Emoji")}</div>
               {field("address", f.truckType === "fixed" ? "Address of your fixed location" : "City or home base (optional)")}
