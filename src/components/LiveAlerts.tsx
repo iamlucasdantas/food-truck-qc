@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useFavorites } from "@/hooks/use-favorites";
 import { useProfile } from "@/hooks/use-profile";
 import { useTrucks } from "@/lib/queries";
+import { syncCrmContact, notifyCrmLiveAlert } from "@/lib/crm.functions";
 import type { Stop } from "@/data/trucks";
 
 /** In-app toast when a favorited truck checks in live; also returns users to their page after Google sign-in. */
