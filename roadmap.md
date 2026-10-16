@@ -38,3 +38,6 @@
 - [x] Own-handle posts auto-approve to public calendar; community posts pending in owner inbox (Approve/Edit/Reject)
 - [x] Source badges on stops (own post / community / calendar / manual)
 - [ ] Verify on screen as a signed-in owner; Instagram needs public profiles (no login-only content)
+## Step 9 — Truck approval flow (done, not published)
+- [x] Admin Pending trucks: Approve / Reject with reason; HIGHLEVEL_APPROVAL_WEBHOOK_URL webhook (truck_approved/truck_rejected), fire-and-forget
+- [ ] User fills HIGHLEVEL_APPROVAL_WEBHOOK_URL secret; verify email arrives in HighLevel
