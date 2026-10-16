@@ -272,25 +272,29 @@ function ApifySeed() {
     queryFn: async () => (await supabase.from("ingestion_runs").select("*").eq("source", "apify_maps").order("started_at", { ascending: false }).limit(10)).data ?? [],
   });
 
-  const run = async () => {
+  const latest = runs[0];
+  const missing = latest && latest.status === "running" ? SEED_CITIES.filter((c) => !(latest.cities_done ?? []).includes(c)) : [];
+
+  const run = async (resume: boolean) => {
     setBusy(true); setLog([]);
-    const { data: r } = await supabase.from("ingestion_runs").insert({ source: "apify_maps", notes: "Google Maps seed" }).select().single();
-    let found = 0, created = 0, updated = 0; const errs: string[] = [];
-    for (const city of SEED_CITIES) {
+    let runId = resume ? latest?.id : undefined;
+    if (!runId) {
+      const { data: r } = await supabase.from("ingestion_runs").insert({ source: "apify_maps", notes: "Google Maps seed", cities_total: SEED_CITIES }).select().single();
+      runId = r?.id;
+    }
+    const todo = resume ? missing : SEED_CITIES;
+    let created = 0;
+    for (const city of todo) {
       setLog((l) => [...l, `⏳ ${city}…`]);
       try {
-        const out = await seed({ data: { city } });
-        found += out.found; created += out.created; updated += out.updated; errs.push(...out.errors);
+        const out = await seed({ data: { city, runId } });
+        created += out.created;
         setLog((l) => [...l.slice(0, -1), `✓ ${city}: ${out.found} found, ${out.created} new, ${out.updated} updated`]);
       } catch (e) {
-        errs.push(`${city}: ${e instanceof Error ? e.message : String(e)}`);
         setLog((l) => [...l.slice(0, -1), `✗ ${city}: ${e instanceof Error ? e.message : String(e)}`]);
       }
+      inv();
     }
-    if (r) await supabase.from("ingestion_runs").update({
-      status: errs.length ? (created + updated ? "partial" : "error") : "success", finished_at: new Date().toISOString(),
-      items_found: found, items_created: created, notes: `Google Maps seed · ${updated} updated`, error: errs.slice(0, 20).join("\n") || null,
-    }).eq("id", r.id);
     setBusy(false); inv();
     toast.success(`Seed done: ${created} new trucks`);
   };
@@ -300,8 +304,12 @@ function ApifySeed() {
       <div className="panel space-y-3 p-5">
         <p className="text-2xl font-extrabold">{count} <span className="text-base font-normal text-muted-foreground">/ 50 active trucks</span></p>
         <div className="h-2 overflow-hidden rounded bg-muted"><div className="h-full bg-primary" style={{ width: `${Math.min(100, (count / 50) * 100)}%` }} /></div>
-        <p className="text-sm text-muted-foreground">Searches Google Maps for food trucks in {SEED_CITIES.length} Quad Cities-area towns. Takes a few minutes and uses Apify credits. Trucks claimed by owners are never overwritten.</p>
-        <button disabled={busy} onClick={() => void run()} className="chip bg-primary text-primary-foreground">{busy ? "Running…" : "Run Google Maps seed"}</button>
+        <p className="text-sm text-muted-foreground">Searches Google Maps for food trucks in {SEED_CITIES.length} Quad Cities-area towns. Each town is saved as soon as it finishes, so if the page reloads you can continue where it stopped. Uses Apify credits. Trucks claimed by owners are never overwritten.</p>
+        {latest && <p className="text-sm font-semibold">Cities done {(latest.cities_done ?? []).length}/{latest.cities_total?.length || SEED_CITIES.length}{missing.length > 0 && ` · missing: ${missing.join(", ")}`}</p>}
+        <div className="flex flex-wrap gap-2">
+          {missing.length > 0 && <button disabled={busy} onClick={() => void run(true)} className="chip bg-primary text-primary-foreground">{busy ? "Running…" : `Continue (${missing.length} left)`}</button>}
+          <button disabled={busy} onClick={() => void run(false)} className="chip">{busy ? "Running…" : "Run Google Maps seed"}</button>
+        </div>
         {log.length > 0 && <pre className="rounded bg-muted p-2 text-xs">{log.join("\n")}</pre>}
       </div>
       <h3 className="font-bold">Last runs</h3>
