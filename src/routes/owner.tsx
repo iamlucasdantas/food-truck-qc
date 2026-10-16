@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/use-auth";
-import { closingTime, fmtTime, QC_CENTER, type Truck } from "@/data/trucks";
+import { closingTime, fmtTime, QC_CENTER, PAYMENT_METHODS, effectivePayments, type Business, type Truck } from "@/data/trucks";
 import { useStops, dayBounds, useStopsRealtime } from "@/lib/queries";
 import { geocode, fileToLogo } from "@/lib/geocode";
 
@@ -79,6 +79,7 @@ function Owner() {
         </div>
       )}
       {truck && <TruckTools key={truck.id} truck={truck} siblings={mine.filter((t) => t.id !== truck.id).map((t) => t.name)} />}
+      {user && mine.length > 0 && <BusinessForm ownerId={user.id} />}
     </main></div>
   );
 }
@@ -281,47 +282,144 @@ function LiveCard({ truck }: { truck: Truck }) {
   );
 }
 
-function ProfileForm({ truck, siblings }: { truck: Truck; siblings: string[] }) {
-  const qc = useQueryClient();
-  const [f, setF] = useState({
-    name: truck.name, category: truck.category, emoji: truck.emoji, description: truck.description,
-    phone: truck.phone ?? "", website: truck.website ?? "", instagram: truck.instagram ?? "", facebook: truck.facebook ?? "", reddit: truck.reddit ?? "",
-    accepts_card: truck.accepts_card, logo_url: truck.logo_url, truck_type: truck.truck_type,
+function useBusiness(ownerId: string | null | undefined) {
+  return useQuery({
+    queryKey: ["business", ownerId],
+    enabled: !!ownerId,
+    queryFn: async () => (await supabase.from("businesses").select("*").eq("owner_id", ownerId!).maybeSingle()).data as Business | null,
   });
-  const txt = (k: "name" | "category" | "emoji" | "description" | "phone" | "website" | "instagram" | "facebook" | "reddit", ph: string) => (
-    <input className="field" placeholder={ph} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} />
+}
+
+/** Checkbox chips for accepted payment methods plus a free "other" field. */
+function PaymentPicker({ value, other, onChange, idPrefix }: { value: string[]; other: string; onChange: (v: string[], other: string) => void; idPrefix: string }) {
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-2">
+        {PAYMENT_METHODS.map((m) => {
+          const on = value.includes(m);
+          return (
+            <label key={m} className={`flex min-h-10 cursor-pointer items-center gap-2 rounded-full border-2 px-3 text-sm font-medium ${on ? "border-primary bg-accent" : "border-input bg-card"}`}>
+              <input type="checkbox" checked={on} onChange={() => onChange(on ? value.filter((x) => x !== m) : [...value, m], other)} />{m}
+            </label>
+          );
+        })}
+      </div>
+      <label className="block space-y-1 text-sm font-semibold" htmlFor={`${idPrefix}-other`}>Other (optional)
+        <input id={`${idPrefix}-other`} className="field w-full text-base font-normal" placeholder="e.g. Bitcoin, checks" value={other} onChange={(e) => onChange(value, e.target.value)} />
+      </label>
+    </div>
+  );
+}
+
+function BusinessForm({ ownerId }: { ownerId: string }) {
+  const qc = useQueryClient();
+  const { data: biz, isLoading } = useBusiness(ownerId);
+  const [f, setF] = useState<null | { name: string; description: string; website: string; instagram: string; facebook: string; reddit: string; logo_url: string | null; payment_methods: string[]; payment_other: string }>(null);
+  useEffect(() => {
+    if (isLoading || f) return;
+    setF({ name: biz?.name ?? "", description: biz?.description ?? "", website: biz?.website ?? "", instagram: biz?.instagram ?? "", facebook: biz?.facebook ?? "", reddit: biz?.reddit ?? "", logo_url: biz?.logo_url ?? null, payment_methods: biz?.payment_methods ?? [], payment_other: biz?.payment_other ?? "" });
+  }, [biz, isLoading, f]);
+  if (!f) return null;
+  const txt = (k: "name" | "website" | "instagram" | "facebook" | "reddit", label: string, ph = "") => (
+    <label className="block space-y-1 text-sm font-semibold">{label}
+      <input className="field w-full text-base font-normal" placeholder={ph} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} />
+    </label>
   );
   async function save(e: React.FormEvent) {
     e.preventDefault();
-    if (!f.name.trim()) return void toast.error("The truck name is required.");
-    if (siblings.some((n) => n.trim().toLowerCase() === f.name.trim().toLowerCase())) return void toast.error("You already have a truck with that name — pick a unique one.");
-    const { error } = await supabase.from("trucks").update(f).eq("id", truck.id);
-    if (ok(error, "Profile saved")) { void qc.invalidateQueries({ queryKey: ["me"] }); void qc.invalidateQueries({ queryKey: ["trucks"] }); void qc.invalidateQueries({ queryKey: ["truck", truck.id] }); }
+    const row = { ...f!, owner_id: ownerId, website: f!.website.trim() || null, instagram: f!.instagram.trim() || null, facebook: f!.facebook.trim() || null, reddit: f!.reddit.trim() || null, updated_at: new Date().toISOString() };
+    const { error } = await supabase.from("businesses").upsert(row, { onConflict: "owner_id" });
+    if (ok(error, "Business profile saved")) { void qc.invalidateQueries({ queryKey: ["business"] }); void qc.invalidateQueries({ queryKey: ["truck"] }); }
   }
   return (
-    <form onSubmit={save} className="panel space-y-2 p-5">
-      <h2 className="text-xl font-bold">Truck profile</h2>
+    <form onSubmit={save} className="panel space-y-3 p-5">
+      <div>
+        <h2 className="text-xl font-bold">Business profile</h2>
+        <p className="text-sm text-muted-foreground">Shared by all your trucks.</p>
+      </div>
       <div className="flex items-center gap-3">
         <div className="grid h-16 w-16 place-items-center overflow-hidden rounded-xl border-2 border-border bg-secondary text-3xl">
-          {f.logo_url ? <img src={f.logo_url} alt="" className="h-full w-full object-cover" /> : f.emoji}
+          {f.logo_url ? <img src={f.logo_url} alt="Business logo" className="h-full w-full object-cover" /> : "🏪"}
         </div>
         <label className="chip cursor-pointer">Upload logo
           <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) setF({ ...f, logo_url: await fileToLogo(file) }); }} />
         </label>
       </div>
+      {txt("name", "Business name")}
+      <label className="block space-y-1 text-sm font-semibold">About your business
+        <textarea className="field w-full text-base font-normal" rows={3} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} />
+      </label>
+      <div className="grid gap-3 sm:grid-cols-2">{txt("website", "Website", "https://…")}{txt("instagram", "Instagram", "@handle")}{txt("facebook", "Facebook", "facebook.com/yourpage")}{txt("reddit", "Reddit username", "u/name")}</div>
+      <p className="text-sm text-muted-foreground">These handles tell FoodTruckQC which posts are yours — stops from your own posts go straight onto the right truck's public calendar.</p>
+      <fieldset className="space-y-2">
+        <legend className="text-sm font-semibold">Accepted payment methods</legend>
+        <PaymentPicker idPrefix="biz" value={f.payment_methods} other={f.payment_other} onChange={(v, o) => setF({ ...f, payment_methods: v, payment_other: o })} />
+      </fieldset>
+      <button className="chip">Save business profile</button>
+    </form>
+  );
+}
+
+function ProfileForm({ truck, siblings }: { truck: Truck; siblings: string[] }) {
+  const qc = useQueryClient();
+  const { data: biz } = useBusiness(truck.claimed_by);
+  const [f, setF] = useState({
+    name: truck.name, category: truck.category, emoji: truck.emoji, phone: truck.phone ?? "",
+    logo_url: truck.logo_url, truck_type: truck.truck_type, base_address: truck.base_address ?? "",
+    payments_same_as_business: truck.payments_same_as_business, payment_methods: truck.payment_methods, payment_other: truck.payment_other,
+  });
+  const txt = (k: "name" | "category" | "emoji" | "phone" | "base_address", label: string) => (
+    <label className="block space-y-1 text-sm font-semibold">{label}
+      <input className="field w-full text-base font-normal" value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} />
+    </label>
+  );
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    if (!f.name.trim()) return void toast.error("The truck name is required.");
+    if (siblings.some((n) => n.trim().toLowerCase() === f.name.trim().toLowerCase())) return void toast.error("You already have a truck with that name — pick a unique one.");
+    if (f.truck_type === "fixed" && !f.base_address.trim()) return void toast.error("A fixed location needs its address.");
+    const addrChanged = f.base_address.trim() !== (truck.base_address ?? "");
+    const g = addrChanged && f.base_address.trim() ? await geocode(f.base_address.trim()) : null;
+    const pays = effectivePayments(f, biz);
+    const { error } = await supabase.from("trucks").update({
+      ...f, base_address: f.base_address.trim() || null,
+      ...(addrChanged ? { base_lat: g?.lat ?? null, base_lng: g?.lng ?? null } : {}),
+      accepts_card: pays.some((p) => p !== "Cash"),
+    }).eq("id", truck.id);
+    if (ok(error, "Truck saved")) { void qc.invalidateQueries({ queryKey: ["me"] }); void qc.invalidateQueries({ queryKey: ["trucks"] }); void qc.invalidateQueries({ queryKey: ["truck", truck.id] }); }
+  }
+  return (
+    <form onSubmit={save} className="panel space-y-3 p-5">
+      <h2 className="text-xl font-bold">Truck profile</h2>
+      <div className="flex items-center gap-3">
+        <div className="grid h-16 w-16 place-items-center overflow-hidden rounded-xl border-2 border-border bg-secondary text-3xl">
+          {f.logo_url ? <img src={f.logo_url} alt="Truck photo" className="h-full w-full object-cover" /> : f.emoji}
+        </div>
+        <label className="chip cursor-pointer">Upload truck photo
+          <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const file = e.target.files?.[0]; if (file) setF({ ...f, logo_url: await fileToLogo(file) }); }} />
+        </label>
+      </div>
       {txt("name", "Truck name")}
-      <div className="grid grid-cols-[1fr_5rem] gap-2">{txt("category", "Category")}{txt("emoji", "Emoji")}</div>
+      <div className="grid grid-cols-[1fr_5rem] gap-2">{txt("category", "Cuisine")}{txt("emoji", "Emoji")}</div>
       <label className="block space-y-1 text-sm font-semibold">Fixed or mobile?
-        <select className="field" value={f.truck_type} onChange={(e) => setF({ ...f, truck_type: e.target.value as "fixed" | "mobile" })}>
+        <select className="field w-full text-base font-normal" value={f.truck_type} onChange={(e) => setF({ ...f, truck_type: e.target.value as "fixed" | "mobile" })}>
           <option value="mobile">🚚 Mobile — shows at scheduled stops or “I'm here”</option>
           <option value="fixed">🏠 Fixed location — always on the map during your hours</option>
         </select>
       </label>
-      <textarea className="field" rows={3} placeholder="Description" value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} />
-      <div className="grid grid-cols-2 gap-2">{txt("phone", "Phone")}{txt("website", "Website")}{txt("instagram", "Instagram")}{txt("facebook", "Facebook")}{txt("reddit", "Reddit username")}</div>
-      <p className="text-xs text-muted-foreground">Your social handles tell FoodTruckQC which posts are yours — stops from your own posts go straight onto your public calendar.</p>
-      <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={f.accepts_card} onChange={(e) => setF({ ...f, accepts_card: e.target.checked })} /> Accepts cards</label>
-      <button className="chip bg-primary text-primary-foreground">Save profile</button>
+      {f.truck_type === "fixed" && txt("base_address", "Address of your fixed location")}
+      {txt("phone", "Truck phone (optional)")}
+      <fieldset className="space-y-2">
+        <legend className="text-sm font-semibold">Payment methods</legend>
+        <label className="flex min-h-11 items-center gap-2 text-sm">
+          <input type="checkbox" checked={f.payments_same_as_business} onChange={(e) => setF({ ...f, payments_same_as_business: e.target.checked, payment_methods: e.target.checked ? f.payment_methods : (f.payment_methods.length ? f.payment_methods : biz?.payment_methods ?? []) })} />
+          Same as business
+        </label>
+        {f.payments_same_as_business
+          ? <p className="text-sm text-muted-foreground">{effectivePayments(f, biz).join(", ") || "None set yet — add them in your business profile."}</p>
+          : <PaymentPicker idPrefix={`truck-${truck.id}`} value={f.payment_methods} other={f.payment_other} onChange={(v, o) => setF({ ...f, payment_methods: v, payment_other: o })} />}
+      </fieldset>
+      <button className="chip bg-primary text-primary-foreground">Save truck</button>
     </form>
   );
 }
