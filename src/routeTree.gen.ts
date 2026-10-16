@@ -24,6 +24,7 @@ import { Route as EmbedRegisterTruckRouteImport } from './routes/embed.register-
 import { Route as OwnerNewRouteImport } from './routes/owner.new'
 import { Route as OwnerOnboardingRouteImport } from './routes/owner.onboarding'
 import { Route as TruckIdRouteImport } from './routes/truck.$id'
+import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as ApiPublicApifyWebhookRouteImport } from './routes/api/public/apify-webhook'
 import { Route as ApiPublicCalendarIdRouteImport } from './routes/api/public/calendar.$id'
 import { Route as ApiPublicJobsFacebookDailyRouteImport } from './routes/api/public/jobs/facebook-daily'
@@ -102,6 +103,11 @@ const TruckIdRoute = TruckIdRouteImport.update({
   path: '/truck/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
+  id: '/.lovable/oauth/consent',
+  path: '/.lovable/oauth/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicApifyWebhookRoute = ApiPublicApifyWebhookRouteImport.update({
   id: '/api/public/apify-webhook',
   path: '/api/public/apify-webhook',
@@ -134,6 +140,7 @@ export interface FileRoutesByFullPath {
   '/owner/new': typeof OwnerNewRoute
   '/owner/onboarding': typeof OwnerOnboardingRoute
   '/truck/$id': typeof TruckIdRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/api/public/apify-webhook': typeof ApiPublicApifyWebhookRoute
   '/api/public/calendar/$id': typeof ApiPublicCalendarIdRoute
   '/api/public/jobs/facebook-daily': typeof ApiPublicJobsFacebookDailyRoute
@@ -153,6 +160,7 @@ export interface FileRoutesByTo {
   '/owner/new': typeof OwnerNewRoute
   '/owner/onboarding': typeof OwnerOnboardingRoute
   '/truck/$id': typeof TruckIdRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/api/public/apify-webhook': typeof ApiPublicApifyWebhookRoute
   '/api/public/calendar/$id': typeof ApiPublicCalendarIdRoute
   '/api/public/jobs/facebook-daily': typeof ApiPublicJobsFacebookDailyRoute
@@ -174,6 +182,7 @@ export interface FileRoutesById {
   '/owner/new': typeof OwnerNewRoute
   '/owner/onboarding': typeof OwnerOnboardingRoute
   '/truck/$id': typeof TruckIdRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/api/public/apify-webhook': typeof ApiPublicApifyWebhookRoute
   '/api/public/calendar/$id': typeof ApiPublicCalendarIdRoute
   '/api/public/jobs/facebook-daily': typeof ApiPublicJobsFacebookDailyRoute
@@ -195,6 +204,7 @@ export interface FileRouteTypes {
     | '/owner/new'
     | '/owner/onboarding'
     | '/truck/$id'
+    | '/.lovable/oauth/consent'
     | '/api/public/apify-webhook'
     | '/api/public/calendar/$id'
     | '/api/public/jobs/facebook-daily'
@@ -214,6 +224,7 @@ export interface FileRouteTypes {
     | '/owner/new'
     | '/owner/onboarding'
     | '/truck/$id'
+    | '/.lovable/oauth/consent'
     | '/api/public/apify-webhook'
     | '/api/public/calendar/$id'
     | '/api/public/jobs/facebook-daily'
@@ -234,6 +245,7 @@ export interface FileRouteTypes {
     | '/owner/new'
     | '/owner/onboarding'
     | '/truck/$id'
+    | '/.lovable/oauth/consent'
     | '/api/public/apify-webhook'
     | '/api/public/calendar/$id'
     | '/api/public/jobs/facebook-daily'
@@ -252,6 +264,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   EmbedRegisterTruckRoute: typeof EmbedRegisterTruckRoute
   TruckIdRoute: typeof TruckIdRoute
+  DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   ApiPublicApifyWebhookRoute: typeof ApiPublicApifyWebhookRoute
   ApiPublicCalendarIdRoute: typeof ApiPublicCalendarIdRoute
   ApiPublicJobsFacebookDailyRoute: typeof ApiPublicJobsFacebookDailyRoute
@@ -364,6 +377,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TruckIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/.lovable/oauth/consent': {
+      id: '/.lovable/oauth/consent'
+      path: '/.lovable/oauth/consent'
+      fullPath: '/.lovable/oauth/consent'
+      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/apify-webhook': {
       id: '/api/public/apify-webhook'
       path: '/api/public/apify-webhook'
@@ -424,6 +444,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   EmbedRegisterTruckRoute: EmbedRegisterTruckRoute,
   TruckIdRoute: TruckIdRoute,
+  DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   ApiPublicApifyWebhookRoute: ApiPublicApifyWebhookRoute,
   ApiPublicCalendarIdRoute: ApiPublicCalendarIdRoute,
   ApiPublicJobsFacebookDailyRoute: ApiPublicJobsFacebookDailyRoute,
