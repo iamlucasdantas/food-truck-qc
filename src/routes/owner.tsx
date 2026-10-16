@@ -117,7 +117,7 @@ function SuggestedStops({ truck }: { truck: Truck }) {
   }
 
   async function approve(s: Suggestion, fields?: typeof f) {
-    let row = { venue_name: s.venue_name, address: s.address, city: s.city, lat: s.lat, lng: s.lng, starts_at: s.starts_at, ends_at: s.ends_at };
+    let row = { venue_name: s.venue_name, address: s.address, city: s.city, lat: s.lat ?? QC_CENTER.lat, lng: s.lng ?? QC_CENTER.lng, starts_at: s.starts_at, ends_at: s.ends_at };
     if (fields) {
       const g = await geocode([fields.address || fields.venue_name, fields.city || "Quad Cities"].filter(Boolean).join(", "));
       const [sh, sm] = fields.start.replace(/(am|pm)/, "").split(":").map(Number);
