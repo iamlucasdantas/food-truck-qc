@@ -165,3 +165,37 @@ html, body { overflow-x: hidden; }
 
 /* Softer outlines everywhere: legacy thick borders render as hairlines. */
 .border-2 { border-width: 1px; }
+
+/* Dark mode ready: same brand accent, inverted warm neutrals (AA contrast). Activated by a .dark class on <html>. */
+.dark {
+  --background: #15100d;
+  --foreground: #f6efe9;
+  --card: #1d1612;
+  --card-foreground: #f6efe9;
+  --popover: #221a15;
+  --popover-foreground: #f6efe9;
+  --primary: #ef4f18;
+  --primary-foreground: #160d09;
+  --secondary: #2a211b;
+  --secondary-foreground: #f6efe9;
+  --muted: #2a211b;
+  --muted-foreground: #b6aba2;
+  --accent: #3a2418;
+  --accent-foreground: #f6efe9;
+  --destructive: #ff5a52;
+  --destructive-foreground: #160d09;
+  --border: #382c24;
+  --input: #6e625a;
+  --ring: #ef4f18;
+  --pin-none: #6e625a;
+  --shadow-pop: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-pop-sm: 0 4px 12px rgba(0, 0, 0, 0.45);
+  --sidebar: #1a1310;
+  --sidebar-foreground: #f6efe9;
+  --sidebar-primary: #ef4f18;
+  --sidebar-primary-foreground: #160d09;
+  --sidebar-accent: #2a211b;
+  --sidebar-accent-foreground: #f6efe9;
+  --sidebar-border: #382c24;
+  --sidebar-ring: #ef4f18;
+}
