@@ -165,7 +165,7 @@ function SuggestedStops({ truck }: { truck: Truck }) {
   });
   const [edit, setEdit] = useState<Suggestion | null>(null);
   const [f, setF] = useState({ venue_name: "", address: "", city: "", date: "", start: "", end: "" });
-  const SRC: Record<string, string> = { page: "Facebook page", group: "Facebook group", reddit: "Reddit", instagram: "Instagram" };
+  const SRC: Record<string, string> = { paste: "Community post", page: "Facebook page", group: "Facebook group", reddit: "Reddit", instagram: "Instagram" };
 
   function openEdit(s: Suggestion) {
     const d = new Date(s.starts_at);
@@ -217,6 +217,7 @@ function SuggestedStops({ truck }: { truck: Truck }) {
           <li key={s.id} className="space-y-2 rounded-xl border-2 border-border p-3 text-sm">
             <div className="flex flex-wrap items-center gap-2">
               <span className="chip">{SRC[s.source] ?? s.source}</span>
+              {s.needs_address_check && <span className="chip border-destructive text-destructive">Check address</span>}
               <b>{new Date(s.starts_at).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</b>
               <span>{fmtTime(s.starts_at)}–{fmtTime(s.ends_at)}</span>
               <span className="text-muted-foreground">{s.venue_name}{s.city ? `, ${s.city}` : ""}</span>

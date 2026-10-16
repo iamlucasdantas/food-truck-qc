@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { splitVenues, resolvePostDate, mergeHints, type ExtractedStop } from "@/data/posts";
+import { resolveVenue } from "@/lib/venues.server";
 import { authorIsTruck, ownerHandles, centralToUtc, chicagoDate, keepExtraction, matchTruckByName, slugify } from "@/data/trucks";
 
 type DB = SupabaseClient<Database>;
@@ -57,6 +59,14 @@ function cleanUrl(raw: string): string | null {
   try { const u = new URL(/^https?:\/\//i.test(s) ? s : `https://${s}`); return u.hostname.includes(".") ? u.toString() : null; } catch { return null; }
 }
 
+/** Facebook session cookies (JSON array exported from a dedicated account) or null when the secret is unset/invalid. */
+function facebookCookies(): unknown[] | null {
+  const raw = process.env["FACEBOOK_COOKIES_JSON"];
+  if (!raw) return null;
+  try { const v = JSON.parse(raw); return Array.isArray(v) && v.length ? v : null; } catch { console.error("[facebook] FACEBOOK_COOKIES_JSON is not valid JSON"); return null; }
+}
+export const facebookSessionConfigured = () => !!facebookCookies();
+
 async function startActor(kind: Kind, all: Source[]): Promise<string> {
   // Apify rejects the whole job if one link is malformed, so fix or skip bad ones.
   const sources = all.flatMap((s) => { const url = cleanUrl(s.url); return url ? [{ ...s, url }] : []; });
@@ -65,6 +75,9 @@ async function startActor(kind: Kind, all: Source[]): Promise<string> {
     : kind === "group" ? { startUrls: sources.map((s) => ({ url: s.url })), resultsLimit: 40, viewOption: "CHRONOLOGICAL", onlyPostsNewerThan: "7 days" }
     : kind === "reddit" ? { startUrls: sources.map((s) => ({ url: s.url })), maxItems: 30, sort: "new" }
     : { directUrls: sources.map((s) => s.url), resultsType: "posts", resultsLimit: 10 };
+  // Optional logged-in session for private/blocked groups: Admin explains the FACEBOOK_COOKIES_JSON secret (never pasted in chat).
+  const cookies = (kind === "group" || kind === "page") ? facebookCookies() : null;
+  if (cookies) Object.assign(input, { cookies });
   const hooks = btoa(JSON.stringify([{ eventTypes: ["ACTOR.RUN.SUCCEEDED", "ACTOR.RUN.FAILED", "ACTOR.RUN.TIMED_OUT", "ACTOR.RUN.ABORTED"], requestUrl: `${PUBLIC_ORIGIN}/api/public/apify-webhook` }]));
   const res = await fetch(`https://api.apify.com/v2/acts/${ACTORS[kind]}/runs?webhooks=${hooks}`, {
     method: "POST", headers: { Authorization: `Bearer ${apifyToken()}`, "Content-Type": "application/json" }, body: JSON.stringify(input),
@@ -100,7 +113,7 @@ type Item = Record<string, unknown> & {
 };
 
 /** Normalized post across Facebook, Reddit and Instagram items. */
-type Post = { url: string; text: string; time: string; author: string; inputUrl: string };
+export type Post = { url: string; text: string; time: string; author: string; inputUrl: string };
 
 function normalizeItem(kind: Kind, it: Item): Post | null {
   if (kind === "reddit") {
@@ -121,7 +134,7 @@ function normalizeItem(kind: Kind, it: Item): Post | null {
   return { url, text, time: it.time ?? "", author: it.user?.name ?? it.pageName ?? "", inputUrl: it.inputUrl ?? it.facebookUrl ?? "" };
 }
 
-type Extracted = { truck_name: string; is_food_truck: boolean; date: string; start: string; end: string; venue: string; address: string; city: string; confidence: number };
+type Extracted = ExtractedStop;
 
 const SCHEMA = {
   type: "object", additionalProperties: false, required: ["stops"],
@@ -136,38 +149,127 @@ const SCHEMA = {
 
 class AiStop extends Error {}
 
-async function extract(text: string, postDate: string, url: string, pageOwner: string | null): Promise<Extracted[]> {
+const SYSTEM = `Extract food truck stops from a Quad Cities (Iowa/Illinois) social media post.
+Return ONE entry per venue + time range: "Jumpin Joey's 11-2 & Adventurous Brewing LLC 4-8pm" is two stops (11:00-14:00 and 16:00-20:00).
+Venue names are often Facebook place tags (a business name with no address): put that name in venue and leave address empty unless a street address is written.
+Dates: use the post date unless the post says tomorrow, today/tonight or a weekday name (next one on/after the post date). Times are local Central time, 24h HH:MM.
+Short ranges without am/pm: "11-2" = 11:00-14:00; "4-8" = 16:00-20:00. If no end time, assume 3 hours after start.
+truck_name = the truck the post is about (the poster when they write in first person). confidence 0-1 = how sure the truck will be at that place at that time.
+If the post announces no specific stop, return an empty list. is_food_truck = clearly a mobile food truck/trailer/cart.`;
+
+/** Central-time date of a post timestamp (falls back to today). */
+function postDay(time: string, today: string): string {
+  const t = Date.parse(time);
+  return Number.isFinite(t) ? chicagoDate(new Date(t)) : today;
+}
+
+async function extract(text: string, postTime: string, url: string, pageOwner: string | null, today: string): Promise<Extracted[]> {
   const key = process.env["LOVABLE_API_KEY"];
   if (!key) throw new AiStop("LOVABLE_API_KEY is not configured");
+  const day = postDay(postTime, today);
+  const hints = splitVenues(text);
+  const date = resolvePostDate(text, day);
   const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       model: MODEL,
       response_format: { type: "json_schema", json_schema: { name: "stops", strict: true, schema: SCHEMA } },
       messages: [
-        { role: "system", content: "Extract upcoming food truck stops from a Quad Cities (Iowa/Illinois) social media post. Return one entry per date/location announced. Resolve relative dates (today, tomorrow, Friday) against the post date. Times are local Central time, 24h HH:MM; if no end time, assume 3 hours after start. confidence 0-1 = how sure you are the truck will be at that place at that time. If the post announces no specific stop, return an empty list. is_food_truck = the truck is clearly a mobile food truck/trailer/cart." },
-        { role: "user", content: `Today: ${chicagoDate()}\nPost date: ${postDate}\nPost URL: ${url}\n${pageOwner ? `Posted by the truck: ${pageOwner}\n` : ""}Post:\n${text.slice(0, 4000)}` },
+        { role: "system", content: SYSTEM },
+        { role: "user", content: `Today: ${today}\nPost date: ${day}\nPost URL: ${url}\n${pageOwner ? `Posted by the truck: ${pageOwner}\n` : ""}${hints.length ? `Venue/time pairs found: ${hints.map((h) => `${h.venue} ${h.start}-${h.end}`).join("; ")}\n` : ""}Post:\n${text.slice(0, 4000)}` },
       ],
     }),
   });
   if (res.status === 402 || res.status === 403) throw new AiStop(`AI paused [${res.status}]: ${(await res.text()).slice(0, 200)}`);
   if (!res.ok) throw new Error(`AI failed [${res.status}]`);
   const j = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-  try { return (JSON.parse(j.choices?.[0]?.message?.content ?? "{}") as { stops?: Extracted[] }).stops ?? []; } catch { return []; }
+  let ai: Extracted[] = [];
+  try { ai = (JSON.parse(j.choices?.[0]?.message?.content ?? "{}") as { stops?: Extracted[] }).stops ?? []; } catch { ai = []; }
+  return mergeHints(ai, hints, date, pageOwner ?? "");
 }
 
-let lastNominatim = 0;
-async function geocodeCached(db: DB, q: string) {
-  const key = q.trim().toLowerCase();
-  const { data: hit } = await db.from("geocode_cache").select("*").eq("query", key).maybeSingle();
-  if (hit) return hit.lat != null && hit.lng != null ? { lat: hit.lat, lng: hit.lng, city: hit.city ?? "" } : null;
-  const wait = lastNominatim + 1100 - Date.now();
-  if (wait > 0) await new Promise((r) => setTimeout(r, wait));
-  lastNominatim = Date.now();
-  const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&addressdetails=1&countrycodes=us&q=${encodeURIComponent(q)}`, { headers: { "User-Agent": "FoodTruckQC/1.0 (app.foodtruckqc.com)" } });
-  const [h] = res.ok ? ((await res.json()) as { lat: string; lon: string; address?: Record<string, string> }[]) : [];
-  const out = h ? { lat: Number(h.lat), lng: Number(h.lon), city: h.address?.["city"] ?? h.address?.["town"] ?? h.address?.["village"] ?? "" } : null;
-  await db.from("geocode_cache").upsert({ query: key, lat: out?.lat ?? null, lng: out?.lng ?? null, city: out?.city ?? null });
+
+export type TruckLite = Pick<TruckRow, "id" | "name" | "claimed_by" | "phone" | "instagram" | "facebook" | "reddit">;
+type Biz = { owner_id: string; facebook: string | null; instagram: string | null; reddit: string | null };
+export type IngestCtx = { db: DB; trucks: TruckLite[]; bizByOwner: Map<string, Biz>; today: string; runId: string | null; dryRun?: boolean };
+export type StopResult = {
+  truckName: string; truckId: string | null; newTruck: boolean; venue: string; address: string | null; city: string;
+  date: string; start: string; end: string; own: boolean; checkAddress: boolean;
+  status: "published" | "suggested" | "history" | "duplicate" | "no-address" | "no-truck" | "owner-has-stop" | "low-confidence" | "preview";
+};
+
+/** Why a source produced no posts — shown in Admin → Facebook. */
+function blockedReason(kind: Kind, items: Item[], url: string): string {
+  const err = items.find((it) => typeof it["error"] === "string" && (!it.inputUrl || normUrl(it.inputUrl) === normUrl(url)));
+  const msg = String(err?.["errorDescription"] ?? err?.["error"] ?? "");
+  if (/login|log in|private|join|permission|checkpoint/i.test(msg)) return `Facebook asked for a login (private group or blocked): ${msg.slice(0, 120)}`;
+  if (msg) return msg.slice(0, 160);
+  return kind === "group" ? "No posts returned — the group is private, Facebook blocked the scraper, or nothing new was posted" : "No posts returned";
+}
+
+/** Extract stops from one post, match the truck, resolve each venue's address, then publish (own post) or suggest. */
+export async function ingestPost(ctx: IngestCtx, kind: Kind | "paste", p: Post, owner: TruckLite | null): Promise<StopResult[]> {
+  const { db, trucks, today } = ctx;
+  const handlesOf = (t: TruckLite) => ownerHandles(t, t.claimed_by ? ctx.bizByOwner.get(t.claimed_by) : null);
+  const sameBusiness = (a: TruckLite, b: TruckLite) => a.id === b.id || (!!a.claimed_by && a.claimed_by === b.claimed_by);
+  const out: StopResult[] = [];
+  const ex = await extract(p.text, p.time, p.url, owner?.name ?? null, today);
+  for (const e of ex) {
+    const base = { venue: e.venue, address: e.address || null, city: e.city, date: e.date, start: e.start, end: e.end, own: false, checkAddress: false, newTruck: false };
+    // A business page can post for any of its trucks: prefer the named truck of the same business.
+    const sibling = owner?.claimed_by ? matchTruckByName(e.truck_name, trucks.filter((t) => sameBusiness(t, owner))) : null;
+    let truck = sibling ?? owner ?? matchTruckByName(e.truck_name, trucks)
+      ?? (p.author ? trucks.find((t) => authorIsTruck(p.author, handlesOf(t))) ?? matchTruckByName(p.author, trucks) : null);
+    const own = !!truck && (authorIsTruck(p.author, handlesOf(truck)) || (owner != null && sameBusiness(truck, owner) && kind !== "group" && kind !== "reddit" && kind !== "paste"));
+    const geo = await resolveVenue(db, e.venue, e.city, e.address);
+    const r = { ...base, truckName: truck?.name ?? e.truck_name, truckId: truck?.id ?? null, own, venue: geo?.name ?? e.venue, address: geo?.address ?? base.address, city: geo?.city || e.city, checkAddress: geo?.check ?? true };
+    if (/^\d{4}-\d{2}-\d{2}$/.test(e.date) && e.date < today) { out.push({ ...r, status: "history" }); continue; }
+    if (!keepExtraction(e, today)) { out.push({ ...r, status: "low-confidence" }); continue; }
+    if (!geo) { out.push({ ...r, status: "no-address" }); continue; }
+    if (ctx.dryRun) { out.push({ ...r, newTruck: !truck, status: "preview" }); continue; }
+    if (!truck && (kind === "group" || kind === "reddit" || kind === "paste") && e.is_food_truck && e.truck_name.trim().length >= 3) {
+      const id = `${slugify(e.truck_name)}-${Math.random().toString(36).slice(2, 7)}`;
+      const { error } = await db.from("trucks").insert({ id, name: e.truck_name.trim(), status: "pending", source: kind === "paste" ? "admin_paste" : `apify_${kind}` });
+      if (!error) {
+        const { postOwnerWebhook } = await import("@/lib/owner-webhook.server");
+        await postOwnerWebhook({ source: "scraper", isNewBusiness: true, contact: { name: "", email: "", phone: "" }, businessName: "",
+          truckId: id, truckName: e.truck_name.trim(), truckType: "mobile", cuisine: "", city: e.city || "", description: p.url });
+        truck = { id, name: e.truck_name.trim(), claimed_by: null, phone: null, instagram: null, facebook: null, reddit: null };
+        trucks.push(truck);
+        r.newTruck = true; r.truckId = id; r.truckName = truck.name;
+      }
+    }
+    if (!truck) { out.push({ ...r, status: "no-truck" }); continue; }
+    const starts = centralToUtc(e.date, e.start || "11:00");
+    let ends = centralToUtc(e.date, e.end || "14:00");
+    if (ends <= starts) ends = new Date(starts.getTime() + 3 * 3_600_000);
+    // Never overwrite owner stops: skip if the owner already has a stop overlapping this time.
+    const { count } = await db.from("stops").select("id", { count: "exact", head: true }).eq("truck_id", truck.id).eq("source", "owner")
+      .eq("cancelled", false).lt("starts_at", ends.toISOString()).gt("ends_at", starts.toISOString());
+    if (count) { out.push({ ...r, status: "owner-has-stop" }); continue; }
+    const venueName = geo.name || e.venue || e.address || "From their own post";
+    if (own && !geo.check) {
+      // The truck posted it itself and the address is trusted: auto-approved, straight onto the public calendar.
+      const { data: dupe } = await db.from("stops").select("id").eq("truck_id", truck.id).eq("source_url", p.url).eq("starts_at", starts.toISOString()).limit(1);
+      if (dupe?.length) { out.push({ ...r, status: "duplicate" }); continue; }
+      const { error } = await db.from("stops").insert({
+        truck_id: truck.id, venue_name: venueName, address: geo.address, city: geo.city || e.city || "",
+        lat: geo.lat, lng: geo.lng, starts_at: starts.toISOString(), ends_at: ends.toISOString(), source: "own_post", confidence: e.confidence, source_url: p.url || null,
+      });
+      out.push({ ...r, status: error ? "duplicate" : "published" });
+    } else {
+      // Someone else posted it, or the address needs checking: pending until the owner (or admin, for unclaimed trucks) approves.
+      const q = db.from("suggested_stops").select("id").eq("truck_id", truck.id).eq("starts_at", starts.toISOString()).eq("venue_name", venueName).neq("status", "rejected").limit(1);
+      const { data: dup } = await q;
+      if (dup?.length) { out.push({ ...r, status: "duplicate" }); continue; }
+      const { error } = await db.from("suggested_stops").insert({
+        truck_id: truck.id, source: kind, source_url: p.url || null, author: p.author || null, excerpt: p.text.slice(0, 500),
+        venue_name: venueName, address: geo.address, city: geo.city || e.city || "", needs_address_check: geo.check,
+        lat: geo.lat, lng: geo.lng, starts_at: starts.toISOString(), ends_at: ends.toISOString(),
+      });
+      out.push({ ...r, status: error ? "duplicate" : "suggested" });
+    }
+  }
   return out;
 }
 
@@ -190,13 +292,11 @@ export async function processFacebookRun(db: DB, runId: string, budgetMs = 20_00
   let found = run.items_found, created = run.items_created, remaining = 0, pending = false;
 
   const { data: allTrucks } = await db.from("trucks").select("id, name, claimed_by, phone, instagram, facebook, reddit").neq("status", "archived");
-  const trucks = (allTrucks ?? []) as Pick<TruckRow, "id" | "name" | "claimed_by" | "phone" | "instagram" | "facebook" | "reddit">[];
+  const trucks = (allTrucks ?? []) as TruckLite[];
   const { data: bizRows } = await db.from("businesses").select("owner_id, facebook, instagram, reddit");
   const bizByOwner = new Map((bizRows ?? []).map((b) => [b.owner_id, b]));
-  /** Handles that identify this truck's own posts: its owner's business handles (shared by all their trucks), else legacy truck values. */
-  const handlesOf = (t: (typeof trucks)[number]) => ownerHandles(t, t.claimed_by ? bizByOwner.get(t.claimed_by) : null);
-  const sameBusiness = (a: (typeof trucks)[number], b: (typeof trucks)[number]) => a.id === b.id || (!!a.claimed_by && a.claimed_by === b.claimed_by);
   const today = chicagoDate();
+  const ctx: IngestCtx = { db, trucks, bizByOwner, today, runId };
 
   for (const kind of KINDS) {
     const kindSources = sources.filter((s) => s.kind === kind);
@@ -236,9 +336,10 @@ export async function processFacebookRun(db: DB, runId: string, budgetMs = 20_00
       if (done.has(src.id)) continue;
       const posts = bySource.get(src.id) ?? [];
       if (!posts.length) {
-        if (kind === "group") errors.push(`Group skipped (private/blocked or no posts): ${src.url}`);
+        const reason = blockedReason(kind, items, src.url);
+        if (kind === "group") errors.push(`Group skipped (${reason}): ${src.url}`);
         done.add(src.id);
-        await db.from("social_sources").update({ last_run_at: new Date().toISOString() }).eq("id", src.id);
+        await db.from("social_sources").update({ last_run_at: new Date().toISOString(), last_status: kind === "group" ? "blocked" : "empty", last_posts: 0, last_stops: 0, last_reason: reason }).eq("id", src.id);
         continue;
       }
       // A page/instagram/reddit source tied to a truck is that truck's own profile.
@@ -252,62 +353,17 @@ export async function processFacebookRun(db: DB, runId: string, budgetMs = 20_00
         if (!owner.instagram && raw?.instagram) fill.instagram = raw.instagram;
         if (Object.keys(fill).length) { await db.from("trucks").update(fill).eq("id", owner.id); Object.assign(owner, fill); }
       }
-      let left = 0;
+      let left = 0, srcStops = 0, srcPosts = 0;
       for (const p of posts) {
         if (seen.has(p.url)) continue;
         if (Date.now() - t0 > budgetMs || meta.aiPaused) { left++; continue; }
         found++;
         let stopsMade = 0;
         try {
-          const ex = await extract(p.text, p.time, p.url, owner?.name ?? null);
-          for (const e of ex) {
-            if (!keepExtraction(e, today)) continue;
-            // A business page can post for any of its trucks: prefer the named truck of the same business.
-            const sibling = owner?.claimed_by ? matchTruckByName(e.truck_name, trucks.filter((t) => sameBusiness(t, owner))) : null;
-            let truck = sibling ?? owner ?? matchTruckByName(e.truck_name, trucks);
-            if (!truck && (kind === "group" || kind === "reddit") && e.is_food_truck && e.truck_name.trim().length >= 3) {
-              const id = `${slugify(e.truck_name)}-${Math.random().toString(36).slice(2, 7)}`;
-              const { error } = await db.from("trucks").insert({ id, name: e.truck_name.trim(), status: "pending", source: `apify_${kind}` });
-              if (!error) {
-                const { postOwnerWebhook } = await import("@/lib/owner-webhook.server");
-                await postOwnerWebhook({ source: "scraper", isNewBusiness: true, contact: { name: "", email: "", phone: "" }, businessName: "",
-                  truckId: id, truckName: e.truck_name.trim(), truckType: "mobile", cuisine: "", city: e.city || "", description: p.url });
-              }
-              if (!error) { truck = { id, name: e.truck_name.trim(), claimed_by: null, phone: null, instagram: null, facebook: null, reddit: null }; trucks.push(truck); }
-            }
-            if (!truck) continue;
-            const q = [e.address || e.venue, e.city || "Quad Cities"].filter(Boolean).join(", ");
-            const geo = q ? await geocodeCached(db, q) : null;
-            if (!geo) continue;
-            const starts = centralToUtc(e.date, e.start || "11:00");
-            let ends = centralToUtc(e.date, e.end || "14:00");
-            if (ends <= starts) ends = new Date(starts.getTime() + 3 * 3_600_000);
-            // Never overwrite owner stops: skip if the owner already has a stop overlapping this time.
-            const { count } = await db.from("stops").select("id", { count: "exact", head: true }).eq("truck_id", truck.id).eq("source", "owner")
-              .eq("cancelled", false).lt("starts_at", ends.toISOString()).gt("ends_at", starts.toISOString());
-            if (count) continue;
-            const own = authorIsTruck(p.author, handlesOf(truck)) || (owner != null && sameBusiness(truck, owner) && kind !== "group" && kind !== "reddit");
-            if (own) {
-              // The truck posted it itself: auto-approved, straight onto the public calendar.
-              const { error } = await db.from("stops").insert({
-                truck_id: truck.id, venue_name: e.venue || e.address || "From their own post", address: e.address || null, city: e.city || geo.city || "",
-                lat: geo.lat, lng: geo.lng, starts_at: starts.toISOString(), ends_at: ends.toISOString(), source: "own_post", confidence: e.confidence, source_url: p.url,
-              });
-              if (!error) { stopsMade++; created++; }
-            } else {
-              // Someone else posted it: pending suggestion for the owner (or the admin queue for unclaimed trucks).
-              const { data: dup } = await db.from("suggested_stops").select("id").eq("truck_id", truck.id).eq("source_url", p.url)
-                .gte("starts_at", starts.toISOString()).lte("starts_at", ends.toISOString()).neq("status", "rejected").limit(1);
-              if (!dup?.length) {
-                const { error } = await db.from("suggested_stops").insert({
-                  truck_id: truck.id, source: kind, source_url: p.url, author: p.author || null, excerpt: p.text.slice(0, 500),
-                  venue_name: e.venue || e.address || "", address: e.address || null, city: e.city || geo.city || "",
-                  lat: geo.lat, lng: geo.lng, starts_at: starts.toISOString(), ends_at: ends.toISOString(),
-                });
-                if (!error) { stopsMade++; created++; }
-              }
-            }
-          }
+          const res = await ingestPost(ctx, kind, p, owner);
+          stopsMade = res.filter((r) => r.status === "published" || r.status === "suggested").length;
+          created += stopsMade;
+          srcPosts++; srcStops += stopsMade;
           await db.from("social_posts").upsert({ url: p.url, source_id: src.id, run_id: runId, stops_created: stopsMade });
           seen.add(p.url);
         } catch (e) {
@@ -316,7 +372,10 @@ export async function processFacebookRun(db: DB, runId: string, budgetMs = 20_00
         }
       }
       if (left) remaining += left;
-      else { done.add(src.id); await db.from("social_sources").update({ last_run_at: new Date().toISOString() }).eq("id", src.id); }
+      else {
+        done.add(src.id);
+        await db.from("social_sources").update({ last_run_at: new Date().toISOString(), last_status: "ok", last_posts: srcPosts, last_stops: srcStops, last_reason: srcPosts ? null : "No new posts since the last run" }).eq("id", src.id);
+      }
     }
   }
 
