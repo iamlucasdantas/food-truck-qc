@@ -84,6 +84,30 @@ export type Database = {
           },
         ]
       }
+      geocode_cache: {
+        Row: {
+          city: string | null
+          created_at: string
+          lat: number | null
+          lng: number | null
+          query: string
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string
+          lat?: number | null
+          lng?: number | null
+          query: string
+        }
+        Update: {
+          city?: string | null
+          created_at?: string
+          lat?: number | null
+          lng?: number | null
+          query?: string
+        }
+        Relationships: []
+      }
       ingestion_runs: {
         Row: {
           cities_done: string[]
@@ -93,6 +117,7 @@ export type Database = {
           id: string
           items_created: number
           items_found: number
+          meta: Json
           notes: string | null
           source: string
           started_at: string
@@ -106,6 +131,7 @@ export type Database = {
           id?: string
           items_created?: number
           items_found?: number
+          meta?: Json
           notes?: string | null
           source: string
           started_at?: string
@@ -119,12 +145,86 @@ export type Database = {
           id?: string
           items_created?: number
           items_found?: number
+          meta?: Json
           notes?: string | null
           source?: string
           started_at?: string
           status?: string
         }
         Relationships: []
+      }
+      social_posts: {
+        Row: {
+          processed_at: string
+          run_id: string | null
+          source_id: string | null
+          stops_created: number
+          url: string
+        }
+        Insert: {
+          processed_at?: string
+          run_id?: string | null
+          source_id?: string | null
+          stops_created?: number
+          url: string
+        }
+        Update: {
+          processed_at?: string
+          run_id?: string | null
+          source_id?: string | null
+          stops_created?: number
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_posts_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "social_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      social_sources: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          kind: string
+          last_run_at: string | null
+          name: string
+          truck_id: string | null
+          url: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          kind: string
+          last_run_at?: string | null
+          name?: string
+          truck_id?: string | null
+          url: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          kind?: string
+          last_run_at?: string | null
+          name?: string
+          truck_id?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_sources_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "trucks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stops: {
         Row: {
@@ -140,6 +240,7 @@ export type Database = {
           lng: number
           repeat_group: string | null
           source: Database["public"]["Enums"]["stop_source"]
+          source_url: string | null
           starts_at: string
           truck_id: string
           venue_name: string
@@ -157,6 +258,7 @@ export type Database = {
           lng: number
           repeat_group?: string | null
           source?: Database["public"]["Enums"]["stop_source"]
+          source_url?: string | null
           starts_at: string
           truck_id: string
           venue_name?: string
@@ -174,6 +276,7 @@ export type Database = {
           lng?: number
           repeat_group?: string | null
           source?: Database["public"]["Enums"]["stop_source"]
+          source_url?: string | null
           starts_at?: string
           truck_id?: string
           venue_name?: string
