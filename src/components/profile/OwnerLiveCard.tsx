@@ -84,9 +84,9 @@ export function OwnerLiveCard({ truck }: { truck: Truck }) {
           <p className="mb-2 text-2xl font-semibold">{now ? `${Math.max(0,Math.ceil((Date.parse(live.ends_at)-now.getTime())/60000))} min remaining` : "Live"}</p><p><b>You're live</b> at {live.venue_name} until {fmtCentral(live.ends_at)}.</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {[30, 60].map((m) => (
-              <Button key={m} onClick={() => void extend(live, m)} className="chip">+{m === 60 ? "1h" : "30 min"}</Button>
+              <Button variant="outline" key={m} onClick={() => void extend(live, m)} className="chip">+{m === 60 ? "1h" : "30 min"}</Button>
             ))}
-            <Button onClick={() => void supabase.from("stops").update({ ends_at: new Date().toISOString(), is_live: true }).eq("id", live.id).then(({ error }) => error ? supabase.from("stops").update({ cancelled: true }).eq("id", live.id).then(({ error: e2 }) => ok(e2, "Checked out")) : ok(null, "Checked out")).then(()=>qc.invalidateQueries({queryKey:["stops"]}))} className="chip"><Square/>End now</Button>
+            <Button variant="outline" onClick={() => void supabase.from("stops").update({ ends_at: new Date().toISOString(), is_live: true }).eq("id", live.id).then(({ error }) => error ? supabase.from("stops").update({ cancelled: true }).eq("id", live.id).then(({ error: e2 }) => ok(e2, "Checked out")) : ok(null, "Checked out")).then(()=>qc.invalidateQueries({queryKey:["stops"]}))} className="chip"><Square/>End now</Button>
           </div>
         </div>
       ) : null}
@@ -97,15 +97,15 @@ export function OwnerLiveCard({ truck }: { truck: Truck }) {
         <legend className="font-semibold">How long will you be here?</legend>
         <div className="flex flex-wrap gap-2">
           {[60, 120, 180, 240].map((m) => (
-            <Button key={m} type="button" onClick={() => setMins(m)} aria-pressed={mins === m} className={`chip min-h-10 ${mins === m ? "chip-active" : ""}`}>{m / 60}h</Button>
+            <Button variant="outline" key={m} type="button" onClick={() => setMins(m)} aria-pressed={mins === m} className={`chip min-h-10 ${mins === m ? "chip-active" : ""}`}>{m / 60}h</Button>
           ))}
-          <Button type="button" onClick={() => setMins("custom")} aria-pressed={mins === "custom"} className={`chip min-h-10 ${mins === "custom" ? "chip-active" : ""}`}>Custom</Button>
+          <Button variant="outline" type="button" onClick={() => setMins("custom")} aria-pressed={mins === "custom"} className={`chip min-h-10 ${mins === "custom" ? "chip-active" : ""}`}>Custom</Button>
         </div>
         {mins === "custom" && (
           <div className="space-y-2 rounded-xl border-2 border-border p-3">
             <div className="flex gap-2">
-              <Button type="button" onClick={() => setCustomMode("length")} aria-pressed={customMode === "length"} className={`chip ${customMode === "length" ? "chip-active" : ""}`}>For…</Button>
-              <Button type="button" onClick={() => setCustomMode("until")} aria-pressed={customMode === "until"} className={`chip ${customMode === "until" ? "chip-active" : ""}`}>Until…</Button>
+              <Button variant="outline" type="button" onClick={() => setCustomMode("length")} aria-pressed={customMode === "length"} className={`chip ${customMode === "length" ? "chip-active" : ""}`}>For…</Button>
+              <Button variant="outline" type="button" onClick={() => setCustomMode("until")} aria-pressed={customMode === "until"} className={`chip ${customMode === "until" ? "chip-active" : ""}`}>Until…</Button>
             </div>
             {customMode === "length" ? (
               <div className="flex items-center gap-2">
@@ -124,7 +124,7 @@ export function OwnerLiveCard({ truck }: { truck: Truck }) {
         <div className="space-y-2">
           <div className="flex gap-2">
             <input className="field" placeholder="Address, e.g. 1200 River Dr, Moline" value={addr} onChange={(e) => setAddr(e.target.value)} />
-            <Button onClick={findAddr} className="chip shrink-0">Find</Button>
+            <Button variant="outline" onClick={findAddr} className="chip shrink-0">Find</Button>
           </div>
           <div className="h-56 overflow-hidden rounded-xl border-2 border-border">
             <ClientOnly fallback={null}>
@@ -136,7 +136,7 @@ export function OwnerLiveCard({ truck }: { truck: Truck }) {
           <Button disabled={busy} onClick={() => void checkIn(pos, addr || "Live location")} className="chip w-full justify-center bg-primary py-2 text-primary-foreground">Check in at pin</Button>
         </div>
       )}
-      <Button onClick={closedToday} className="chip">🚫 Closed today</Button>
+      <Button variant="outline" onClick={closedToday} className="chip"><Square/>Closed today</Button>
     </div>
   );
 }
