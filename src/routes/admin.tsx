@@ -342,7 +342,7 @@ function FacebookTab() {
   const cont = useServerFn(continueFacebookUpdate);
   const [busy, setBusy] = useState(false);
   const [url, setUrl] = useState("");
-  const [kind, setKind] = useState<"group" | "page">("group");
+  const [kind, setKind] = useState<"group" | "page" | "reddit" | "instagram">("group");
   const { data: sources = [] } = useQuery({
     queryKey: ["admin", "social"],
     queryFn: async () => (await supabase.from("social_sources").select("*").order("created_at", { ascending: false })).data ?? [],
@@ -383,7 +383,7 @@ function FacebookTab() {
     <div className="space-y-3">
       <div className="panel space-y-3 p-5">
         <div className="flex flex-wrap gap-2">
-          <select className="field w-auto" value={kind} onChange={(e) => setKind(e.target.value as "group" | "page")}><option value="group">Group</option><option value="page">Page</option></select>
+          <select className="field w-auto" value={kind} onChange={(e) => setKind(e.target.value as typeof kind)}><option value="group">Facebook group</option><option value="page">Facebook page</option><option value="reddit">Reddit</option><option value="instagram">Instagram</option></select>
           <input className="field flex-1" placeholder="https://www.facebook.com/groups/…" value={url} onChange={(e) => setUrl(e.target.value)} />
           <button onClick={() => void add()} className="chip bg-primary text-primary-foreground">Add</button>
         </div>
