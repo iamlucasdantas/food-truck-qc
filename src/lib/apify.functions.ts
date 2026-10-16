@@ -1,0 +1,75 @@
+import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { mapApifyCategory, isFoodTruckPlace, slugify } from "@/data/trucks";
+
+export const SEED_CITIES = ["Davenport, IA", "Bettendorf, IA", "Rock Island, IL", "Moline, IL", "East Moline, IL", "Muscatine, IA", "Clinton, IA"];
+
+type Place = {
+  title?: string; categoryName?: string; categories?: string[]; phone?: string; website?: string; address?: string; city?: string;
+  location?: { lat: number; lng: number }; placeId?: string; imageUrl?: string; instagrams?: string[]; facebooks?: string[];
+};
+
+/** Admin-only: scrape one city from Google Maps via Apify and upsert trucks + 30 days of gray base stops. */
+export const seedCity = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { city: string }) => {
+    if (!SEED_CITIES.includes(d.city)) throw new Error("Unknown city");
+    return d;
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
+    if (!isAdmin) throw new Error("Forbidden");
+    const token = process.env["APIFY_TOKEN"];
+    if (!token) throw new Error("APIFY_TOKEN is not configured");
+
+    const res = await fetch("https://api.apify.com/v2/acts/compass~crawler-google-places/run-sync-get-dataset-items", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ searchStringsArray: ["food truck"], locationQuery: `${data.city}, USA`, maxCrawledPlacesPerSearch: 25, language: "en", scrapeContacts: true, skipClosedPlaces: true }),
+    });
+    if (!res.ok) throw new Error(`Apify request failed [${res.status}]: ${(await res.text()).slice(0, 300)}`);
+    const places = ((await res.json()) as Place[]).filter((p) => p.placeId && p.title && p.location && isFoodTruckPlace(p.categoryName, p.categories, p.title));
+
+    const ids = places.map((p) => p.placeId!);
+    const { data: existing } = ids.length ? await supabase.from("trucks").select("id, google_place_id, claimed_by").in("google_place_id", ids) : { data: [] };
+    const byPlace = new Map((existing ?? []).map((t) => [t.google_place_id!, t]));
+    let created = 0, updated = 0;
+    const errors: string[] = [];
+
+    for (const p of places) {
+      const fields = {
+        name: p.title!, category: mapApifyCategory(p.categoryName), phone: p.phone ?? null, website: p.website ?? null,
+        base_address: p.address ?? null, base_lat: p.location!.lat, base_lng: p.location!.lng, logo_url: p.imageUrl ?? null,
+        instagram: p.instagrams?.[0] ?? null, facebook: p.facebooks?.[0] ?? null, source: "apify", google_place_id: p.placeId!,
+      };
+      const ex = byPlace.get(p.placeId!);
+      let truckId: string;
+      if (ex) {
+        if (ex.claimed_by) continue; // owner manages this truck — never overwrite
+        const { error } = await supabase.from("trucks").update(fields).eq("id", ex.id);
+        if (error) { errors.push(`${p.title}: ${error.message}`); continue; }
+        truckId = ex.id; updated++;
+      } else {
+        truckId = `${slugify(p.title!)}-${p.placeId!.slice(-5).toLowerCase()}`;
+        const { error } = await supabase.from("trucks").insert({ id: truckId, ...fields, status: "active" });
+        if (error) { errors.push(`${p.title}: ${error.message}`); continue; }
+        created++;
+      }
+      // Replace future base-location stops (only apify_maps rows; owner stops untouched).
+      const now = new Date();
+      await supabase.from("stops").delete().eq("truck_id", truckId).eq("source", "apify_maps").gte("starts_at", now.toISOString());
+      const rows = Array.from({ length: 30 }, (_, i) => {
+        const day = new Date(now); day.setUTCDate(day.getUTCDate() + i);
+        const d = day.toISOString().slice(0, 10);
+        return {
+          truck_id: truckId, venue_name: "Base location (Google Maps)", address: p.address ?? null, city: p.city ?? data.city.split(",")[0]!,
+          lat: p.location!.lat, lng: p.location!.lng, starts_at: `${d}T16:00:00Z`, ends_at: `${d}T23:59:00Z`, // ~11am–7pm Central
+          source: "apify_maps" as const, confidence: 0.3,
+        };
+      });
+      const { error } = await supabase.from("stops").insert(rows);
+      if (error) errors.push(`${p.title} stops: ${error.message}`);
+    }
+    return { city: data.city, found: places.length, created, updated, errors };
+  });

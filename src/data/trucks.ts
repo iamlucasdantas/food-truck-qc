@@ -110,3 +110,24 @@ export function parseCsv(text: string): Record<string, string>[] {
   const keys = head.map((h) => h.trim().toLowerCase());
   return body.map((r) => Object.fromEntries(keys.map((k, i) => [k, (r[i] ?? "").trim()])));
 }
+
+const FOOD_WORDS = /food truck|food stand|food cart|mobile|caterer|catering|taco|bbq|barbecue|burger|hot dog|pizza|restaurant|ice cream|dessert|coffee|snack|sandwich|grill|kitchen|street food/i;
+const NON_FOOD = /repair|dealer|rental|auto|parking|storage|wash|towing|moving|supply|insurance|bank|school|church/i;
+
+/** Keep Google Maps results that are food trucks / food businesses; drop dealers, repair shops, etc. */
+export function isFoodTruckPlace(categoryName?: string, categories?: string[], title?: string): boolean {
+  const cats = [categoryName ?? "", ...(categories ?? [])].join(" | ");
+  if (/food truck/i.test(cats) || /food truck/i.test(title ?? "")) return true;
+  if (NON_FOOD.test(cats)) return false;
+  return FOOD_WORDS.test(cats);
+}
+
+const CAT_MAP: [RegExp, string][] = [
+  [/mexican|taco/i, "Mexican"], [/bbq|barbecue/i, "BBQ"], [/burger/i, "Burgers"], [/hot dog/i, "Hot Dogs"], [/pizza/i, "Pizza"],
+  [/ice cream|dessert|bakery|donut/i, "Desserts"], [/coffee|cafe/i, "Coffee"], [/thai/i, "Thai"], [/korean/i, "Korean"],
+  [/japanese|sushi/i, "Japanese"], [/indian/i, "Indian"], [/italian/i, "Italian"], [/caribbean|jamaican/i, "Caribbean"],
+  [/chicken|wings/i, "Chicken"], [/sandwich|deli/i, "Sandwiches"], [/seafood|fish/i, "Seafood"], [/asian|chinese/i, "Asian Fusion"],
+];
+export function mapApifyCategory(categoryName?: string): string {
+  return CAT_MAP.find(([re]) => re.test(categoryName ?? ""))?.[1] ?? "Other";
+}

@@ -51,3 +51,11 @@ t2("Google Maps base stops show gray and lose to real stops", () => {
   e2(ps([mk("apify_maps", 11, 19)], now, "now", now).stop).not.toBeNull();
   e2(ps([mk("apify_maps", 11, 19), mk("owner", 11, 14)], now, "now", now)).toMatchObject({ status: "open", stop: { id: "owner" } });
 });
+
+import { isFoodTruckPlace, mapApifyCategory } from "./trucks";
+t2("Apify filter keeps food trucks and drops dealers", () => {
+  e2(isFoodTruckPlace("Food truck")).toBe(true);
+  e2(isFoodTruckPlace("Truck dealer", ["Truck repair shop"], "QC Trucks")).toBe(false);
+  e2(mapApifyCategory("Mexican restaurant")).toBe("Mexican");
+  e2(mapApifyCategory("Food truck")).toBe("Other");
+});
