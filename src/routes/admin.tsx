@@ -12,6 +12,7 @@ import { seedCity, SEED_CITIES } from "@/lib/apify.functions";
 import { startFacebookUpdate, continueFacebookUpdate } from "@/lib/facebook.functions";
 import { notifyCrmTruckDecision } from "@/lib/crm.functions";
 import { AdminTrucks } from "@/components/AdminTrucks";
+import { AdminSuggestions, FacebookSession, PastePost } from "@/components/AdminFacebookTools";
 
 export const Route = createFileRoute("/admin")({
   staticData: { sitemap: false },
@@ -349,13 +350,19 @@ function FacebookTab() {
           <button disabled={busy || running} onClick={() => void run(false)} className="chip">{busy ? "Running…" : "Run Facebook update"}</button>
         </div>
       </div>
+      <AdminSuggestions />
+      <PastePost />
+      <FacebookSession />
       <h3 className="font-bold">Sources ({sources.length})</h3>
       <ul className="space-y-1 text-sm">
         {sources.map((s) => (
           <li key={s.id} className="panel flex items-center gap-2 p-2">
             <span className="chip">{s.kind}{s.truck_id ? " · truck" : ""}</span>
             <a href={s.url} target="_blank" rel="noreferrer" className="flex-1 truncate underline">{s.name || s.url}</a>
-            <span className="text-xs text-muted-foreground">{s.last_run_at ? new Date(s.last_run_at).toLocaleDateString() : "never"}</span>
+            <span className="text-right text-xs text-muted-foreground">
+              {s.last_run_at ? `${new Date(s.last_run_at).toLocaleDateString()} · ${s.last_status === "blocked" ? "blocked" : `${s.last_posts} posts, ${s.last_stops} stops`}` : "never run"}
+              {s.last_reason && <span className={`block ${s.last_status === "blocked" ? "font-semibold text-destructive" : ""}`}>{s.last_reason}</span>}
+            </span>
             <button className="chip" onClick={async () => { await supabase.from("social_sources").delete().eq("id", s.id); inv(); }}>Remove</button>
           </li>
         ))}
