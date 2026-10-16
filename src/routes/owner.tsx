@@ -160,7 +160,7 @@ function LiveCard({ truck }: { truck: Truck }) {
           <div className="h-56 overflow-hidden rounded-xl border-2 border-border">
             <ClientOnly fallback={null}>
               <Suspense fallback={null}>
-                <TruckMap pins={[]} center={pos} radiusMi={0.05} onSelect={() => {}} onCenterChange={setPos} />
+                <TruckMap pins={[]} center={pos} radiusMi={0} zoom={15} showRadius={false} onSelect={() => {}} onCenterChange={setPos} />
               </Suspense>
             </ClientOnly>
           </div>

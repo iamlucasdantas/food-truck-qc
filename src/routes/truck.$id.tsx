@@ -1,7 +1,8 @@
 import { SiteFooter } from "@/components/SiteFooter";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, ClientOnly } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
+const TruckMap = lazy(() => import("@/components/TruckMap"));
 import { supabase } from "@/integrations/supabase/client";
 import { fmtRange, SOURCE_LABEL } from "@/data/trucks";
 import { useStops, dayBounds, useStopsRealtime } from "@/lib/queries";
@@ -37,6 +38,7 @@ function TruckPage() {
   }, []);
   const { data: stops = [] } = useStops(from, to, [id]);
   useStopsRealtime();
+  const [mapFailed, setMapFailed] = useState(false);
 
   if (isLoading) return <main className="p-10 text-center text-muted-foreground">Loading…</main>;
   if (!t) return <div className="p-10 text-center"><p>Truck not found.</p><Link to="/" className="chip mt-4">Back to map</Link></div>;
@@ -45,17 +47,38 @@ function TruckPage() {
   return (
     <main className="mx-auto w-full max-w-[1100px] min-w-0 space-y-5 p-4 pb-16">
       <Link to="/" className="chip">← Map</Link>
-      <header className="panel flex items-center gap-4 p-5">
-        <div className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-2xl border-2 border-border bg-secondary text-5xl">
+      <header className="panel grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 p-4 sm:gap-4 sm:p-5">
+        <div className="grid h-16 w-16 sm:h-20 sm:w-20 shrink-0 place-items-center overflow-hidden rounded-2xl border-2 border-border bg-secondary text-5xl">
           {t.logo_url ? <img src={t.logo_url} alt="" className="h-full w-full object-cover" /> : t.emoji}
         </div>
-        <div className="flex-1">
-          <h1 className="text-3xl font-extrabold">{t.name}</h1>
+        <div className="min-w-0">
+          <h1 className="break-words text-2xl font-extrabold sm:text-3xl">{t.name}</h1>
           <p className="text-muted-foreground">{t.category} · {t.accepts_card ? "Cards accepted" : "Cash only"}</p>
         </div>
         <button onClick={() => toggle(t.id)} aria-label="Favorite" className={`chip ${isFav(t.id) ? "chip-active" : ""}`}>♥</button>
       </header>
       <p>{t.description}</p>
+      {(() => {
+        const s0 = stops[0];
+        const pt = s0 ? { lat: s0.lat, lng: s0.lng } : t.base_lat != null && t.base_lng != null ? { lat: t.base_lat, lng: t.base_lng } : null;
+        if (!pt || mapFailed) return null;
+        return (
+          <section className="panel overflow-hidden">
+            <div className="h-56 sm:h-72">
+              <ClientOnly fallback={<div className="h-full bg-muted" />}>
+                <Suspense fallback={<div className="h-full bg-muted" />}>
+                  <TruckMap pins={[{ id: t.id, ...pt, status: s0 ? "today" : "none", emoji: t.emoji, name: t.name }]} center={pt} radiusMi={0} zoom={14}
+                    showRadius={false} draggable={false} onSelect={() => {}} onCenterChange={() => {}} onFail={() => setMapFailed(true)} />
+                </Suspense>
+              </ClientOnly>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-2 p-3 text-sm">
+              <span className="min-w-0">{s0 ? `${s0.venue_name}, ${s0.city}` : (t.base_address ?? "Base location (not confirmed)")}</span>
+              <a target="_blank" rel="noreferrer" className="chip" href={`https://www.google.com/maps/dir/?api=1&destination=${pt.lat},${pt.lng}`}>Directions</a>
+            </div>
+          </section>
+        );
+      })()}
 
       <section className="panel p-5">
         <h2 className="mb-3 text-xl font-bold">Next 7 days</h2>
@@ -63,8 +86,8 @@ function TruckPage() {
         <ul className="divide-y-2 divide-muted">
           {stops.map((s) => (
             <li key={s.id} className="flex justify-between gap-3 py-2 text-sm">
-              <span className="w-28 font-semibold">{new Date(s.starts_at).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</span>
-              <span className="flex-1 text-right">
+              <span className="w-24 shrink-0 font-semibold sm:w-28">{new Date(s.starts_at).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</span>
+              <span className="min-w-0 flex-1 text-right">
                 {s.venue_name}, {s.city} · {fmtRange(s)}
                 <span className="block text-xs text-muted-foreground">{SOURCE_LABEL[s.source]}</span>
               </span>
