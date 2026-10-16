@@ -44,7 +44,7 @@ export function PastePost() {
   async function go(save: boolean) {
     setBusy(true);
     try {
-      const r = await run({ data: { text, image: image || undefined, author, postDate, url, save } });
+      const r = await run({ data: { text, image, author, postDate, url, save } });
       setRes(r);
       if (r.error) toast.error(r.error);
       else if (r.read && !save) { if (!text) setText(r.read.text); if (!author) setAuthor(r.read.author); if (!postDate) setPostDate(r.read.postDate); setImage(""); }
