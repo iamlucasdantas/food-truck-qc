@@ -131,7 +131,7 @@ function TruckPage() {
       </section>
 
       {sections?.length ? (
-        <section className="panel p-5" aria-labelledby="menu-h">
+        <section id="menu" className="panel scroll-mt-4 p-5" aria-labelledby="menu-h">
           <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
             <h2 id="menu-h" className="text-xl font-bold">Current menu</h2>
             {t.menu_updated_at && <p className="text-sm text-muted-foreground">Updated by owner · {new Date(t.menu_updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>}
@@ -156,14 +156,19 @@ function TruckPage() {
             ))}
           </div>
         </section>
-      ) : menu.length > 0 && (
-        <section className="panel p-5">
+      ) : menu.length > 0 ? (
+        <section id="menu" className="panel scroll-mt-4 p-5">
           <h2 className="mb-3 text-xl font-bold">Menu</h2>
           <ul className="space-y-1 text-sm">
             {menu.map((m) => (
               <li key={m.item} className="flex justify-between"><span>{m.item}</span><span className="font-semibold">${m.price.toFixed(2)}</span></li>
             ))}
           </ul>
+        </section>
+      ) : (
+        <section id="menu" className="panel scroll-mt-4 p-5">
+          <h2 className="mb-3 text-xl font-bold">Menu</h2>
+          <p className="text-sm text-muted-foreground">No menu published yet.</p>
         </section>
       )}
 

@@ -5,7 +5,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ClientOnly } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Search, SlidersHorizontal, Heart, X, Phone, Globe, Instagram, Navigation, ChevronDown } from "lucide-react";
+import { Search, SlidersHorizontal, Heart, X, ExternalLink, Utensils, ArrowRight, Navigation, ChevronDown } from "lucide-react";
 import {
   pickStop, placeTruck, byStatusThenDistance, chooseCenter, milesBetween, fmtRange, fmtTime, QC_CENTER, SOURCE_LABEL,
   fmtCentral, type Window, type Status, type Stop,
@@ -19,6 +19,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 
 const TruckMap = lazy(() => import("@/components/TruckMap"));
 
@@ -401,13 +402,22 @@ function Index() {
               <button onClick={() => toggle(sel.t.id)} aria-label={isFav(sel.t.id) ? "Remove from favorites" : "Save to favorites"} className={`grid h-11 w-11 shrink-0 place-items-center rounded-full hover:bg-muted ${focus}`}><Heart className={`h-5 w-5 ${isFav(sel.t.id) ? "fill-primary text-primary" : "text-muted-foreground"}`} /></button>
               <button onClick={() => setSelected(null)} aria-label="Close" className={`grid h-11 w-11 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-muted ${focus}`}><X className="h-5 w-5" /></button>
             </div>
-            <div className="mt-3 grid grid-cols-4 gap-2">
-              <Action href={sel.t.phone ? `tel:${sel.t.phone}` : undefined} icon={<Phone className="h-5 w-5" />} label="Call" />
-              <Action href={sel.t.website ?? undefined} icon={<Globe className="h-5 w-5" />} label="Website" external />
-              <Action href={sel.t.instagram ? (sel.t.instagram.startsWith("http") ? sel.t.instagram : `https://instagram.com/${sel.t.instagram.replace(/^@/, "")}`) : undefined} icon={<Instagram className="h-5 w-5" />} label="Instagram" external />
-              <Action href={`https://www.google.com/maps/dir/?api=1&destination=${sel.lat},${sel.lng}`} icon={<Navigation className="h-5 w-5" />} label="Directions" external primary />
+            {sel.stop?.source_url && /^https?:\/\//i.test(sel.stop.source_url) && (
+              <Button asChild variant="link" className="mt-2 h-auto max-w-full justify-start px-0 py-1 text-xs">
+                <a href={sel.stop.source_url} target="_blank" rel="noopener noreferrer"><ExternalLink />Original post</a>
+              </Button>
+            )}
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <Button asChild className="h-11">
+                <a href={`https://www.google.com/maps/dir/?api=1&destination=${sel.lat},${sel.lng}`} target="_blank" rel="noopener noreferrer"><Navigation />Directions</a>
+              </Button>
+              <Button asChild variant="outline" className="h-11">
+                <Link to="/truck/$id" params={{ id: sel.t.id }} hash="menu"><Utensils />Menu</Link>
+              </Button>
             </div>
-            <Link to="/truck/$id" params={{ id: sel.t.id }} className={`mt-2 flex h-11 items-center justify-center rounded-xl text-sm font-semibold text-primary hover:bg-muted ${focus}`}>View details →</Link>
+            <Button asChild variant="link" className="mt-2 h-11 w-full">
+              <Link to="/truck/$id" params={{ id: sel.t.id }}>View profile<ArrowRight /></Link>
+            </Button>
           </div>
         </div>
       )}
@@ -424,8 +434,3 @@ function Section({ title, aside, children }: { title: string; aside?: ReactNode;
   );
 }
 
-function Action({ href, icon, label, external, primary }: { href?: string | undefined; icon: ReactNode; label: string; external?: boolean; primary?: boolean }) {
-  const cls = `flex h-16 flex-col items-center justify-center gap-1.5 rounded-md border text-[13px] font-medium transition-colors duration-150 ${focus} ${primary ? "border-primary bg-primary text-primary-foreground hover:bg-primary/90" : "border-border bg-card hover:bg-accent"}`;
-  if (!href) return <span className={`${cls} cursor-not-allowed text-pin-none`} aria-disabled>{icon}{label}</span>;
-  return <a href={href} className={cls} {...(external ? { target: "_blank", rel: "noreferrer" } : {})}>{icon}{label}</a>;
-}
