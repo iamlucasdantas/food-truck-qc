@@ -38,3 +38,21 @@ describe("business info is asked once", () => {
     expect(buildSignup({ ...input, truckName: " taco one " }, existing).ok).toBe(false);
   });
 });
+
+import { ownerWebhookPayload } from "./business";
+describe("owner webhook events", () => {
+  const base = { contact: { name: "Ana Ruiz", email: "a@b.com", phone: "1" }, businessName: "Ruiz Eats", truckId: "t1", truckName: "Taco", truckType: "mobile", cuisine: "Tacos", city: "Moline" };
+  it("new business → owner_signup", () => {
+    const p = ownerWebhookPayload({ ...base, source: "embed", isNewBusiness: true });
+    expect([p.event, p.is_new_business, p.source, p.business_name]).toEqual(["owner_signup", "true", "embed", "Ruiz Eats"]);
+    expect(p.admin_review_url).toBe("https://app.foodtruckqc.com/admin?tab=pending");
+  });
+  it("extra truck → truck_added", () => {
+    const p = ownerWebhookPayload({ ...base, source: "owner_dashboard", isNewBusiness: false });
+    expect([p.event, p.is_new_business]).toEqual(["truck_added", "false"]);
+  });
+  it("scraped truck → truck_detected with empty email", () => {
+    const p = ownerWebhookPayload({ ...base, contact: { name: "", email: "", phone: "" }, source: "scraper", isNewBusiness: true });
+    expect([p.event, p.email, p.first_name, p.source]).toEqual(["truck_detected", "", "", "scraper"]);
+  });
+});

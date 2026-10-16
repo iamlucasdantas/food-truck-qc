@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { buildSignup, parseBusinessName, parseContact, signupStepsFor, type ExistingBusiness } from "@/data/business";
 
 const opt = (max: number) => z.string().trim().max(max).optional().default("");
@@ -74,22 +75,32 @@ export const submitTruckSignup = createServerFn({ method: "POST" })
     if (s.truck.created_by) {
       await supabaseAdmin.from("claims").insert({ truck_id: id, user_id: s.truck.created_by, user_email: s.contact.email, message: "Additional truck submitted via the embed form" });
     }
-    const hook = process.env["HIGHLEVEL_OWNER_WEBHOOK_URL"];
-    if (hook) {
-      const [first = "", ...rest] = s.contact.name.split(" ");
-      try {
-        const res = await fetch(hook, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            event: "owner_signup", email: s.contact.email, first_name: first, last_name: rest.join(" "), name: s.contact.name,
-            phone: s.contact.phone, business_name: s.businessName, truck_name: s.truck.name, cuisine: data.category, city: data.city, truck_type: data.truckType,
-            instagram: s.truck.instagram ?? "", facebook: s.truck.facebook ?? "", website: s.truck.website ?? "", description: s.linked ? "" : data.description,
-            truck_url: `https://app.foodtruckqc.com/truck/${id}`, tags: ["owner"],
-          }),
-        });
-        if (!res.ok) console.error(`[HighLevel] owner webhook failed [${res.status}]: ${await res.text().catch(() => "")}`);
-      } catch (e) { console.error("[HighLevel] owner webhook failed", e); }
-    }
+    const { postOwnerWebhook } = await import("@/lib/owner-webhook.server");
+    await postOwnerWebhook({
+      source: "embed", isNewBusiness: !s.linked, contact: s.contact, businessName: s.businessName,
+      truckId: id, truckName: s.truck.name, truckType: data.truckType, cuisine: data.category, city: data.city,
+      instagram: s.truck.instagram, facebook: s.truck.facebook, website: s.truck.website, description: s.linked ? "" : data.description,
+    });
+    return { ok: true };
+  });
+
+/** Signed-in owner just created a pending truck (/owner/new): notify HighLevel once. Never blocks the save. */
+export const notifyOwnerTruckAdded = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ truckId: z.string().min(1).max(120), isNewBusiness: z.boolean() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { data: t } = await context.supabase.from("trucks").select("*").eq("id", data.truckId).maybeSingle();
+    // Only the creator, only while pending and fresh — so it fires once per new truck.
+    if (!t || t.created_by !== context.userId || t.status !== "pending" || Date.now() - new Date(t.created_at).getTime() > 10 * 60_000) return { ok: false };
+    const { data: biz } = await context.supabase.from("businesses").select("*").eq("owner_id", context.userId).maybeSingle();
+    const email = (context.claims as { email?: string })?.email ?? "";
+    const c = parseContact(t.description) ?? { name: "", email, phone: "" };
+    const { postOwnerWebhook } = await import("@/lib/owner-webhook.server");
+    await postOwnerWebhook({
+      source: "owner_dashboard", isNewBusiness: data.isNewBusiness, contact: { ...c, email: c.email || email },
+      businessName: biz?.name || parseBusinessName(t.description), truckId: t.id, truckName: t.name, truckType: t.truck_type,
+      cuisine: t.category, city: t.base_address ?? "", instagram: biz?.instagram, facebook: biz?.facebook, website: biz?.website,
+      description: data.isNewBusiness ? (biz?.description ?? "") : "",
+    });
     return { ok: true };
   });

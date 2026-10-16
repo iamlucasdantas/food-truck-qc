@@ -6,6 +6,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { slugify } from "@/data/trucks";
 import { geocode } from "@/lib/geocode";
 import { StepHeader } from "@/components/StepHeader";
+import { useServerFn } from "@tanstack/react-start";
+import { notifyOwnerTruckAdded } from "@/lib/embed.functions";
 import { contactLine, parseContact, sameName } from "@/data/business";
 
 export const Route = createFileRoute("/owner/new")({
@@ -25,6 +27,7 @@ export const Route = createFileRoute("/owner/new")({
 
 function NewTruck() {
   const { user, openAuth } = useAuth();
+  const notify = useServerFn(notifyOwnerTruckAdded);
   const [f, setF] = useState({ contactName: "", email: "", businessName: "", name: "", category: "", emoji: "🚚", phone: "", website: "", instagram: "", facebook: "", address: "", description: "", truckType: "" as "" | "fixed" | "mobile" });
   const [err, setErr] = useState<Record<string, string>>({});
   const [step, setStep] = useState<0 | 1>(0);
@@ -99,6 +102,7 @@ function NewTruck() {
       status: "pending", created_by: user.id, truck_type: f.truckType, description: bizLine + contact,
       base_address: f.address || null, base_lat: g?.lat ?? null, base_lng: g?.lng ?? null,
     });
+    if (!error) void notify({ data: { truckId: id, isNewBusiness: !linked } }).catch((e) => console.error("[owner/new] notify failed", e));
     if (!error) await supabase.from("claims").insert({ truck_id: id, user_id: user.id, user_email: user.email ?? null, message: "New truck submitted by owner" });
     setBusy(false);
     if (error) return void toast.error(error.message);
