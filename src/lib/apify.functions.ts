@@ -12,7 +12,7 @@ type Place = {
 /** Admin-only: scrape one city from Google Maps via Apify and upsert trucks + 30 days of gray base stops. */
 export const seedCity = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { city: string }) => {
+  .inputValidator((d: { city: string; runId?: string | undefined }) => {
     if (!SEED_CITIES.includes(d.city)) throw new Error("Unknown city");
     return d;
   })
@@ -70,6 +70,22 @@ export const seedCity = createServerFn({ method: "POST" })
       });
       const { error } = await supabase.from("stops").insert(rows);
       if (error) errors.push(`${p.title} stops: ${error.message}`);
+    }
+    // Record per-city progress server-side so a page reload never loses finished cities.
+    if (data.runId) {
+      const { data: run } = await supabase.from("ingestion_runs").select("*").eq("id", data.runId).single();
+      if (run) {
+        const done = Array.from(new Set([...(run.cities_done ?? []), data.city]));
+        const total = run.cities_total?.length ? run.cities_total : SEED_CITIES;
+        const allDone = total.every((c) => done.includes(c));
+        const prevErr = run.error ? run.error.split("\n") : [];
+        const errs = [...prevErr, ...errors].slice(0, 20);
+        await supabase.from("ingestion_runs").update({
+          cities_done: done, items_found: run.items_found + places.length, items_created: run.items_created + created,
+          notes: `Google Maps seed · ${done.length}/${total.length} cities`, error: errs.join("\n") || null,
+          ...(allDone ? { status: errs.length ? "partial" : "success", finished_at: new Date().toISOString() } : {}),
+        }).eq("id", data.runId);
+      }
     }
     return { city: data.city, found: places.length, created, updated, errors };
   });
