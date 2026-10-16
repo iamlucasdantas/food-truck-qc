@@ -43,6 +43,13 @@
       "when": 1792117195034,
       "tag": "0005_ingestion_city_progress",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792150534509,
+      "tag": "0006_facebook_sources",
+      "breakpoints": true
     }
   ]
 }

@@ -8,6 +8,7 @@ import { parseCsv, slugify } from "@/data/trucks";
 import { geocode } from "@/lib/geocode";
 import { useServerFn } from "@tanstack/react-start";
 import { seedCity, SEED_CITIES } from "@/lib/apify.functions";
+import { startFacebookUpdate, continueFacebookUpdate } from "@/lib/facebook.functions";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -24,7 +25,7 @@ export const Route = createFileRoute("/admin")({
   component: Admin,
 });
 
-const TABS = ["Claims", "Pending trucks", "Trucks", "CSV import", "Apify", "Logs"] as const;
+const TABS = ["Claims", "Pending trucks", "Trucks", "CSV import", "Apify", "Facebook", "Logs"] as const;
 const err = (e: { message: string } | null) => (e ? (toast.error(e.message), true) : false);
 
 function Admin() {
@@ -48,6 +49,7 @@ function Admin() {
           {tab === "Trucks" && <Trucks />}
           {tab === "CSV import" && <CsvImport />}
           {tab === "Apify" && <ApifySeed />}
+          {tab === "Facebook" && <FacebookTab />}
           {tab === "Logs" && <Logs />}
         </>
       )}
@@ -323,6 +325,86 @@ function ApifySeed() {
           ))}
         </ul>
       )}
+    </div>
+  );
+}
+
+function FacebookTab() {
+  const inv = useInvalidate();
+  const start = useServerFn(startFacebookUpdate);
+  const cont = useServerFn(continueFacebookUpdate);
+  const [busy, setBusy] = useState(false);
+  const [url, setUrl] = useState("");
+  const [kind, setKind] = useState<"group" | "page">("group");
+  const { data: sources = [] } = useQuery({
+    queryKey: ["admin", "social"],
+    queryFn: async () => (await supabase.from("social_sources").select("*").order("created_at", { ascending: false })).data ?? [],
+  });
+  const { data: runs = [] } = useQuery({
+    queryKey: ["admin", "runs", "fb"],
+    queryFn: async () => (await supabase.from("ingestion_runs").select("*").eq("source", "apify_facebook").order("started_at", { ascending: false }).limit(10)).data ?? [],
+    refetchInterval: busy ? 5000 : false,
+  });
+  const latest = runs[0];
+  const running = latest?.status === "running";
+
+  const add = async () => {
+    if (!/facebook\.com\//i.test(url)) return toast.error("Paste a facebook.com URL");
+    const { error } = await supabase.from("social_sources").insert({ kind, url: url.trim(), name: url.trim().split("/").filter(Boolean).pop() ?? "" });
+    if (error) return toast.error(error.message);
+    setUrl(""); inv(); return undefined;
+  };
+  const loop = async (runId: string) => {
+    for (let i = 0; i < 60; i++) {
+      const out = await cont({ data: { runId } });
+      inv();
+      if (out.done) return toast.success("Facebook update finished");
+      await new Promise((r) => setTimeout(r, out.remaining > 0 ? 1000 : 10000));
+    }
+    return undefined;
+  };
+  const run = async (resume: boolean) => {
+    setBusy(true);
+    try {
+      const runId = resume && latest ? latest.id : (await start()).runId;
+      inv(); await loop(runId);
+    } catch (e) { toast.error(e instanceof Error ? e.message : String(e)); }
+    setBusy(false); inv();
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="panel space-y-3 p-5">
+        <div className="flex flex-wrap gap-2">
+          <select className="field w-auto" value={kind} onChange={(e) => setKind(e.target.value as "group" | "page")}><option value="group">Group</option><option value="page">Page</option></select>
+          <input className="field flex-1" placeholder="https://www.facebook.com/groups/…" value={url} onChange={(e) => setUrl(e.target.value)} />
+          <button onClick={() => void add()} className="chip bg-primary text-primary-foreground">Add</button>
+        </div>
+        <p className="text-sm text-muted-foreground">Only public groups work. Every truck with a Facebook link is checked automatically too. Runs daily at 6am Central; uses Apify and AI credits.</p>
+        {latest && <p className="text-sm font-semibold">Sources done {latest.cities_done.length}/{latest.cities_total.length} · {latest.status} · {latest.items_created} stops added</p>}
+        <div className="flex flex-wrap gap-2">
+          {running && <button disabled={busy} onClick={() => void run(true)} className="chip bg-primary text-primary-foreground">{busy ? "Running…" : "Continue"}</button>}
+          <button disabled={busy || running} onClick={() => void run(false)} className="chip">{busy ? "Running…" : "Run Facebook update"}</button>
+        </div>
+      </div>
+      <h3 className="font-bold">Sources ({sources.length})</h3>
+      <ul className="space-y-1 text-sm">
+        {sources.map((s) => (
+          <li key={s.id} className="panel flex items-center gap-2 p-2">
+            <span className="chip">{s.kind}{s.truck_id ? " · truck" : ""}</span>
+            <a href={s.url} target="_blank" rel="noreferrer" className="flex-1 truncate underline">{s.name || s.url}</a>
+            <span className="text-xs text-muted-foreground">{s.last_run_at ? new Date(s.last_run_at).toLocaleDateString() : "never"}</span>
+            <button className="chip" onClick={async () => { await supabase.from("social_sources").delete().eq("id", s.id); inv(); }}>Remove</button>
+          </li>
+        ))}
+      </ul>
+      <h3 className="font-bold">Last runs</h3>
+      <ul className="space-y-1 text-sm">
+        {runs.map((r) => (
+          <li key={r.id} className="panel p-3"><b>{new Date(r.started_at).toLocaleString()}</b> · {r.notes} · {r.status} · {r.items_found} posts · {r.items_created} stops
+            {r.error && <pre className="mt-1 whitespace-pre-wrap text-xs text-destructive">{r.error}</pre>}</li>
+        ))}
+      </ul>
     </div>
   );
 }

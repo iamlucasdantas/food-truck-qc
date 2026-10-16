@@ -4,7 +4,7 @@ import { milesBetween, pickStop, closingTime, slugify, QC_CENTER, type Stop } fr
 const stop = (start: Date, end: Date, extra: Partial<Stop> = {}): Stop => ({
   id: "s", truck_id: "t", venue_name: "Park", address: null, city: "Moline", lat: 0, lng: 0,
   starts_at: start.toISOString(), ends_at: end.toISOString(), source: "owner", confidence: 1,
-  is_live: false, cancelled: false, repeat_group: null, created_at: start.toISOString(), ...extra,
+  is_live: false, cancelled: false, repeat_group: null, source_url: null, created_at: start.toISOString(), ...extra,
 });
 
 describe("truck rules", () => {
@@ -72,5 +72,24 @@ describe("map placement", () => {
   it("falls back to Quad Cities when user is far away", () => {
     expect(chooseCenter({ lat: 40.7, lng: -74 })).toEqual(QC);
     expect(chooseCenter(null)).toEqual(QC);
+  });
+});
+
+import { normalizeTruckName, matchTruckByName, centralToUtc, keepExtraction } from "./trucks";
+describe("facebook post rules", () => {
+  it("matches names loosely", () => {
+    expect(normalizeTruckName("The Bragg BBQ Food Truck, LLC")).toBe("bragg bbq");
+    expect(matchTruckByName("Bragg BBQ", [{ name: "Bragg BBQ Truck" }])?.name).toBe("Bragg BBQ Truck");
+    expect(matchTruckByName("Tacos", [{ name: "Bragg BBQ" }])).toBeNull();
+  });
+  it("converts Central time to UTC with DST", () => {
+    expect(centralToUtc("2026-07-01", "11:00").toISOString()).toBe("2026-07-01T16:00:00.000Z");
+    expect(centralToUtc("2026-12-01", "11:00").toISOString()).toBe("2026-12-01T17:00:00.000Z");
+  });
+  it("keeps only confidence >= 0.7 within today..+30 days", () => {
+    expect(keepExtraction({ confidence: 0.7, date: "2026-10-16" }, "2026-10-16")).toBe(true);
+    expect(keepExtraction({ confidence: 0.69, date: "2026-10-16" }, "2026-10-16")).toBe(false);
+    expect(keepExtraction({ confidence: 0.9, date: "2026-10-15" }, "2026-10-16")).toBe(false);
+    expect(keepExtraction({ confidence: 0.9, date: "2026-11-16" }, "2026-10-16")).toBe(false);
   });
 });

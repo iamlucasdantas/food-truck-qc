@@ -149,3 +149,35 @@ export function byStatusThenDistance(a: { status: Status; dist: number }, b: { s
 export function chooseCenter(user: { lat: number; lng: number } | null) {
   return user && milesBetween(user, QC_CENTER) <= 40 ? user : QC_CENTER;
 }
+
+/** Truck names compared loosely: lowercase, no punctuation, filler words dropped. */
+export function normalizeTruckName(name: string): string {
+  return name.toLowerCase().replace(/&/g, " and ").replace(/[^a-z0-9 ]/g, " ")
+    .split(/\s+/).filter((w) => w && !["the", "food", "truck", "trailer", "llc", "co", "inc"].includes(w)).join(" ");
+}
+/** Find an existing truck by normalized name (exact, or containment for names ≥ 5 chars). */
+export function matchTruckByName<T extends { name: string }>(name: string, trucks: T[]): T | null {
+  const n = normalizeTruckName(name);
+  if (n.length < 3) return null;
+  return trucks.find((t) => normalizeTruckName(t.name) === n)
+    ?? (n.length >= 5 ? trucks.find((t) => { const m = normalizeTruckName(t.name); return m.length >= 5 && (m.includes(n) || n.includes(m)); }) : undefined)
+    ?? null;
+}
+/** Today's date (YYYY-MM-DD) in Quad Cities (Central) time. */
+export function chicagoDate(now = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago" }).format(now);
+}
+/** Central local date + HH:MM → UTC Date (DST-aware). */
+export function centralToUtc(date: string, time: string): Date {
+  const guess = new Date(`${date}T${time.padStart(5, "0")}:00Z`);
+  const p = new Intl.DateTimeFormat("en-US", { timeZone: "America/Chicago", hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).formatToParts(guess);
+  const g = (t: string) => Number(p.find((x) => x.type === t)!.value);
+  const asLocal = Date.UTC(g("year"), g("month") - 1, g("day"), g("hour"), g("minute"));
+  return new Date(guess.getTime() + (guess.getTime() - asLocal));
+}
+/** Keep an AI-extracted stop only if confident (≥ 0.7) and dated today through the next 30 days. */
+export function keepExtraction(e: { confidence: number; date: string }, today: string): boolean {
+  if (!(e.confidence >= 0.7) || !/^\d{4}-\d{2}-\d{2}$/.test(e.date)) return false;
+  const days = (Date.parse(e.date) - Date.parse(today)) / 86_400_000;
+  return days >= 0 && days <= 30;
+}
