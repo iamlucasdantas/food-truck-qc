@@ -150,7 +150,7 @@ function Wizard({ userId, email }: { userId: string; email: string }) {
   const completenessInput: CompletenessInput = {
     businessName: biz.name, description: biz.description, logoUrl: biz.logo_url, paymentMethods: biz.payment_methods,
     truckName: truck?.name ?? "", cuisine: truck?.category ?? "",
-    hasMenu: Array.isArray(truck?.menu_sections) && truck.menu_sections.length > 0, photoCount, hasSchedule: stopCount > 0,
+    hasMenu: ((truck?.menu_sections as unknown[] | null)?.length ?? 0) > 0, photoCount, hasSchedule: stopCount > 0,
   };
 
   return (
