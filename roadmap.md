@@ -3,7 +3,7 @@
 ## Automated Facebook scans
 - [x] Prepare six daily scan times, every two hours 10:00–20:00 Chicago, DST-safe; retain old daily callback contract
 - [x] Five timing tests passed including DST changes; callback rejects unauthenticated requests (401), build OK
-- [ ] Activate replacement managed schedule after publication approval (current live schedule remains 6am)
+- [x] Publication requested with user approval; managed schedule id 1 replaced and read back active with every-two-hours body and DST-safe UTC candidate hours (Chicago filter allows exactly six scans daily); 135 tests passed, build OK. Deployment completion and first scheduled scrape not yet verified.
 
 ## Mobile fixes and map preview
 - [x] Fix profile header and quiet-hours input layout on phones
