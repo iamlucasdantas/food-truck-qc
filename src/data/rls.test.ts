@@ -1,10 +1,11 @@
+// @vitest-environment node
 // Live checks of the access rules on the real backend, as a signed-out visitor.
 // Owner-only writes (photos, menu, business) must be refused; public reads must work.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const env = Object.fromEntries(
-  readFileSync(new URL("../../.env", import.meta.url), "utf8").split("\n").map((l) => l.match(/^(\w+)="?([^"]*)"?$/)).filter(Boolean).map((m) => [m![1], m![2]]),
+  readFileSync(`${process.cwd()}/.env`, "utf8").split("\n").map((l) => l.match(/^(\w+)="?([^"]*)"?$/)).filter(Boolean).map((m) => [m![1], m![2]]),
 ) as Record<string, string>;
 const URL_ = env["VITE_SUPABASE_URL"]!;
 const KEY = env["VITE_SUPABASE_PUBLISHABLE_KEY"]!;
