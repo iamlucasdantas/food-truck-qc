@@ -1,4 +1,4 @@
-import { CUISINES, cuisineOf, cityOf, matchesFilters, parseFilters, filtersToSearch, type CuisineKey, type Filters } from "@/data/filters";
+import { CUISINES, cityOf, matchesFilters, parseFilters, filtersToSearch, type CuisineKey, type Filters } from "@/data/filters";
 import { truckByline } from "@/data/onboarding";
 import { Logo } from "@/components/Logo";
 import { SiteFooter } from "@/components/SiteFooter";
