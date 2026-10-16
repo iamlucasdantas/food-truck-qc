@@ -29,6 +29,13 @@
       "when": 1792115642837,
       "tag": "0003_admin_by_verified_email",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792115682338,
+      "tag": "0004_second_admin_email",
+      "breakpoints": true
     }
   ]
 }
