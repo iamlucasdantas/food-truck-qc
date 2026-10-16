@@ -15,3 +15,7 @@
 ## Step 3 — done
 - [x] /admin: claims (approve/reject w/ reason), pending trucks, trucks search/edit/archive/merge, CSV import, import logs
 - [x] PWA manifest + icons, /privacy, /terms, Admin link in account menu
+
+## Step 4 — done
+- [x] Public footer links to Privacy/Terms
+- [x] Apify Google Maps seed (admin tab, per-city runs, gray base stops, run logs)

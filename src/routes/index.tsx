@@ -1,3 +1,4 @@
+import { SiteFooter } from "@/components/SiteFooter";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ClientOnly } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
@@ -197,6 +198,7 @@ function Index() {
               </li>
             ))}
           </ul>
+          <SiteFooter />
         </div>
       </div>
     </div>

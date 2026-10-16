@@ -24,7 +24,15 @@ const hours = (d: Date) => d.getHours() + d.getMinutes() / 60;
 const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
 
 /** Best stop for one truck on a date/time window, with status relative to now. */
+/** Google Maps base-location stops are low-confidence: shown gray ("none"), only when no real stop matches. */
 export function pickStop(stops: Stop[], date: Date, win: Window, now: Date): { stop: Stop | null; status: Status } {
+  const real = pickReal(stops.filter((s) => s.source !== "apify_maps"), date, win, now);
+  if (real.stop) return real;
+  const base = stops.find((s) => !s.cancelled && s.source === "apify_maps" && sameDay(new Date(s.starts_at), date));
+  return base ? { stop: base, status: "none" } : real;
+}
+
+function pickReal(stops: Stop[], date: Date, win: Window, now: Date): { stop: Stop | null; status: Status } {
   const live = stops.filter((s) => !s.cancelled);
   if (win === "now") {
     if (!sameDay(date, now)) return { stop: null, status: "none" };
@@ -101,4 +109,25 @@ export function parseCsv(text: string): Record<string, string>[] {
   if (!head) return [];
   const keys = head.map((h) => h.trim().toLowerCase());
   return body.map((r) => Object.fromEntries(keys.map((k, i) => [k, (r[i] ?? "").trim()])));
+}
+
+const FOOD_WORDS = /food truck|food stand|food cart|mobile|caterer|catering|taco|bbq|barbecue|burger|hot dog|pizza|restaurant|ice cream|dessert|coffee|snack|sandwich|grill|kitchen|street food/i;
+const NON_FOOD = /repair|dealer|rental|auto|parking|storage|wash|towing|moving|supply|insurance|bank|school|church/i;
+
+/** Keep Google Maps results that are food trucks / food businesses; drop dealers, repair shops, etc. */
+export function isFoodTruckPlace(categoryName?: string, categories?: string[], title?: string): boolean {
+  const cats = [categoryName ?? "", ...(categories ?? [])].join(" | ");
+  if (/food truck/i.test(cats) || /food truck/i.test(title ?? "")) return true;
+  if (NON_FOOD.test(cats)) return false;
+  return FOOD_WORDS.test(cats);
+}
+
+const CAT_MAP: [RegExp, string][] = [
+  [/mexican|taco/i, "Mexican"], [/bbq|barbecue/i, "BBQ"], [/burger/i, "Burgers"], [/hot dog/i, "Hot Dogs"], [/pizza/i, "Pizza"],
+  [/ice cream|dessert|bakery|donut/i, "Desserts"], [/coffee|cafe/i, "Coffee"], [/thai/i, "Thai"], [/korean/i, "Korean"],
+  [/japanese|sushi/i, "Japanese"], [/indian/i, "Indian"], [/italian/i, "Italian"], [/caribbean|jamaican/i, "Caribbean"],
+  [/chicken|wings/i, "Chicken"], [/sandwich|deli/i, "Sandwiches"], [/seafood|fish/i, "Seafood"], [/asian|chinese/i, "Asian Fusion"],
+];
+export function mapApifyCategory(categoryName?: string): string {
+  return CAT_MAP.find(([re]) => re.test(categoryName ?? ""))?.[1] ?? "Other";
 }

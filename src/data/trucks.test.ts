@@ -41,3 +41,21 @@ import { test as t2, expect as e2 } from "vitest";
 t2("parseCsv handles quoted commas", () => {
   e2(parseCsv('name,address\n"Taco, Inc",1 Main St\n')).toEqual([{ name: "Taco, Inc", address: "1 Main St" }]);
 });
+
+import { pickStop as ps } from "./trucks";
+t2("Google Maps base stops show gray and lose to real stops", () => {
+  const now = new Date(2026, 9, 16, 12);
+  const mk = (source: string, h1: number, h2: number) => ({ id: source, truck_id: "x", venue_name: "", address: null, city: "", lat: 0, lng: 0,
+    starts_at: new Date(2026, 9, 16, h1).toISOString(), ends_at: new Date(2026, 9, 16, h2).toISOString(), source, confidence: 1, is_live: false, cancelled: false, repeat_group: null, created_at: "" }) as never;
+  e2(ps([mk("apify_maps", 11, 19)], now, "now", now).status).toBe("none");
+  e2(ps([mk("apify_maps", 11, 19)], now, "now", now).stop).not.toBeNull();
+  e2(ps([mk("apify_maps", 11, 19), mk("owner", 11, 14)], now, "now", now)).toMatchObject({ status: "open", stop: { id: "owner" } });
+});
+
+import { isFoodTruckPlace, mapApifyCategory } from "./trucks";
+t2("Apify filter keeps food trucks and drops dealers", () => {
+  e2(isFoodTruckPlace("Food truck")).toBe(true);
+  e2(isFoodTruckPlace("Truck dealer", ["Truck repair shop"], "QC Trucks")).toBe(false);
+  e2(mapApifyCategory("Mexican restaurant")).toBe("Mexican");
+  e2(mapApifyCategory("Food truck")).toBe("Other");
+});

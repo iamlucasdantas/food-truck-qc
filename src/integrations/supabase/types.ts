@@ -195,6 +195,7 @@ export type Database = {
           description: string
           emoji: string
           facebook: string | null
+          google_place_id: string | null
           id: string
           instagram: string | null
           logo_url: string | null
@@ -218,6 +219,7 @@ export type Database = {
           description?: string
           emoji?: string
           facebook?: string | null
+          google_place_id?: string | null
           id: string
           instagram?: string | null
           logo_url?: string | null
@@ -241,6 +243,7 @@ export type Database = {
           description?: string
           emoji?: string
           facebook?: string | null
+          google_place_id?: string | null
           id?: string
           instagram?: string | null
           logo_url?: string | null
