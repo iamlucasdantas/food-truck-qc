@@ -10,6 +10,7 @@ import { geocode } from "@/lib/geocode";
 import { useServerFn } from "@tanstack/react-start";
 import { seedCity, SEED_CITIES } from "@/lib/apify.functions";
 import { startFacebookUpdate, continueFacebookUpdate } from "@/lib/facebook.functions";
+import { notifyCrmTruckDecision } from "@/lib/crm.functions";
 
 export const Route = createFileRoute("/admin")({
   staticData: { sitemap: false },
