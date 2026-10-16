@@ -36,6 +36,7 @@ export function AccountButton() {
         <DropdownMenuItem asChild className="min-h-11"><Link to="/account">Account</Link></DropdownMenuItem>
         {(roles.includes("owner") || isAdmin) && <DropdownMenuItem asChild className="min-h-11"><Link to="/owner">Owner dashboard</Link></DropdownMenuItem>}
         {isAdmin && <DropdownMenuItem asChild className="min-h-11"><Link to="/admin">Admin</Link></DropdownMenuItem>}
+        <DropdownMenuItem asChild className="min-h-11"><a href="https://foodtruckqc.com" target="_blank" rel="noopener noreferrer">About FoodTruckQC</a></DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => void signOut()} className="min-h-11">Sign out</DropdownMenuItem>
       </DropdownMenuContent>

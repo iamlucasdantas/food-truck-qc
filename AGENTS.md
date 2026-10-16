@@ -18,4 +18,4 @@
 - Facebook ingestion: one async Apify job per kind (pages/groups) per run; an Apify webhook + admin Continue process posts in time-boxed batches, deduped via social_posts, so work survives reloads and timeouts.
 - Guest hearts live in localStorage and merge into favorites on sign-in (FavoritesSync); signed-in-only pages go under src/routes/_authenticated (client-side gate), so public pages stay crawlable.
 - Sitemap is router-derived (src/lib/sitemap.ts + sitemap[.]xml route); every route must set staticData.sitemap, and truck pages come from active trucks — keeps Google's page list in sync automatically.
-- Emails are sent by the owner's HighLevel CRM, not by the app; app code only POSTs to the HighLevel inbound-webhook workflow URLs stored in the HIGHLEVEL_SIGNUP_WEBHOOK_URL and HIGHLEVEL_ALERT_WEBHOOK_URL secrets, and fails quietly when they are unset.
+- Only auth emails come from Lovable Cloud; every other email is sent by the owner's HighLevel CRM. App code only POSTs flat snake_case JSON to one inbound-webhook URL per flow (HIGHLEVEL_USER_WEBHOOK_URL, HIGHLEVEL_OWNER_WEBHOOK_URL, HIGHLEVEL_ALERT_WEBHOOK_URL secrets) and fails quietly when unset.

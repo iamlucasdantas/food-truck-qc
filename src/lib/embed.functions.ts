@@ -6,7 +6,7 @@ const opt = (max: number) => z.string().trim().max(max).optional().default("");
 export const truckSignupSchema = z.object({
   contactName: z.string().trim().min(1, "Enter your name").max(100),
   email: z.string().trim().email("Enter a valid email").max(255),
-  phone: z.string().trim().min(7, "Enter a phone number").max(30),
+  phone: opt(30),
   truckName: z.string().trim().min(1, "Enter the truck name").max(100),
   category: z.string().trim().min(1, "Pick a category").max(50),
   city: opt(120),
@@ -25,12 +25,12 @@ export const submitTruckSignup = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const slug = data.truckName.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) || "truck";
     const id = `${slug}-${Math.random().toString(36).slice(2, 6)}`;
-    const contact = `Owner contact: ${data.contactName} · ${data.email} · ${data.phone}`;
+    const contact = `Owner contact: ${[data.contactName, data.email, data.phone].filter(Boolean).join(" · ")}`;
     const { error } = await supabaseAdmin.from("trucks").insert({
       id,
       name: data.truckName,
       category: data.category,
-      phone: data.phone,
+      phone: data.phone || null,
       website: data.website || null,
       instagram: data.instagram || null,
       facebook: data.facebook || null,
@@ -43,19 +43,22 @@ export const submitTruckSignup = createServerFn({ method: "POST" })
       console.error("[embed signup] insert failed", error);
       return { ok: false, error: "Could not save. Please try again." };
     }
-    const hook = process.env["HIGHLEVEL_SIGNUP_WEBHOOK_URL"];
+    const hook = process.env["HIGHLEVEL_OWNER_WEBHOOK_URL"];
     if (hook) {
       const [first = "", ...rest] = data.contactName.split(" ");
-      await fetch(hook, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          event: "owner_signup", source: "FoodTruckQC embed", email: data.email, phone: data.phone,
-          first_name: first, last_name: rest.join(" "), truck_name: data.truckName, truck_id: id,
-          category: data.category, city: data.city, instagram: data.instagram, facebook: data.facebook, website: data.website,
-          claim_url: `https://app.foodtruckqc.com/truck/${id}`,
-        }),
-      }).catch((e) => console.error("[HighLevel] owner webhook failed", e));
+      try {
+        const res = await fetch(hook, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            event: "owner_signup", email: data.email, first_name: first, last_name: rest.join(" "), name: data.contactName,
+            phone: data.phone, truck_name: data.truckName, cuisine: data.category, city: data.city,
+            instagram: data.instagram, facebook: data.facebook, website: data.website, description: data.description,
+            truck_url: `https://app.foodtruckqc.com/truck/${id}`, tags: ["owner"],
+          }),
+        });
+        if (!res.ok) console.error(`[HighLevel] owner webhook failed [${res.status}]: ${await res.text().catch(() => "")}`);
+      } catch (e) { console.error("[HighLevel] owner webhook failed", e); }
     }
     return { ok: true };
   });
