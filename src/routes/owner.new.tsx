@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { slugify } from "@/data/trucks";
 import { geocode } from "@/lib/geocode";
 import { StepHeader } from "@/components/StepHeader";
+import { ClaimSuggestions } from "@/components/ClaimSuggestions";
 import { useServerFn } from "@tanstack/react-start";
 import { notifyOwnerTruckAdded } from "@/lib/embed.functions";
 import { contactLine, parseContact, sameName } from "@/data/business";
@@ -125,6 +126,7 @@ function NewTruck() {
     <main className="mx-auto w-full max-w-[680px] min-w-0 space-y-4 p-4">
       <Link to="/owner" className="chip">← Owner dashboard</Link>
       <h1 className="text-3xl font-extrabold">Add your truck</h1>
+      {user && !done && <ClaimSuggestions userId={user.id} />}
       {done ? (
         <div className="panel space-y-3 p-5" role="status">
           <p className="text-lg font-bold">Thanks! {f.name} is in review.</p>
