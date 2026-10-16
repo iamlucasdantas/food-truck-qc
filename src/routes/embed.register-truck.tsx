@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { submitTruckSignup, truckSignupSchema } from "@/lib/embed.functions";
 import { LogoMark } from "@/components/Logo";
 
@@ -31,16 +31,33 @@ function EmbedForm() {
   const [done, setDone] = useState(false);
   const [fail, setFail] = useState("");
 
-  // Report real content height to the host page so it can size the iframe exactly.
+  // Report the content wrapper's height (never viewport-dependent) to the host page.
+  // Posting only on >2px change + rAF debounce prevents an iframe resize feedback loop.
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const lastHeight = useRef(0);
   useEffect(() => {
-    if (window.parent === window) return;
-    const post = () =>
-      window.parent.postMessage({ type: "ftqc-embed-height", height: document.documentElement.scrollHeight }, "*");
-    post();
-    const ro = new ResizeObserver(post);
-    ro.observe(document.documentElement);
-    window.addEventListener("resize", post);
-    return () => { ro.disconnect(); window.removeEventListener("resize", post); };
+    const el = wrapRef.current;
+    if (!el || window.parent === window) return;
+    let raf = 0;
+    const measure = () => {
+      raf = 0;
+      const h = Math.round(el.getBoundingClientRect().height);
+      if (Math.abs(h - lastHeight.current) <= 2) return;
+      lastHeight.current = h;
+      window.parent.postMessage({ type: "ftqc-embed-height", height: h }, "*");
+    };
+    const schedule = () => { if (!raf) raf = requestAnimationFrame(measure); };
+    schedule();
+    const ro = new ResizeObserver(schedule);
+    ro.observe(el);
+    window.addEventListener("load", schedule);
+    window.addEventListener("resize", schedule);
+    return () => {
+      ro.disconnect();
+      if (raf) cancelAnimationFrame(raf);
+      window.removeEventListener("load", schedule);
+      window.removeEventListener("resize", schedule);
+    };
   }, [done]);
 
   async function onSubmit(e: React.FormEvent) {
@@ -67,7 +84,7 @@ function EmbedForm() {
   );
 
   return (
-    <main className="min-h-dvh overflow-x-hidden bg-background p-3 text-foreground sm:p-4">
+    <main ref={wrapRef} className="flow-root overflow-x-hidden bg-background p-3 text-foreground sm:p-4">
       <div className="mx-auto w-full max-w-[620px] space-y-4">
         <div className="flex items-center gap-3">
           <div className="h-10 w-8"><LogoMark /></div>
