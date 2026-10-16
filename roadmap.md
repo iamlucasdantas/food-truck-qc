@@ -1,5 +1,10 @@
 # Roadmap
 
+## Automated Facebook scans
+- [x] Prepare six daily scan times, every two hours 10:00–20:00 Chicago, DST-safe; retain old daily callback contract
+- [x] Five timing tests passed including DST changes; callback rejects unauthenticated requests (401), build OK
+- [ ] Activate replacement managed schedule after publication approval (current live schedule remains 6am)
+
 ## Mobile fixes and map preview
 - [x] Fix profile header and quiet-hours input layout on phones
 - [x] Simplify selected truck card to original post, directions, menu and profile

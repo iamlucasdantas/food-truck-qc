@@ -378,7 +378,7 @@ function FacebookTab() {
           <input className="field flex-1" placeholder="https://www.facebook.com/groups/…" value={url} onChange={(e) => setUrl(e.target.value)} />
           <button onClick={() => void add()} className="chip bg-primary text-primary-foreground">Add</button>
         </div>
-        <p className="text-sm text-muted-foreground">Only public groups work. Every truck with a Facebook link is checked automatically too. Runs daily at 6am Central; uses Apify and AI credits.</p>
+        <p className="text-sm text-muted-foreground">Only public groups work. Every truck with a Facebook link is checked automatically too. Planned automatic scans: 10am, noon, 2pm, 4pm, 6pm and 8pm Central daily, pending activation; uses Apify and AI credits.</p>
         {latest && <p className="text-sm font-semibold">Sources done {latest.cities_done.length}/{latest.cities_total.length} · {latest.status} · {latest.items_created} stops added</p>}
         <div className="flex flex-wrap gap-2">
           {running && <button disabled={busy} onClick={() => void run(true)} className="chip bg-primary text-primary-foreground">{busy ? "Running…" : "Continue"}</button>}

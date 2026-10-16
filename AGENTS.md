@@ -10,6 +10,7 @@
 <!-- LOVABLE:END -->
 
 ## Rules
+- Managed social scans use the stable facebook-daily callback with a validated versioned body and Chicago-local timing rules in src/data/social-schedule.ts; preserve the old body until deployment and schedule replacement so live callbacks remain compatible.
 - Subdirectories have their own AGENTS.md (src/lib); read it before changing files there.
 - Truck/stop data lives in Lovable Cloud tables; pure status/time rules live in `src/data/trucks.ts` (unit-tested) so UI and tests share them.
 - Stops are concrete dated rows (not weekly patterns) so owner edits, cancellations and live check-ins are single-row changes.
