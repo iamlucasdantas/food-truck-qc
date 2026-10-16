@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
-import { submitTruckSignup, truckSignupSchema } from "@/lib/embed.functions";
+import { SIGNUP_STEPS, submitTruckSignup, truckSignupSchema } from "@/lib/embed.functions";
 import { LogoMark } from "@/components/Logo";
+import { StepHeader } from "@/components/StepHeader";
 
 export const Route = createFileRoute("/embed/register-truck")({
   staticData: { sitemap: false },
@@ -21,7 +22,7 @@ export const Route = createFileRoute("/embed/register-truck")({
 });
 
 const CATS = ["Tacos", "BBQ", "Burgers", "Asian", "Pizza", "Dessert", "Coffee", "Other"];
-const empty = { contactName: "", email: "", phone: "", truckName: "", category: "", truckType: "", city: "", instagram: "", facebook: "", website: "", description: "", company: "" };
+const empty = { contactName: "", email: "", phone: "", businessName: "", truckName: "", category: "", truckType: "", city: "", instagram: "", facebook: "", website: "", description: "", company: "" };
 
 function EmbedForm() {
   const submit = useServerFn(submitTruckSignup);
@@ -30,6 +31,7 @@ function EmbedForm() {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [fail, setFail] = useState("");
+  const [step, setStep] = useState<0 | 1>(0);
 
   // Report the content wrapper's height (never viewport-dependent) to the host page.
   // Posting only on >2px change + rAF debounce prevents an iframe resize feedback loop.
@@ -58,15 +60,29 @@ function EmbedForm() {
       window.removeEventListener("load", schedule);
       window.removeEventListener("resize", schedule);
     };
-  }, [done]);
+  }, [done, step]);
+
+  /** Errors for the given step only (whole schema is validated, then filtered to that step's fields). */
+  function stepErrors(s: 0 | 1) {
+    const r = truckSignupSchema.safeParse(f);
+    if (r.success) return {};
+    const keys = SIGNUP_STEPS[s] as readonly string[];
+    return Object.fromEntries(r.error.issues.map((i) => [String(i.path[0]), i.message]).filter(([k]) => keys.includes(k ?? "")));
+  }
+
+  function next(e: React.FormEvent) {
+    e.preventDefault();
+    const e1 = stepErrors(0);
+    setErr(e1);
+    if (Object.keys(e1).length === 0) setStep(1);
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const r = truckSignupSchema.safeParse(f);
-    if (!r.success) {
-      setErr(Object.fromEntries(r.error.issues.map((i) => [String(i.path[0]), i.message])));
-      return;
-    }
+    const e2 = stepErrors(1);
+    if (Object.keys(e2).length) return setErr(e2);
+    const e1 = stepErrors(0);
+    if (Object.keys(e1).length) { setErr(e1); return setStep(0); }
     setErr({}); setFail(""); setBusy(true);
     try {
       const res = await submit({ data: f });
@@ -94,47 +110,60 @@ function EmbedForm() {
           </div>
         </div>
         {done ? (
-          <div className="panel space-y-2 p-5">
+          <div className="panel space-y-2 p-5" role="status">
             <p className="text-lg font-bold">Thanks! Your truck is in review.</p>
             <p className="text-muted-foreground">Look for an email with next steps once it's approved.</p>
           </div>
         ) : (
-          <form onSubmit={onSubmit} className="panel space-y-3 p-4 sm:p-5" noValidate>
-            {input("contactName", "Your name")}
-            <div className="grid gap-3 sm:grid-cols-2">{input("email", "Email", "email")}{input("phone", "Phone / WhatsApp", "tel")}</div>
-            {input("truckName", "Truck name")}
-            <label className="block space-y-1">
-              <span className="text-sm font-semibold">Category</span>
-              <select className="field w-full text-base" value={f.category} onChange={(e) => setF({ ...f, category: e.target.value })}>
-                <option value="">Pick one…</option>
-                {CATS.map((c) => <option key={c}>{c}</option>)}
-              </select>
-              {err["category"] && <span className="text-sm text-destructive">{err["category"]}</span>}
-            </label>
-            <fieldset className="space-y-2">
-              <legend className="text-sm font-semibold">Is it fixed or mobile?</legend>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {([["fixed", "🏠 Fixed location", "Restaurant, brewery, market stall"], ["mobile", "🚚 Mobile", "Moves around the Quad Cities"]] as const).map(([v, label, hint]) => (
-                  <label key={v} className={`flex min-h-11 cursor-pointer items-start gap-2 rounded-xl border-2 p-3 text-base ${f.truckType === v ? "border-primary bg-accent" : "border-input bg-card"}`}>
-                    <input type="radio" name="truckType" className="mt-1" checked={f.truckType === v} onChange={() => setF({ ...f, truckType: v })} />
-                    <span><b>{label}</b><br /><span className="text-sm text-muted-foreground">{hint}</span></span>
-                  </label>
-                ))}
-              </div>
-              {err["truckType"] && <span className="text-sm text-destructive">{err["truckType"]}</span>}
-            </fieldset>
-            {input("city", "City or usual spot", "text", "Davenport, IA")}
-            <div className="grid gap-3 sm:grid-cols-3">{input("instagram", "Instagram")}{input("facebook", "Facebook")}{input("website", "Website")}</div>
-            <label className="block space-y-1">
-              <span className="text-sm font-semibold">Short description</span>
-              <textarea className="field w-full text-base" rows={3} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} />
-            </label>
+          <form onSubmit={step === 0 ? next : onSubmit} className="panel space-y-3 p-4 sm:p-5" noValidate>
+            <StepHeader step={step} titles={["About you and your business", "Your truck"]} />
+            {step === 0 ? (
+              <>
+                {input("contactName", "Your name")}
+                <div className="grid gap-3 sm:grid-cols-2">{input("email", "Email", "email")}{input("phone", "Phone / WhatsApp (optional)", "tel")}</div>
+                {input("businessName", "Business name (optional)")}
+                <div className="grid gap-3 sm:grid-cols-3">{input("website", "Website (optional)")}{input("instagram", "Instagram (optional)")}{input("facebook", "Facebook (optional)")}</div>
+              </>
+            ) : (
+              <>
+                {input("truckName", "Truck name")}
+                <fieldset className="space-y-2">
+                  <legend className="text-sm font-semibold">Is it fixed or mobile?</legend>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {([["fixed", "🏠 Fixed location", "Restaurant, brewery, market stall"], ["mobile", "🚚 Mobile", "Moves around the Quad Cities"]] as const).map(([v, label, hint]) => (
+                      <label key={v} className={`flex min-h-11 cursor-pointer items-start gap-2 rounded-xl border-2 p-3 text-base ${f.truckType === v ? "border-primary bg-accent" : "border-input bg-card"}`}>
+                        <input type="radio" name="truckType" className="mt-1" checked={f.truckType === v} onChange={() => setF({ ...f, truckType: v })} />
+                        <span><b>{label}</b><br /><span className="text-sm text-muted-foreground">{hint}</span></span>
+                      </label>
+                    ))}
+                  </div>
+                  {err["truckType"] && <span className="text-sm text-destructive">{err["truckType"]}</span>}
+                </fieldset>
+                <label className="block space-y-1">
+                  <span className="text-sm font-semibold">Cuisine</span>
+                  <select className="field w-full text-base" value={f.category} onChange={(e) => setF({ ...f, category: e.target.value })}>
+                    <option value="">Pick one…</option>
+                    {CATS.map((c) => <option key={c}>{c}</option>)}
+                  </select>
+                  {err["category"] && <span className="text-sm text-destructive">{err["category"]}</span>}
+                </label>
+                {f.truckType === "fixed" ? input("city", "Address of your fixed location", "text", "123 Main St, Davenport, IA") : input("city", "City or usual spot (optional)", "text", "Davenport, IA")}
+                <label className="block space-y-1">
+                  <span className="text-sm font-semibold">Short description (optional)</span>
+                  <textarea className="field w-full text-base" rows={3} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} />
+                </label>
+              </>
+            )}
             <input tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" value={f.company} onChange={(e) => setF({ ...f, company: e.target.value })} />
             {fail && <p className="text-sm text-destructive">{fail}</p>}
-            <button disabled={busy} className="min-h-11 w-full rounded-full bg-primary px-5 font-bold text-primary-foreground">{busy ? "Sending…" : "Submit my truck"}</button>
+            <div className="flex gap-2 pt-1">
+              {step === 1 && <button type="button" onClick={() => { setErr({}); setStep(0); }} className="min-h-11 rounded-full border border-input bg-card px-5 font-semibold">Back</button>}
+              <button disabled={busy} className="min-h-11 flex-1 rounded-full bg-primary px-5 font-bold text-primary-foreground">{step === 0 ? "Continue" : busy ? "Sending…" : "Submit my truck"}</button>
+            </div>
           </form>
         )}
       </div>
     </main>
   );
 }
+

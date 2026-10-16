@@ -7,6 +7,7 @@ export const truckSignupSchema = z.object({
   contactName: z.string().trim().min(1, "Enter your name").max(100),
   email: z.string().trim().email("Enter a valid email").max(255),
   phone: opt(30),
+  businessName: opt(120),
   truckName: z.string().trim().min(1, "Enter the truck name").max(100),
   category: z.string().trim().min(1, "Pick a category").max(50),
   truckType: z.string().trim().refine((v) => v === "fixed" || v === "mobile", "Pick fixed location or mobile"),
@@ -16,7 +17,15 @@ export const truckSignupSchema = z.object({
   website: opt(200),
   description: opt(600),
   company: opt(200), // honeypot: real people leave this empty
+}).superRefine((d, ctx) => {
+  if (d.truckType === "fixed" && !d.city) ctx.addIssue({ code: "custom", path: ["city"], message: "A fixed location needs its address" });
 });
+
+/** Fields shown on each step of the two-step owner form (used for per-step validation). */
+export const SIGNUP_STEPS = [
+  ["contactName", "email", "phone", "businessName", "website", "instagram", "facebook"],
+  ["truckName", "truckType", "category", "city", "description"],
+] as const;
 
 /** Public endpoint for the embeddable owner signup form: creates a pending truck for admin review and notifies HighLevel. */
 export const submitTruckSignup = createServerFn({ method: "POST" })
@@ -36,7 +45,7 @@ export const submitTruckSignup = createServerFn({ method: "POST" })
       instagram: data.instagram || null,
       facebook: data.facebook || null,
       base_address: data.city || null,
-      description: [data.description, contact].filter(Boolean).join("\n\n"),
+      description: [data.description, data.businessName && `Business: ${data.businessName}`, contact].filter(Boolean).join("\n\n"),
       status: "pending",
       source: "embed_form",
       truck_type: data.truckType,
@@ -54,7 +63,7 @@ export const submitTruckSignup = createServerFn({ method: "POST" })
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             event: "owner_signup", email: data.email, first_name: first, last_name: rest.join(" "), name: data.contactName,
-            phone: data.phone, truck_name: data.truckName, cuisine: data.category, city: data.city, truck_type: data.truckType,
+            phone: data.phone, business_name: data.businessName, truck_name: data.truckName, cuisine: data.category, city: data.city, truck_type: data.truckType,
             instagram: data.instagram, facebook: data.facebook, website: data.website, description: data.description,
             truck_url: `https://app.foodtruckqc.com/truck/${id}`, tags: ["owner"],
           }),
