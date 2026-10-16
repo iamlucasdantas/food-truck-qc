@@ -120,6 +120,13 @@
       "when": 1792169971026,
       "tag": "0016_truck_photos_read_owner_only",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792170333692,
+      "tag": "0017_business_name_on_trucks_and_onboarding",
+      "breakpoints": true
     }
   ]
 }
