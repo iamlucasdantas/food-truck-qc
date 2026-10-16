@@ -38,6 +38,11 @@ function TruckPage() {
   const [from, to] = useMemo(() => {
     const [a] = dayBounds(new Date()); const b = new Date(a); b.setDate(a.getDate() + 30); return [a, b];
   }, []);
+  const { data: biz } = useQuery({
+    queryKey: ["truck", id, "business", t?.claimed_by],
+    enabled: !!t?.claimed_by,
+    queryFn: async () => (await supabase.from("businesses").select("*").eq("owner_id", t!.claimed_by!).maybeSingle()).data,
+  });
   const { data: allStops = [] } = useStops(from, to, [id]);
   const stops = allStops.filter((s) => s.source !== "apify_maps" || allStops.every((x) => x.source === "apify_maps")).slice(0, 20);
   useStopsRealtime();
@@ -52,15 +57,24 @@ function TruckPage() {
       <Link to="/" className="chip">← Map</Link>
       <header className="panel grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 p-4 sm:gap-4 sm:p-5">
         <div className="grid h-16 w-16 sm:h-20 sm:w-20 shrink-0 place-items-center overflow-hidden rounded-2xl border-2 border-border bg-secondary text-5xl">
-          {t.logo_url ? <img src={t.logo_url} alt="" className="h-full w-full object-cover" /> : t.emoji}
+          {(t.logo_url ?? biz?.logo_url) ? <img src={(t.logo_url ?? biz?.logo_url)!} alt="" className="h-full w-full object-cover" /> : t.emoji}
         </div>
         <div className="min-w-0">
           <h1 className="break-words text-2xl font-extrabold sm:text-3xl">{t.name}</h1>
-          <p className="text-muted-foreground">{t.category} · {t.accepts_card ? "Cards accepted" : "Cash only"}</p>
+          <p className="text-muted-foreground">{t.category}{biz?.name ? ` · ${biz.name}` : ""}</p>
         </div>
         <button onClick={() => toggle(t.id)} aria-label={isFav(t.id) ? "Remove from favorites" : "Save to favorites"} aria-pressed={isFav(t.id)} className="chip h-11"><Heart className={`h-4 w-4 ${isFav(t.id) ? "fill-primary text-primary" : ""}`} />{isFav(t.id) ? "Saved" : "Save"}</button>
       </header>
-      <p>{t.description}</p>
+      {(() => { const d = publicDescription(biz?.description || t.description); return d ? <p className="whitespace-pre-line">{d}</p> : null; })()}
+      {(() => {
+        const pays = biz || t.payments_same_as_business === false ? effectivePayments(t, biz) : t.accepts_card ? ["Cash", "Credit/debit card"] : ["Cash"];
+        return pays.length ? (
+          <section aria-label="Accepted payment methods" className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-semibold">We accept</span>
+            {pays.map((p) => <span key={p} className="inline-flex h-6 items-center rounded-full border border-border bg-card px-2.5 text-xs font-medium">{p}</span>)}
+          </section>
+        ) : null;
+      })()}
       {(() => {
         const s0 = stops[0];
         const pt = s0 ? { lat: s0.lat, lng: s0.lng } : t.base_lat != null && t.base_lng != null ? { lat: t.base_lat, lng: t.base_lng } : null;
@@ -112,7 +126,19 @@ function TruckPage() {
 
       <section className="flex flex-wrap gap-2">
         {t.phone && <a href={`tel:${t.phone}`} className="chip">📞 {t.phone}</a>}
-        {t.instagram && <span className="chip">📸 {t.instagram}</span>}
+        {(() => {
+          const h = ownerHandles(t, biz);
+          const site = biz?.website || t.website;
+          const url = (v: string, base: string) => (/^https?:\/\//i.test(v) ? v : v.includes(".") ? `https://${v}` : `${base}${v.replace(/^@|^u\//, "")}`);
+          return (
+            <>
+              {site && <a href={url(site, "https://")} target="_blank" rel="noreferrer" className="chip">🌐 Website</a>}
+              {h.instagram && <a href={url(h.instagram, "https://www.instagram.com/")} target="_blank" rel="noreferrer" className="chip">📸 Instagram</a>}
+              {h.facebook && <a href={url(h.facebook, "https://www.facebook.com/")} target="_blank" rel="noreferrer" className="chip">👍 Facebook</a>}
+              {h.reddit && <a href={url(h.reddit, "https://www.reddit.com/user/")} target="_blank" rel="noreferrer" className="chip">💬 Reddit</a>}
+            </>
+          );
+        })()}
       </section>
       {!t.claimed_by && <ClaimButton truckId={t.id} />}
     <SiteFooter />
