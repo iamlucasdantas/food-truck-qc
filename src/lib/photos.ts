@@ -17,6 +17,5 @@ export function useTruckPhotos(truckId: string | undefined) {
     enabled: !!truckId,
     staleTime: 30 * 60_000,
     queryFn: async (): Promise<TruckPhoto[]> => signTruckPhotos({ data: { truckId: truckId! } }),
-    },
   });
 }
