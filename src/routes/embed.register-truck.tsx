@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { submitTruckSignup, truckSignupSchema } from "@/lib/embed.functions";
 import { LogoMark } from "@/components/Logo";
 
@@ -30,6 +30,18 @@ function EmbedForm() {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [fail, setFail] = useState("");
+
+  // Report real content height to the host page so it can size the iframe exactly.
+  useEffect(() => {
+    if (window.parent === window) return;
+    const post = () =>
+      window.parent.postMessage({ type: "ftqc-embed-height", height: document.documentElement.scrollHeight }, "*");
+    post();
+    const ro = new ResizeObserver(post);
+    ro.observe(document.documentElement);
+    window.addEventListener("resize", post);
+    return () => { ro.disconnect(); window.removeEventListener("resize", post); };
+  }, [done]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
