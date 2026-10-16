@@ -14,11 +14,38 @@ export const WINDOWS: Record<Exclude<Window, "now">, [number, number]> = {
 
 export const SOURCE_LABEL: Record<Source, string> = {
   owner: "Confirmed by owner",
+  own_post: "From their own post",
   apify_event: "Imported from Facebook Events",
   apify_post: "Imported from a social post",
   apify_maps: "Imported from Google Maps",
   estimated: "Estimated (weekly pattern)",
 };
+
+export type StopBadge = "own post" | "community" | "calendar" | "manual";
+/** Short source badge for a stop. Calendar = imported from the owner's connected calendar feed. */
+export function stopBadge(stop: Pick<Stop, "source">, series?: { external_uid?: string | null } | null): StopBadge {
+  if (series?.external_uid) return "calendar";
+  if (stop.source === "own_post") return "own post";
+  if (stop.source === "apify_post" || stop.source === "apify_event") return "community";
+  return "manual";
+}
+
+/** Extract a comparable handle from a social URL or raw @handle. */
+export function socialHandle(v: string | null | undefined): string {
+  if (!v) return "";
+  const s = v.trim().toLowerCase().replace(/^@/, "");
+  const m = s.match(/(?:facebook\.com|instagram\.com|reddit\.com\/(?:user|u|r))\/([^/?#]+)/);
+  return (m?.[1] ?? s.replace(/^https?:\/\/(www\.)?/, "")).replace(/\/+$/, "");
+}
+/** True when a post author matches one of the truck's saved social handles (Facebook, Instagram or Reddit). */
+export function authorIsTruck(author: string | null | undefined, truck: { facebook?: string | null; instagram?: string | null; reddit?: string | null }): boolean {
+  const a = socialHandle(author);
+  if (!a) return false;
+  return [truck.facebook, truck.instagram, truck.reddit].some((h) => {
+    const x = socialHandle(h);
+    return !!x && (x === a || x.endsWith("/" + a) || a.endsWith("/" + x));
+  });
+}
 
 const hours = (d: Date) => d.getHours() + d.getMinutes() / 60;
 const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();

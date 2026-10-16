@@ -440,6 +440,71 @@ export type Database = {
           },
         ]
       }
+      suggested_stops: {
+        Row: {
+          address: string | null
+          author: string | null
+          city: string
+          created_at: string
+          ends_at: string
+          excerpt: string
+          id: string
+          lat: number | null
+          lng: number | null
+          reviewed_at: string | null
+          source: string
+          source_url: string | null
+          starts_at: string
+          status: string
+          truck_id: string
+          venue_name: string
+        }
+        Insert: {
+          address?: string | null
+          author?: string | null
+          city?: string
+          created_at?: string
+          ends_at: string
+          excerpt?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          reviewed_at?: string | null
+          source?: string
+          source_url?: string | null
+          starts_at: string
+          status?: string
+          truck_id: string
+          venue_name?: string
+        }
+        Update: {
+          address?: string | null
+          author?: string | null
+          city?: string
+          created_at?: string
+          ends_at?: string
+          excerpt?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          reviewed_at?: string | null
+          source?: string
+          source_url?: string | null
+          starts_at?: string
+          status?: string
+          truck_id?: string
+          venue_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suggested_stops_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "trucks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trucks: {
         Row: {
           accepts_card: boolean
@@ -461,6 +526,7 @@ export type Database = {
           merged_into: string | null
           name: string
           phone: string | null
+          reddit: string | null
           source: string
           status: Database["public"]["Enums"]["truck_status"]
           truck_type: string
@@ -486,6 +552,7 @@ export type Database = {
           merged_into?: string | null
           name: string
           phone?: string | null
+          reddit?: string | null
           source?: string
           status?: Database["public"]["Enums"]["truck_status"]
           truck_type?: string
@@ -511,6 +578,7 @@ export type Database = {
           merged_into?: string | null
           name?: string
           phone?: string | null
+          reddit?: string | null
           source?: string
           status?: Database["public"]["Enums"]["truck_status"]
           truck_type?: string
@@ -569,6 +637,7 @@ export type Database = {
         | "apify_post"
         | "apify_maps"
         | "estimated"
+        | "own_post"
       truck_status: "active" | "pending" | "archived"
     }
     CompositeTypes: {
@@ -705,6 +774,7 @@ export const Constants = {
         "apify_post",
         "apify_maps",
         "estimated",
+        "own_post",
       ],
       truck_status: ["active", "pending", "archived"],
     },
