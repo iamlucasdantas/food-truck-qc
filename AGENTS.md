@@ -17,3 +17,4 @@
 - Truck logos are stored as small data URLs on the truck row because the workspace blocks public storage buckets.
 - Facebook ingestion: one async Apify job per kind (pages/groups) per run; an Apify webhook + admin Continue process posts in time-boxed batches, deduped via social_posts, so work survives reloads and timeouts.
 - Guest hearts live in localStorage and merge into favorites on sign-in (FavoritesSync); signed-in-only pages go under src/routes/_authenticated (client-side gate), so public pages stay crawlable.
+- Sitemap is router-derived (src/lib/sitemap.ts + sitemap[.]xml route); every route must set staticData.sitemap, and truck pages come from active trucks — keeps Google's page list in sync automatically.
