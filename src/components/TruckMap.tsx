@@ -18,12 +18,14 @@ interface Props {
   zoom?: number;
   onFail?: () => void;
   highlightId?: string | null;
+  pillClass?: string;
+  locateClass?: string;
 }
 
 const PIN_VAR: Record<Status, string> = { open: "var(--pin-open)", today: "var(--pin-today)", none: "var(--pin-none)" };
 
 /** Leaflet + OpenStreetMap tiles — no API key. Loaded only in the browser. */
-export default function TruckMap({ pins, center, radiusMi, onSelect, onCenterChange, showRadius = true, draggable = true, zoom = 12, onFail, highlightId = null }: Props) {
+export default function TruckMap({ pins, center, radiusMi, onSelect, onCenterChange, showRadius = true, draggable = true, zoom = 12, onFail, highlightId = null, pillClass = "top-3", locateClass = "bottom-6 right-3" }: Props) {
   const [moved, setMoved] = useState(false);
   const [ready, setReady] = useState(false);
   const el = useRef<HTMLDivElement>(null);
@@ -111,12 +113,12 @@ export default function TruckMap({ pins, center, radiusMi, onSelect, onCenterCha
     <div className="relative h-full w-full">
       <div ref={el} className="h-full w-full bg-muted" />
       {ready && draggable && moved && (
-        <button onClick={searchArea} className="absolute left-1/2 top-3 z-[500] inline-flex h-10 -translate-x-1/2 items-center gap-2 rounded-full bg-card px-4 text-sm font-semibold shadow-pop-sm transition-all duration-150 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <button onClick={searchArea} className={`absolute left-1/2 ${pillClass} z-[500] inline-flex h-10 -translate-x-1/2 items-center gap-2 rounded-full bg-card px-4 text-sm font-semibold shadow-pop-sm transition-all duration-150 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`}>
           <Search className="h-4 w-4" /> Search this area
         </button>
       )}
       {ready && draggable && (
-        <button onClick={locate} aria-label="Locate me" className="absolute bottom-6 right-3 z-[500] grid h-12 w-12 place-items-center rounded-full bg-card text-primary shadow-pop-sm transition-all duration-150 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <button onClick={locate} aria-label="Locate me" className={`absolute ${locateClass} z-[500] grid h-12 w-12 place-items-center rounded-full bg-card text-primary shadow-pop-sm transition-all duration-150 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`}>
           <LocateFixed className="h-5 w-5" />
         </button>
       )}
