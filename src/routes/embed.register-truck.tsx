@@ -126,12 +126,13 @@ function EmbedForm() {
           </div>
         </div>
         {done ? (
-          <div className="panel space-y-3 p-5" role="status">
-            <p className="text-lg font-bold">Thanks! Your truck is in review.</p>
+          <div className="panel space-y-4 p-5" role="status">
+            <p className="text-lg font-bold">Thanks! Your truck is on its way 🎉</p>
+            <StatusTracker status="pending" />
             <p className="text-muted-foreground">Look for an email with next steps once it's approved.</p>
             <div className="space-y-2 rounded-xl bg-accent p-4">
               <p className="font-bold">Next step: add your menu and photos</p>
-              <p className="text-sm">Create your free account with the same email (<b className="break-all">{f.email}</b>). Your truck links to it once you confirm that email.</p>
+              <p className="text-sm">Create your free account with the same email (<b className="break-all">{f.email}</b>). Your truck links to it once you confirm that email — then a short setup gets you map-ready in about 5 minutes.</p>
               <a href={`/auth?mode=up&redirect=${encodeURIComponent("/owner/onboarding?step=3")}`} target="_blank" rel="noopener" className="inline-flex min-h-11 items-center rounded-full bg-primary px-5 font-bold text-primary-foreground">Create your free account</a>
             </div>
           </div>
