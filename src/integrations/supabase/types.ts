@@ -19,6 +19,7 @@ export type Database = {
           created_at: string
           id: string
           message: string
+          reject_reason: string | null
           reviewed_at: string | null
           status: Database["public"]["Enums"]["claim_status"]
           truck_id: string
@@ -29,6 +30,7 @@ export type Database = {
           created_at?: string
           id?: string
           message?: string
+          reject_reason?: string | null
           reviewed_at?: string | null
           status?: Database["public"]["Enums"]["claim_status"]
           truck_id: string
@@ -39,6 +41,7 @@ export type Database = {
           created_at?: string
           id?: string
           message?: string
+          reject_reason?: string | null
           reviewed_at?: string | null
           status?: Database["public"]["Enums"]["claim_status"]
           truck_id?: string
@@ -199,6 +202,7 @@ export type Database = {
           merged_into: string | null
           name: string
           phone: string | null
+          source: string
           status: Database["public"]["Enums"]["truck_status"]
           website: string | null
         }
@@ -221,6 +225,7 @@ export type Database = {
           merged_into?: string | null
           name: string
           phone?: string | null
+          source?: string
           status?: Database["public"]["Enums"]["truck_status"]
           website?: string | null
         }
@@ -243,6 +248,7 @@ export type Database = {
           merged_into?: string | null
           name?: string
           phone?: string | null
+          source?: string
           status?: Database["public"]["Enums"]["truck_status"]
           website?: string | null
         }
@@ -283,10 +289,12 @@ export type Database = {
         Returns: undefined
       }
       owns_truck: { Args: { _truck_id: string }; Returns: boolean }
-      review_claim: {
-        Args: { _approve: boolean; _claim_id: string }
-        Returns: undefined
-      }
+      review_claim:
+        | { Args: { _approve: boolean; _claim_id: string }; Returns: undefined }
+        | {
+            Args: { _approve: boolean; _claim_id: string; _reason: string }
+            Returns: undefined
+          }
     }
     Enums: {
       app_role: "admin" | "owner" | "consumer"
