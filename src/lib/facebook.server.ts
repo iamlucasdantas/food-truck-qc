@@ -261,6 +261,11 @@ export async function processFacebookRun(db: DB, runId: string, budgetMs = 20_00
             if (!truck && (kind === "group" || kind === "reddit") && e.is_food_truck && e.truck_name.trim().length >= 3) {
               const id = `${slugify(e.truck_name)}-${Math.random().toString(36).slice(2, 7)}`;
               const { error } = await db.from("trucks").insert({ id, name: e.truck_name.trim(), status: "pending", source: `apify_${kind}` });
+              if (!error) {
+                const { postOwnerWebhook } = await import("@/lib/owner-webhook.server");
+                await postOwnerWebhook({ source: "scraper", isNewBusiness: true, contact: { name: "", email: "", phone: "" }, businessName: "",
+                  truckId: id, truckName: e.truck_name.trim(), truckType: "mobile", cuisine: "", city: e.city || "", description: p.url });
+              }
               if (!error) { truck = { id, name: e.truck_name.trim(), claimed_by: null, phone: null, instagram: null, facebook: null, reddit: null }; trucks.push(truck); }
             }
             if (!truck) continue;

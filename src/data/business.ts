@@ -83,3 +83,29 @@ export function buildSignup(d: SignupInput, existing: ExistingBusiness | null) {
     },
   };
 }
+
+export const ADMIN_REVIEW_URL = "https://app.foodtruckqc.com/admin?tab=pending";
+export type NewTruckSource = "embed" | "owner_dashboard" | "scraper";
+
+export interface NewTruckNotice {
+  source: NewTruckSource;
+  isNewBusiness: boolean;
+  contact: OwnerContact;
+  businessName: string;
+  truckId: string; truckName: string; truckType: string; cuisine: string; city: string;
+  instagram?: string | null; facebook?: string | null; website?: string | null; description?: string;
+}
+
+/** Flat payload for HIGHLEVEL_OWNER_WEBHOOK_URL, sent once per new pending truck from every path. */
+export function ownerWebhookPayload(n: NewTruckNotice) {
+  const [first = "", ...rest] = n.contact.name.trim().split(" ");
+  const event = n.source === "scraper" ? "truck_detected" : n.isNewBusiness ? "owner_signup" : "truck_added";
+  return {
+    event, is_new_business: n.isNewBusiness ? "true" : "false", source: n.source,
+    email: n.contact.email, first_name: first, last_name: rest.join(" "), name: n.contact.name.trim(), phone: n.contact.phone,
+    business_name: n.businessName, truck_name: n.truckName, cuisine: n.cuisine, city: n.city, truck_type: n.truckType,
+    instagram: n.instagram ?? "", facebook: n.facebook ?? "", website: n.website ?? "", description: n.description ?? "",
+    truck_url: `https://app.foodtruckqc.com/truck/${n.truckId}`, admin_review_url: ADMIN_REVIEW_URL,
+    tags: n.source === "scraper" ? ["truck-detected"] : ["owner"],
+  };
+}

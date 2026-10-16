@@ -1,7 +1,7 @@
 import { Logo } from "@/components/Logo";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -34,6 +34,7 @@ const err = (e: { message: string } | null) => (e ? (toast.error(e.message), tru
 function Admin() {
   const { user, ready, isAdmin, openAuth } = useAuth();
   const [tab, setTab] = useState<(typeof TABS)[number]>("Claims");
+  useEffect(() => { if (new URLSearchParams(window.location.search).get("tab") === "pending") setTab("Pending trucks"); }, []);
   return (
     <div className="min-h-dvh bg-sidebar text-sidebar-foreground"><header className="border-b border-sidebar-border bg-sidebar"><div className="mx-auto flex w-full max-w-[1100px] items-center justify-between gap-3 p-4"><Logo /><Link to="/" className="chip">← Map</Link></div></header>
     <main className="mx-auto w-full max-w-[1100px] min-w-0 space-y-4 p-4 pb-16">
