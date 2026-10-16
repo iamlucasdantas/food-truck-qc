@@ -4,7 +4,7 @@ import { milesBetween, pickStop, closingTime, slugify, QC_CENTER, type Stop } fr
 const stop = (start: Date, end: Date, extra: Partial<Stop> = {}): Stop => ({
   id: "s", truck_id: "t", venue_name: "Park", address: null, city: "Moline", lat: 0, lng: 0,
   starts_at: start.toISOString(), ends_at: end.toISOString(), source: "owner", confidence: 1,
-  is_live: false, cancelled: false, repeat_group: null, source_url: null, created_at: start.toISOString(), ...extra,
+  is_live: false, cancelled: false, repeat_group: null, source_url: null, note: null, series_id: null, occurrence_date: null, created_at: start.toISOString(), ...extra,
 });
 
 describe("truck rules", () => {
