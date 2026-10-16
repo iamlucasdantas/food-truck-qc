@@ -45,7 +45,7 @@ export const syncCrmContact = createServerFn({ method: "POST" })
     const email = c?.email;
     if (!email) return { ok: false };
     const meta = c?.user_metadata ?? {};
-    const name = (prof?.display_name ?? meta.full_name ?? meta.name ?? "").trim() || email.split("@")[0];
+    const name: string = (prof?.display_name ?? meta.full_name ?? meta.name ?? "").trim() || (email.split("@")[0] ?? email);
     const [first = "", ...rest] = name.split(" ");
 
     const result = await postToHighLevel(process.env["HIGHLEVEL_USER_WEBHOOK_URL"], {
