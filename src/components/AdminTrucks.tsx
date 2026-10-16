@@ -11,7 +11,7 @@ import { CUISINES, adminStatus, cityOf, filtersToSearch, matchesFilters, parseFi
 
 const PAGE = 50;
 const STATUS_LABEL: Record<AdminStatus, string> = { approved: "Approved", pending: "Pending", rejected: "Rejected", deleted: "Deleted" };
-const SOURCE_LABEL: Record<string, string> = { apify_maps: "Google Maps", embed_form: "Website form", manual: "Manual", owner: "Owner", scraper: "Scraper" };
+const SOURCE_LABEL: Record<string, string> = { apify_maps: "Google Maps", apify: "Google Maps", embed_form: "Website form", manual: "Manual", owner: "Owner", scraper: "Scraper" };
 
 type Row = {
   id: string; name: string; business_name: string; category: string; emoji: string; base_address: string | null;

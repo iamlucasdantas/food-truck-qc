@@ -22,7 +22,9 @@ export function cityOf(address: string | null | undefined): string {
   const a = address ?? "";
   const known = CITIES.find((c) => new RegExp(`\\b${c}\\b`, "i").test(a));
   if (known) return known;
-  const parts = a.split(",").map((s) => s.trim()).filter(Boolean);
+  const parts = a.split(",").map((s) => s.trim()).filter((s) => s && !/^(USA|United States|[A-Z]{2}(\s+\d{5})?)$/.test(s));
+  return parts.length >= 2 ? parts[parts.length - 1]!.replace(/\s+[A-Z]{2}(\s+\d{5})?$/, "") : "";
+  // eslint-disable-next-line no-unreachable
   return parts.length >= 3 ? parts[parts.length - 2]! : parts.length === 2 ? parts[1]!.replace(/\s+[A-Z]{2}(\s+\d{5})?$/, "") : "";
 }
 

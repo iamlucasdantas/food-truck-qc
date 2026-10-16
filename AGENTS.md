@@ -28,3 +28,7 @@
 - trucks.business_name is set by DB triggers from the owner's businesses row (falls back to the 'Business:' line for unowned submissions) and re-synced when the business is renamed — so every add path, display byline and webhook gets it without asking again.
 - Owner onboarding (/owner/onboarding) saves progress in profiles.onboarding; step/skip/resume rules live in src/data/onboarding.ts (unit-tested). owns_truck() also covers the creator's own pending, unclaimed truck so menu/photos/schedule can be set up before approval.
 - Website-form trucks link to an account only via linkMyEmbedTrucks after the account email is confirmed; a typed email never links anything.
+- Admin truck delete is a soft delete (deleted_at/deleted_by via admin_delete_trucks/admin_restore_truck RPCs, logged in truck_deletions) with a 30-day restore window; a daily pg_cron job purges the truck and its stops/photos/menu after that — so mistakes are reversible.
+- Claim suggestions are computed server-side (src/lib/claims.functions.ts) with the pure matcher in src/data/claims.ts; only public-safe fields leave the server and pending trucks are only suggested on a confirmed-email match.
+- Search/filter rules (text, dish, cuisine, city, type, status, open) live in src/data/filters.ts and are shared by the map and Admin; filter state lives in URL params so views can be shared.
+- "I'm here" end times come from liveEnd() in src/data/trucks.ts (15 min–12 h, Central time); the DB trigger caps live stops at 12 h.
