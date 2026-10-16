@@ -132,9 +132,10 @@ export function mapApifyCategory(categoryName?: string): string {
   return CAT_MAP.find(([re]) => re.test(categoryName ?? ""))?.[1] ?? "Other";
 }
 
-/** Where to place a truck for a window: its matching stop, else its base location (gray). */
-export function placeTruck(t: Pick<Truck, "base_lat" | "base_lng">, picked: { stop: Stop | null; status: Status }) {
+/** Where to place a truck for a window: its matching stop, else its base location (gray). Mobile trucks only show where a stop says they are. */
+export function placeTruck(t: Pick<Truck, "base_lat" | "base_lng" | "truck_type">, picked: { stop: Stop | null; status: Status }) {
   if (picked.stop && picked.status !== "none") return { lat: picked.stop.lat, lng: picked.stop.lng, status: picked.status, stop: picked.stop };
+  if (t.truck_type === "mobile") return null;
   const lat = t.base_lat ?? picked.stop?.lat, lng = t.base_lng ?? picked.stop?.lng;
   return lat != null && lng != null ? { lat, lng, status: "none" as Status, stop: null } : null;
 }
