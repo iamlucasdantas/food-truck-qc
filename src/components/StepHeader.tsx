@@ -1,5 +1,5 @@
 /** "Step X of 2" label + progress bar for the two-step owner registration forms. */
-exportfunction StepHeader({ step, titles }: { step: 0 | 1; titles: [string, string] }) {
+export function StepHeader({ step, titles }: { step: 0 | 1; titles: [string, string] }) {
   return (
     <div className="space-y-2">
       <div className="flex items-baseline justify-between gap-2">
