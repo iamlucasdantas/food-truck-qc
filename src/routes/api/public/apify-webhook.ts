@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 /** Apify calls this when a Facebook scrape finishes. We trust only run IDs we started ourselves. */
 export const Route = createFileRoute("/api/public/apify-webhook")({
+  staticData: { sitemap: false },
   server: {
     handlers: {
       POST: async ({ request }) => {

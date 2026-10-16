@@ -12,6 +12,7 @@ import { seedCity, SEED_CITIES } from "@/lib/apify.functions";
 import { startFacebookUpdate, continueFacebookUpdate } from "@/lib/facebook.functions";
 
 export const Route = createFileRoute("/admin")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Admin | FoodTruckQC" },

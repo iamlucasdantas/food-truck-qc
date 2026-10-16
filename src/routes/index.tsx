@@ -21,6 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 const TruckMap = lazy(() => import("@/components/TruckMap"));
 
 export const Route = createFileRoute("/")({
+  staticData: { sitemap: true },
   head: () => ({
     meta: [
       { title: "FoodTruckQC — Food trucks near you." },

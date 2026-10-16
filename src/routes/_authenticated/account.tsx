@@ -11,6 +11,7 @@ import { deleteMyAccount } from "@/lib/account.functions";
 import { SiteFooter } from "@/components/SiteFooter";
 
 export const Route = createFileRoute("/_authenticated/account")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "Your account | FoodTruckQC" },

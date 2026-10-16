@@ -9,6 +9,7 @@ import { useTrucks, useStops, dayBounds } from "@/lib/queries";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const Route = createFileRoute("/favorites")({
+  staticData: { sitemap: false },
   head: () => ({
     meta: [
       { title: "My favorite food trucks | FoodTruckQC" },
