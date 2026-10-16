@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
-import { SIGNUP_STEPS, submitTruckSignup, truckSignupSchema } from "@/lib/embed.functions";
+import { checkBusinessEmail, submitTruckSignup, truckSignupSchema } from "@/lib/embed.functions";
+import { signupStepsFor } from "@/data/business";
 import { LogoMark } from "@/components/Logo";
 import { StepHeader } from "@/components/StepHeader";
 
@@ -26,6 +27,15 @@ const empty = { contactName: "", email: "", phone: "", businessName: "", truckNa
 
 function EmbedForm() {
   const submit = useServerFn(submitTruckSignup);
+  const check = useServerFn(checkBusinessEmail);
+  const [known, setKnown] = useState(false);
+  const checkedEmail = useRef("");
+  async function checkEmail(email: string) {
+    const e = email.trim().toLowerCase();
+    if (e === checkedEmail.current || !/^\S+@\S+\.\S+$/.test(e)) return known;
+    checkedEmail.current = e;
+    try { const r = await check({ data: { email: e } }); setKnown(r.known); return r.known; } catch { return known; }
+  }
   const [f, setF] = useState(empty);
   const [err, setErr] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
@@ -60,19 +70,20 @@ function EmbedForm() {
       window.removeEventListener("load", schedule);
       window.removeEventListener("resize", schedule);
     };
-  }, [done, step]);
+  }, [done, step, known]);
 
   /** Errors for the given step only (whole schema is validated, then filtered to that step's fields). */
-  function stepErrors(s: 0 | 1) {
+  function stepErrors(s: 0 | 1, k = known) {
     const r = truckSignupSchema.safeParse(f);
     if (r.success) return {};
-    const keys = SIGNUP_STEPS[s] as readonly string[];
+    const keys = signupStepsFor(k)[s] as readonly string[];
     return Object.fromEntries(r.error.issues.map((i) => [String(i.path[0]), i.message]).filter(([k]) => keys.includes(k ?? "")));
   }
 
-  function next(e: React.FormEvent) {
+  async function next(e: React.FormEvent) {
     e.preventDefault();
-    const e1 = stepErrors(0);
+    const k = await checkEmail(f.email);
+    const e1 = stepErrors(0, k);
     setErr(e1);
     if (Object.keys(e1).length === 0) setStep(1);
   }
@@ -86,7 +97,9 @@ function EmbedForm() {
     setErr({}); setFail(""); setBusy(true);
     try {
       const res = await submit({ data: f });
-      if (res.ok) setDone(true); else setFail(res.error ?? "Could not save.");
+      if (res.ok) setDone(true);
+      else if ("field" in res && res.field) setErr({ [res.field]: res.error ?? "" });
+      else setFail(res.error ?? "Could not save.");
     } catch { setFail("Could not save. Please try again."); }
     setBusy(false);
   }
@@ -94,7 +107,7 @@ function EmbedForm() {
   const input = (k: keyof typeof f, label: string, type = "text", ph = "") => (
     <label className="block space-y-1">
       <span className="text-sm font-semibold">{label}</span>
-      <input className="field w-full text-base" type={type} placeholder={ph} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} />
+      <input className="field w-full text-base" type={type} placeholder={ph} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} onBlur={k === "email" ? (e) => void checkEmail(e.target.value) : undefined} />
       {err[k] && <span className="text-sm text-destructive">{err[k]}</span>}
     </label>
   );
@@ -116,17 +129,21 @@ function EmbedForm() {
           </div>
         ) : (
           <form onSubmit={step === 0 ? next : onSubmit} className="panel space-y-3 p-4 sm:p-5" noValidate>
-            <StepHeader step={step} titles={["About you and your business", "Your truck"]} />
+            <StepHeader step={step} titles={[known ? "About you" : "About you and your business", "Your truck"]} />
             {step === 0 ? (
               <>
                 {input("contactName", "Your name")}
                 <div className="grid gap-3 sm:grid-cols-2">{input("email", "Email", "email")}{input("phone", "Phone / WhatsApp (optional)", "tel")}</div>
+                {known ? (
+                  <p className="rounded-xl bg-accent p-3 text-sm text-foreground" role="status">Welcome back! This email already has a business on FoodTruckQC. Your new truck will be linked to it and use its website, social links and payment methods.</p>
+                ) : (<>
                 {input("businessName", "Business name (optional)")}
                 <label className="block space-y-1">
                   <span className="text-sm font-semibold">About your business (optional)</span>
                   <textarea className="field w-full text-base" rows={3} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} />
                 </label>
                 <div className="grid gap-3 sm:grid-cols-3">{input("website", "Website (optional)")}{input("instagram", "Instagram (optional)")}{input("facebook", "Facebook (optional)")}</div>
+                </>)}
               </>
             ) : (
               <>
