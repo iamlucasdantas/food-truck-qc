@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ClientOnly } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import {
-  pickStop, milesBetween, fmtRange, QC_CENTER, SOURCE_LABEL,
+  pickStop, placeTruck, byStatusThenDistance, chooseCenter, milesBetween, fmtRange, QC_CENTER, SOURCE_LABEL,
   type Window, type Status, type Stop,
 } from "@/data/trucks";
 import { useFavorites } from "@/hooks/use-favorites";
@@ -40,7 +40,7 @@ function Index() {
   const [now, setNow] = useState<Date | null>(null);
   const [dayIdx, setDayIdx] = useState(0);
   const [win, setWin] = useState<Window>("now");
-  const [radius, setRadius] = useState(5);
+  const [radius, setRadius] = useState(10);
   const [center, setCenter] = useState(QC_CENTER);
   const [q, setQ] = useState("");
   const [onlyFav, setOnlyFav] = useState(false);
@@ -53,7 +53,7 @@ function Index() {
   useEffect(() => {
     setNow(new Date());
     navigator.geolocation?.getCurrentPosition(
-      (p) => setCenter({ lat: p.coords.latitude, lng: p.coords.longitude }),
+      (p) => setCenter(chooseCenter({ lat: p.coords.latitude, lng: p.coords.longitude })),
       () => {}, { timeout: 5000 },
     );
   }, []);
@@ -73,19 +73,19 @@ function Index() {
     const term = q.trim().toLowerCase();
     return trucks
       .map((t) => {
-        const { stop, status } = pickStop(byTruck.get(t.id) ?? [], date, effWin, now);
-        return { t, stop: stop as Stop | null, status, dist: stop ? milesBetween(center, stop) : Infinity };
+        const p = placeTruck(t, pickStop(byTruck.get(t.id) ?? [], date, effWin, now));
+        return p ? { t, stop: p.stop as Stop | null, status: p.status, lat: p.lat, lng: p.lng, dist: milesBetween(center, p) } : null;
       })
-      .filter((r) => r.stop && r.dist <= radius)
-      .filter((r) => !term || [r.t.name, r.t.category, r.stop!.city].some((s) => s.toLowerCase().includes(term)))
+      .filter((r): r is NonNullable<typeof r> => !!r && r.dist <= radius)
+      .filter((r) => !term || [r.t.name, r.t.category, r.stop?.city ?? r.t.base_address ?? ""].some((s) => s.toLowerCase().includes(term)))
       .filter((r) => !onlyFav || isFav(r.t.id))
       .filter((r) => !onlyOpen || r.status === "open")
       .filter((r) => !card || r.t.accepts_card)
-      .sort((a, b) => a.dist - b.dist);
+      .sort(byStatusThenDistance);
   }, [now, date, dayIdx, win, q, center, radius, onlyFav, onlyOpen, card, isFav, trucks, byTruck]);
 
   const pins = useMemo(() => results.map((r) => ({
-    id: r.t.id, lat: r.stop!.lat, lng: r.stop!.lng, status: r.status, emoji: r.t.emoji, name: r.t.name,
+    id: r.t.id, lat: r.lat, lng: r.lng, status: r.status, emoji: r.t.emoji, name: r.t.name,
   })), [results]);
 
   const sel = results.find((r) => r.t.id === selected);
@@ -149,19 +149,22 @@ function Index() {
               <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border-2 border-border bg-secondary text-2xl">{sel.t.emoji}</div>
               <div className="min-w-0 flex-1">
                 <h2 className="truncate text-lg font-bold">{sel.t.name}</h2>
-                <p className="text-sm text-muted-foreground">{sel.t.category} · {sel.dist.toFixed(1)} mi · {sel.stop!.venue_name}</p>
+                <p className="text-sm text-muted-foreground">{sel.t.category} · {sel.dist.toFixed(1)} mi · {sel.stop?.venue_name ?? sel.t.base_address ?? "Base location"}</p>
                 <p className="mt-1 flex items-center gap-1.5 text-sm font-medium">
                   <span className={`h-2.5 w-2.5 rounded-full border border-border ${STATUS_DOT[sel.status]}`} />
-                  {STATUS_TEXT[sel.status]} · {fmtRange(sel.stop!)}
+                  {sel.stop ? `${STATUS_TEXT[sel.status]} · ${fmtRange(sel.stop)}` : "Location not confirmed"}
                 </p>
-                <p className="mt-0.5 text-xs text-muted-foreground">{SOURCE_LABEL[sel.stop!.source]}</p>
+                {sel.stop && <p className="mt-0.5 text-xs text-muted-foreground">{SOURCE_LABEL[sel.stop.source]}</p>}
               </div>
               <button onClick={() => setSelected(null)} aria-label="Close" className="text-muted-foreground">✕</button>
             </div>
-            <div className="mt-3 flex gap-2">
+            <div className="mt-3 flex flex-wrap gap-2">
               <button onClick={() => toggle(sel.t.id)} className={`chip ${isFav(sel.t.id) ? "chip-active" : ""}`}>♥ {isFav(sel.t.id) ? "Saved" : "Save"}</button>
               <a target="_blank" rel="noreferrer" className="chip"
-                href={`https://www.google.com/maps/dir/?api=1&destination=${sel.stop!.lat},${sel.stop!.lng}`}>Directions</a>
+                href={`https://www.google.com/maps/dir/?api=1&destination=${sel.lat},${sel.lng}`}>Directions</a>
+              {sel.t.phone && <a className="chip" href={`tel:${sel.t.phone}`}>Call</a>}
+              {sel.t.website && <a target="_blank" rel="noreferrer" className="chip" href={sel.t.website}>Website</a>}
+              {sel.t.instagram && <a target="_blank" rel="noreferrer" className="chip" href={sel.t.instagram.startsWith("http") ? sel.t.instagram : `https://instagram.com/${sel.t.instagram.replace(/^@/, "")}`}>Instagram</a>}
               <Link to="/truck/$id" params={{ id: sel.t.id }} className="chip ml-auto bg-primary text-primary-foreground">Details →</Link>
             </div>
           </div>
@@ -186,11 +189,11 @@ function Index() {
                   <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-secondary text-xl">{r.t.emoji}</span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate font-bold">{r.t.name}</span>
-                    <span className="block truncate text-xs text-muted-foreground">{r.t.category} · {r.stop!.venue_name}, {r.stop!.city}</span>
+                    <span className="block truncate text-xs text-muted-foreground">{r.t.category} · {r.stop ? `${r.stop.venue_name}, ${r.stop.city}` : (r.t.base_address ?? "Base location")}</span>
                   </span>
                   <span className="shrink-0 text-right text-xs">
                     <span className="flex items-center justify-end gap-1 font-semibold">
-                      <span className={`h-2 w-2 rounded-full ${STATUS_DOT[r.status]}`} />{fmtRange(r.stop!)}
+                      <span className={`h-2 w-2 rounded-full ${STATUS_DOT[r.status]}`} />{r.stop ? fmtRange(r.stop) : "Location not confirmed"}
                     </span>
                     <span className="text-muted-foreground">{r.dist.toFixed(1)} mi</span>
                   </span>

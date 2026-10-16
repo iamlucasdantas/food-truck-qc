@@ -131,3 +131,21 @@ const CAT_MAP: [RegExp, string][] = [
 export function mapApifyCategory(categoryName?: string): string {
   return CAT_MAP.find(([re]) => re.test(categoryName ?? ""))?.[1] ?? "Other";
 }
+
+/** Where to place a truck for a window: its matching stop, else its base location (gray). */
+export function placeTruck(t: Pick<Truck, "base_lat" | "base_lng">, picked: { stop: Stop | null; status: Status }) {
+  if (picked.stop && picked.status !== "none") return { lat: picked.stop.lat, lng: picked.stop.lng, status: picked.status, stop: picked.stop };
+  const lat = t.base_lat ?? picked.stop?.lat, lng = t.base_lng ?? picked.stop?.lng;
+  return lat != null && lng != null ? { lat, lng, status: "none" as Status, stop: null } : null;
+}
+
+const RANK: Record<Status, number> = { open: 0, today: 1, none: 2 };
+/** Sort live > scheduled > no data, then nearest first. */
+export function byStatusThenDistance(a: { status: Status; dist: number }, b: { status: Status; dist: number }) {
+  return RANK[a.status] - RANK[b.status] || a.dist - b.dist;
+}
+
+/** Use the user's location only when it is inside the Quad Cities area (≤ 40 mi). */
+export function chooseCenter(user: { lat: number; lng: number } | null) {
+  return user && milesBetween(user, QC_CENTER) <= 40 ? user : QC_CENTER;
+}

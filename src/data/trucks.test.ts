@@ -59,3 +59,18 @@ t2("Apify filter keeps food trucks and drops dealers", () => {
   e2(mapApifyCategory("Mexican restaurant")).toBe("Mexican");
   e2(mapApifyCategory("Food truck")).toBe("Other");
 });
+
+import { placeTruck, byStatusThenDistance, chooseCenter, QC_CENTER as QC } from "./trucks";
+describe("map placement", () => {
+  it("shows a truck with no stop as gray at its base", () => {
+    expect(placeTruck({ base_lat: 41.5, base_lng: -90.5 }, { stop: null, status: "none" })).toMatchObject({ lat: 41.5, status: "none" });
+  });
+  it("sorts live, then scheduled, then gray, then distance", () => {
+    const r = [{ status: "none" as const, dist: 1 }, { status: "today" as const, dist: 5 }, { status: "open" as const, dist: 9 }, { status: "today" as const, dist: 2 }].sort(byStatusThenDistance);
+    expect(r.map((x) => x.status + x.dist)).toEqual(["open9", "today2", "today5", "none1"]);
+  });
+  it("falls back to Quad Cities when user is far away", () => {
+    expect(chooseCenter({ lat: 40.7, lng: -74 })).toEqual(QC);
+    expect(chooseCenter(null)).toEqual(QC);
+  });
+});
