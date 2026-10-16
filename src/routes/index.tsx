@@ -1,14 +1,21 @@
 import { SiteFooter } from "@/components/SiteFooter";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ClientOnly } from "@tanstack/react-router";
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Search, SlidersHorizontal, Heart, X, Phone, Globe, Instagram, Navigation, ChevronDown } from "lucide-react";
 import {
-  pickStop, placeTruck, byStatusThenDistance, chooseCenter, milesBetween, fmtRange, QC_CENTER, SOURCE_LABEL,
+  pickStop, placeTruck, byStatusThenDistance, chooseCenter, milesBetween, fmtRange, fmtTime, QC_CENTER, SOURCE_LABEL,
   type Window, type Status, type Stop,
 } from "@/data/trucks";
 import { useFavorites } from "@/hooks/use-favorites";
 import { useTrucks, useStops, groupBy, dayBounds, useStopsRealtime } from "@/lib/queries";
 import { AccountButton } from "@/components/AccountButton";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const TruckMap = lazy(() => import("@/components/TruckMap"));
 
@@ -26,8 +33,27 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
-const STATUS_TEXT: Record<Status, string> = { open: "Open now", today: "Scheduled", none: "No data" };
-const STATUS_DOT: Record<Status, string> = { open: "bg-pin-open", today: "bg-pin-today", none: "bg-pin-none" };
+const CUISINES = [
+  { key: "tacos", label: "Tacos", emoji: "🌮", re: /mexic|taco|latin/i },
+  { key: "bbq", label: "BBQ", emoji: "🍖", re: /bbq|barbe|smoke/i },
+  { key: "burgers", label: "Burgers", emoji: "🍔", re: /burger|hot dog|sandwich|chicken|grill/i },
+  { key: "asian", label: "Asian", emoji: "🍜", re: /asian|thai|korean|japan|chinese|indian|viet|fusion/i },
+  { key: "pizza", label: "Pizza", emoji: "🍕", re: /pizza|italian/i },
+  { key: "dessert", label: "Dessert", emoji: "🍦", re: /dessert|ice cream|sweet|bak|donut|cupcake/i },
+  { key: "coffee", label: "Coffee", emoji: "☕", re: /coffee|espresso|cafe/i },
+  { key: "other", label: "Other", emoji: "🍽", re: null },
+] as const;
+type CuisineKey = (typeof CUISINES)[number]["key"];
+function cuisineOf(category: string): CuisineKey {
+  return CUISINES.find((c) => c.re?.test(category))?.key ?? "other";
+}
+
+const WIN_LABEL: Record<Window, string> = { now: "Now", lunch: "Lunch 11–2", dinner: "Dinner 5–9", all: "All day" };
+const PILL: Record<Status, string> = {
+  open: "bg-pin-open-soft text-foreground", today: "bg-pin-today-soft text-foreground", none: "bg-muted text-muted-foreground",
+};
+const DOT: Record<Status, string> = { open: "bg-pin-open", today: "bg-pin-today", none: "bg-pin-none" };
+const RADIUS_DEFAULT = 10;
 
 function dayOptions() {
   const out: Date[] = [];
@@ -35,18 +61,26 @@ function dayOptions() {
   for (let i = 0; i <= 30; i++) { const x = new Date(d); x.setDate(d.getDate() + i); out.push(x); }
   return out;
 }
+const dayLabel = (d: Date, i: number) => i === 0 ? "Today" : i === 1 ? "Tomorrow" : d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+
+const focus = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 function Index() {
+  const isMobile = useIsMobile();
   const [now, setNow] = useState<Date | null>(null);
   const [dayIdx, setDayIdx] = useState(0);
   const [win, setWin] = useState<Window>("now");
-  const [radius, setRadius] = useState(10);
+  const [radius, setRadius] = useState(RADIUS_DEFAULT);
   const [center, setCenter] = useState(QC_CENTER);
   const [q, setQ] = useState("");
+  const [cuisines, setCuisines] = useState<CuisineKey[]>([]);
   const [onlyFav, setOnlyFav] = useState(false);
   const [onlyOpen, setOnlyOpen] = useState(false);
   const [card, setCard] = useState(false);
+  const [sort, setSort] = useState<"nearest" | "open">("open");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
+  const [hovered, setHovered] = useState<string | null>(null);
   const [mapFailed, setMapFailed] = useState(false);
   const [sheetH, setSheetH] = useState<number | null>(null);
   const drag = useRef<{ y: number; h: number } | null>(null);
@@ -64,33 +98,46 @@ function Index() {
   const date = days[dayIdx];
 
   const [from, to] = date ? dayBounds(date) : [null, null];
-  const { data: trucks = [] } = useTrucks();
+  const { data: trucks = [], isLoading } = useTrucks();
   const { data: stops = [] } = useStops(from, to);
   useStopsRealtime();
   const byTruck = useMemo(() => groupBy(stops, (s) => s.truck_id), [stops]);
+  const effWin: Window = dayIdx > 0 && win === "now" ? "all" : win;
 
   const results = useMemo(() => {
     if (!now || !date) return [];
-    const effWin: Window = dayIdx > 0 && win === "now" ? "all" : win;
     const term = q.trim().toLowerCase();
-    return trucks
+    const rows = trucks
       .map((t) => {
         const p = placeTruck(t, pickStop(byTruck.get(t.id) ?? [], date, effWin, now));
         return p ? { t, stop: p.stop as Stop | null, status: p.status, lat: p.lat, lng: p.lng, dist: milesBetween(center, p) } : null;
       })
       .filter((r): r is NonNullable<typeof r> => !!r && r.dist <= radius)
       .filter((r) => !term || [r.t.name, r.t.category, r.stop?.city ?? r.t.base_address ?? ""].some((s) => s.toLowerCase().includes(term)))
+      .filter((r) => cuisines.length === 0 || cuisines.includes(cuisineOf(r.t.category)))
       .filter((r) => !onlyFav || isFav(r.t.id))
       .filter((r) => !onlyOpen || r.status === "open")
-      .filter((r) => !card || r.t.accepts_card)
-      .sort(byStatusThenDistance);
-  }, [now, date, dayIdx, win, q, center, radius, onlyFav, onlyOpen, card, isFav, trucks, byTruck]);
+      .filter((r) => !card || r.t.accepts_card);
+    return sort === "open" ? rows.sort(byStatusThenDistance) : rows.sort((a, b) => a.dist - b.dist);
+  }, [now, date, effWin, q, center, radius, cuisines, onlyFav, onlyOpen, card, isFav, trucks, byTruck, sort]);
 
   const pins = useMemo(() => results.map((r) => ({
     id: r.t.id, lat: r.lat, lng: r.lng, status: r.status, emoji: r.t.emoji, name: r.t.name,
   })), [results]);
 
   const sel = results.find((r) => r.t.id === selected);
+
+  // Active (non-default) filters, each removable.
+  const active: { key: string; label: string; clear: () => void }[] = [];
+  if (dayIdx !== 0) active.push({ key: "day", label: date ? dayLabel(date, dayIdx) : "", clear: () => setDayIdx(0) });
+  if (effWin !== "now" && !(dayIdx > 0 && effWin === "all")) active.push({ key: "win", label: WIN_LABEL[effWin], clear: () => setWin("now") });
+  if (radius !== RADIUS_DEFAULT) active.push({ key: "r", label: `${radius} mi`, clear: () => setRadius(RADIUS_DEFAULT) });
+  for (const c of cuisines) { const m = CUISINES.find((x) => x.key === c)!; active.push({ key: c, label: `${m.emoji} ${m.label}`, clear: () => setCuisines((xs) => xs.filter((x) => x !== c)) }); }
+  if (onlyOpen) active.push({ key: "open", label: "Open now", clear: () => setOnlyOpen(false) });
+  if (card) active.push({ key: "card", label: "Takes card", clear: () => setCard(false) });
+  if (onlyFav) active.push({ key: "fav", label: "Favorites only", clear: () => setOnlyFav(false) });
+  const clearAll = () => { setDayIdx(0); setWin("now"); setRadius(RADIUS_DEFAULT); setCuisines([]); setOnlyOpen(false); setCard(false); setOnlyFav(false); setQ(""); };
+  const toggleCuisine = (k: CuisineKey) => setCuisines((xs) => xs.includes(k) ? xs.filter((x) => x !== k) : [...xs, k]);
 
   const snaps = () => { const vh = window.innerHeight; return [148, Math.round(vh * 0.45), Math.round(vh * 0.88)]; };
   const onDown = (e: React.PointerEvent) => { (e.target as HTMLElement).setPointerCapture(e.pointerId); drag.current = { y: e.clientY, h: sheetH ?? snaps()[1]! }; };
@@ -103,131 +150,260 @@ function Index() {
     drag.current = null;
   };
 
-  const dateSelect = (
-    <select value={dayIdx} onChange={(e) => setDayIdx(Number(e.target.value))} className="chip h-11 shrink-0 cursor-pointer" aria-label="Date">
-      {days.map((d, i) => (
-        <option key={i} value={i}>{i === 0 ? "Today" : i === 1 ? "Tomorrow" : d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</option>
-      ))}
-    </select>
-  );
-  const chipCls = (on: boolean) => `chip h-11 shrink-0 whitespace-nowrap ${on ? "chip-active" : ""}`;
-  const chips = (
-    <>
-      {dateSelect}
-      {(["now", "lunch", "dinner", "all"] as Window[]).filter((w) => dayIdx === 0 || w !== "now").map((w) => (
-        <button key={w} onClick={() => setWin(w)} className={chipCls(win === w || (dayIdx > 0 && win === "now" && w === "all"))}>
-          {w === "now" ? "Now" : w === "lunch" ? "Lunch 11–2" : w === "dinner" ? "Dinner 5–9" : "All day"}
-        </button>
-      ))}
-      {[1, 3, 5, 10, 25].map((r) => <button key={r} onClick={() => setRadius(r)} className={chipCls(radius === r)}>{r} mi</button>)}
-      <button onClick={() => setOnlyOpen(!onlyOpen)} className={chipCls(onlyOpen)}>Open now</button>
-      <button onClick={() => setOnlyFav(!onlyFav)} className={chipCls(onlyFav)}>Favorites only</button>
-      <button onClick={() => setCard(!card)} className={chipCls(card)}>Takes card</button>
-    </>
-  );
-  const brandRow = (
-    <div className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-2">
-      <h1 className="text-lg font-extrabold sm:text-xl"><span className="text-primary">FoodTruck</span>QC</h1>
-      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Tacos, BBQ, Moline…" aria-label="Search trucks"
-        className="h-11 w-full min-w-0 rounded-full border-2 border-border bg-background px-4 text-sm outline-none focus:ring-2 focus:ring-ring" />
-      <Link to="/favorites" className="chip h-11 w-11 shrink-0 justify-center" aria-label="My favorites">♥</Link>
+  const chip = (on: boolean) => `chip h-10 shrink-0 whitespace-nowrap ${on ? "chip-active" : ""}`;
+
+  const searchRow = (
+    <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2">
+      <label className="relative block min-w-0">
+        <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search trucks, tacos, BBQ…" aria-label="Search trucks"
+          className="h-12 w-full min-w-0 rounded-full border border-border bg-card pl-11 pr-4 text-sm shadow-pop outline-none transition-shadow duration-150 focus:ring-2 focus:ring-ring" />
+      </label>
+      <button onClick={() => setFiltersOpen(true)} className={`relative inline-flex h-12 shrink-0 items-center gap-2 rounded-full border border-border bg-card px-4 text-sm font-semibold shadow-pop transition-all duration-150 hover:bg-muted ${focus}`} aria-label={`Filters${active.length ? ` (${active.length} active)` : ""}`}>
+        <SlidersHorizontal className="h-4 w-4" /><span className="hidden sm:inline">Filters</span>
+        {active.length > 0 && <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1 text-[11px] font-bold text-primary-foreground">{active.length}</span>}
+      </button>
       <AccountButton />
     </div>
   );
+
+  const quickRow = (
+    <div className="no-scrollbar edge-fade -mx-3 flex gap-2 overflow-x-auto px-3 py-1">
+      <button onClick={() => setOnlyOpen(!onlyOpen)} className={chip(onlyOpen)} aria-pressed={onlyOpen}>
+        <span className="h-2 w-2 rounded-full bg-pin-open" />Open now
+      </button>
+      <label className={`${chip(dayIdx !== 0)} relative cursor-pointer pr-8`}>
+        {date ? dayLabel(date, dayIdx) : "Today"}
+        <ChevronDown className="pointer-events-none absolute right-3 h-4 w-4" />
+        <select value={dayIdx} onChange={(e) => setDayIdx(Number(e.target.value))} className="absolute inset-0 cursor-pointer opacity-0" aria-label="Date">
+          {days.map((d, i) => <option key={i} value={i}>{dayLabel(d, i)}</option>)}
+        </select>
+      </label>
+      <span className="my-2 w-px shrink-0 bg-border" />
+      {CUISINES.map((c) => (
+        <button key={c.key} onClick={() => toggleCuisine(c.key)} className={chip(cuisines.includes(c.key))} aria-pressed={cuisines.includes(c.key)}>
+          <span aria-hidden>{c.emoji}</span>{c.label}
+        </button>
+      ))}
+    </div>
+  );
+
+  const activeRow = active.length > 0 && (
+    <div className="flex flex-wrap items-center gap-1.5">
+      {active.map((a) => (
+        <button key={a.key} onClick={a.clear} className={`inline-flex h-8 items-center gap-1 rounded-full bg-accent px-3 text-xs font-medium transition-colors duration-150 hover:bg-accent/70 ${focus}`} aria-label={`Remove ${a.label}`}>
+          {a.label}<X className="h-3 w-3" />
+        </button>
+      ))}
+      <button onClick={clearAll} className={`h-8 rounded-full px-2 text-xs font-semibold text-primary hover:underline ${focus}`}>Clear all</button>
+    </div>
+  );
+
+  const listHeader = (
+    <div className="flex items-center justify-between gap-2 px-3">
+      <p className="min-w-0 truncate text-sm font-semibold">{results.length} trucks within {radius} mi</p>
+      <label className="relative inline-flex h-10 shrink-0 items-center gap-1 rounded-full px-3 text-sm text-muted-foreground hover:bg-muted">
+        Sort: <span className="font-semibold text-foreground">{sort === "open" ? "Open now first" : "Nearest"}</span><ChevronDown className="h-4 w-4" />
+        <select value={sort} onChange={(e) => setSort(e.target.value as "nearest" | "open")} className="absolute inset-0 cursor-pointer opacity-0" aria-label="Sort">
+          <option value="open">Open now first</option><option value="nearest">Nearest</option>
+        </select>
+      </label>
+    </div>
+  );
+
+  const statusText = (r: (typeof results)[number]) =>
+    !r.stop || r.status === "none" ? "Location not confirmed"
+      : r.status === "open" ? `Open now · until ${fmtTime(r.stop.ends_at)}`
+        : `${dayIdx === 0 ? "Today" : dayIdx === 1 ? "Tomorrow" : "Scheduled"} ${fmtRange(r.stop)}`;
+
+  const loading = isLoading || !now;
   const list = (
     <ul className="space-y-2 px-3 pb-4">
-      {results.length === 0 && now && <li className="py-8 text-center text-sm text-muted-foreground">No trucks match. Try a bigger radius or another time.</li>}
-      {results.map((r) => (
-        <li key={r.t.id}>
+      {loading && Array.from({ length: 5 }).map((_, i) => (
+        <li key={i} className="flex gap-3 rounded-2xl bg-card p-3 shadow-pop"><Skeleton className="h-[72px] w-[72px] rounded-xl" /><div className="flex-1 space-y-2 py-1"><Skeleton className="h-4 w-2/3" /><Skeleton className="h-3 w-1/3" /><Skeleton className="h-3 w-1/2" /></div></li>
+      ))}
+      {!loading && results.length === 0 && (
+        <li className="flex flex-col items-center gap-3 px-4 py-12 text-center">
+          <span className="text-4xl" aria-hidden>🚚</span>
+          <p className="font-semibold">No trucks match these filters</p>
+          <p className="text-sm text-muted-foreground">Try a bigger distance, another day, or fewer cuisines.</p>
+          <button onClick={clearAll} className={`h-11 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors duration-150 hover:bg-primary/90 ${focus}`}>Clear filters</button>
+        </li>
+      )}
+      {!loading && results.map((r) => (
+        <li key={r.t.id} className="relative" onMouseEnter={() => setHovered(r.t.id)} onMouseLeave={() => setHovered(null)}>
           <button onClick={() => setSelected(r.t.id)}
-            className={`flex min-h-11 w-full items-center gap-3 rounded-xl border-2 border-border p-2.5 text-left transition-all hover:shadow-pop-sm ${selected === r.t.id ? "bg-accent" : "bg-background"}`}>
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-secondary text-xl">{r.t.emoji}</span>
-            <span className="min-w-0 flex-1">
+            className={`flex w-full items-start gap-3 rounded-2xl border bg-card p-3 pr-12 text-left shadow-pop transition-all duration-150 hover:shadow-pop-sm ${focus} ${selected === r.t.id ? "border-primary" : "border-transparent"}`}>
+            <span className="grid h-[72px] w-[72px] shrink-0 place-items-center overflow-hidden rounded-xl bg-muted text-3xl">
+              {r.t.logo_url ? <img src={r.t.logo_url} alt="" className="h-full w-full object-cover" loading="lazy" /> : r.t.emoji}
+            </span>
+            <span className="min-w-0 flex-1 space-y-0.5">
               <span className="block truncate font-bold">{r.t.name}</span>
-              <span className="block truncate text-xs text-muted-foreground">{r.t.category} · {r.stop ? `${r.stop.venue_name}, ${r.stop.city}` : (r.t.base_address ?? "Base location")}</span>
-            </span>
-            <span className="max-w-[40%] shrink-0 text-right text-xs">
-              <span className="flex items-center justify-end gap-1 font-semibold">
-                <span className={`h-2 w-2 shrink-0 rounded-full ${STATUS_DOT[r.status]}`} /><span className="truncate">{r.stop ? fmtRange(r.stop) : "Not confirmed"}</span>
+              <span className="block truncate text-sm">{r.t.category} · {r.dist.toFixed(1)} mi</span>
+              <span className="block truncate text-xs text-muted-foreground">{r.stop && r.status !== "none" ? `${r.stop.venue_name}, ${r.stop.city}` : (r.t.base_address ?? "Base location")}</span>
+              <span className={`mt-1 inline-flex max-w-full items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold ${PILL[r.status]}`}>
+                <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${DOT[r.status]}`} /><span className="truncate">{statusText(r)}</span>
               </span>
-              <span className="text-muted-foreground">{r.dist.toFixed(1)} mi</span>
             </span>
+          </button>
+          <button onClick={() => toggle(r.t.id)} aria-label={isFav(r.t.id) ? "Remove from favorites" : "Save to favorites"}
+            className={`absolute right-1 top-1 grid h-11 w-11 place-items-center rounded-full transition-colors duration-150 hover:bg-muted ${focus}`}>
+            <Heart className={`h-5 w-5 ${isFav(r.t.id) ? "fill-primary text-primary" : "text-muted-foreground"}`} />
           </button>
         </li>
       ))}
     </ul>
   );
-  const countLine = <p className="px-3 text-sm font-semibold">{results.length} trucks within {radius} mi {!mapFailed && <span className="font-normal text-muted-foreground">· drag the orange dot to search elsewhere</span>}</p>;
+
+  const filtersBody = (
+    <div className="space-y-6">
+      <Section title="When">
+        <div className="grid grid-cols-4 gap-1 rounded-full bg-muted p-1">
+          {([["Now", dayIdx === 0 && win === "now", () => { setDayIdx(0); setWin("now"); }],
+            ["Today", dayIdx === 0 && win !== "now", () => { setDayIdx(0); if (win === "now") setWin("all"); }],
+            ["Tomorrow", dayIdx === 1, () => setDayIdx(1)],
+            ["Pick date", dayIdx > 1, () => { if (dayIdx < 2) setDayIdx(2); }]] as [string, boolean, () => void][]).map(([l, on, fn]) => (
+            <button key={l} onClick={fn} className={`h-10 rounded-full text-sm font-medium transition-all duration-150 ${focus} ${on ? "bg-card shadow-pop-sm" : "text-muted-foreground"}`}>{l}</button>
+          ))}
+        </div>
+        {dayIdx > 1 && (
+          <select value={dayIdx} onChange={(e) => setDayIdx(Number(e.target.value))} className="field mt-3" aria-label="Pick a date">
+            {days.slice(2).map((d, i) => <option key={i + 2} value={i + 2}>{dayLabel(d, i + 2)}</option>)}
+          </select>
+        )}
+        {!(dayIdx === 0 && win === "now") && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {(["lunch", "dinner", "all"] as Window[]).map((w) => <button key={w} onClick={() => setWin(w)} className={chip(effWin === w)}>{WIN_LABEL[w]}</button>)}
+          </div>
+        )}
+      </Section>
+      <Section title="Distance" aside={<span className="text-sm font-semibold text-primary">{radius} mi</span>}>
+        <Slider min={1} max={25} step={1} value={[radius]} onValueChange={(v) => setRadius(v[0] ?? RADIUS_DEFAULT)} aria-label="Distance in miles" className="py-3" />
+        <div className="flex justify-between text-xs text-muted-foreground"><span>1 mi</span><span>25 mi</span></div>
+      </Section>
+      <Section title="Cuisine">
+        <div className="flex flex-wrap gap-2">
+          {CUISINES.map((c) => <button key={c.key} onClick={() => toggleCuisine(c.key)} className={chip(cuisines.includes(c.key))}><span aria-hidden>{c.emoji}</span>{c.label}</button>)}
+        </div>
+      </Section>
+      <Section title="Extras">
+        <div className="divide-y divide-border">
+          {([["Open now", onlyOpen, setOnlyOpen], ["Takes card", card, setCard], ["Favorites only", onlyFav, setOnlyFav]] as [string, boolean, (v: boolean) => void][]).map(([l, v, set]) => (
+            <label key={l} className="flex min-h-12 cursor-pointer items-center justify-between gap-3 text-sm font-medium">{l}<Switch checked={v} onCheckedChange={set} /></label>
+          ))}
+        </div>
+      </Section>
+    </div>
+  );
+  const filtersFooter = (
+    <div className="flex items-center justify-between gap-3 border-t border-border bg-card px-5 py-3">
+      <button onClick={clearAll} className={`h-11 rounded-full px-2 text-sm font-semibold underline-offset-4 hover:underline ${focus}`}>Clear all</button>
+      <button onClick={() => setFiltersOpen(false)} className={`h-12 rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground transition-colors duration-150 hover:bg-primary/90 ${focus}`}>Show {results.length} trucks</button>
+    </div>
+  );
 
   return (
-    <div className="relative h-dvh w-full overflow-hidden">
-      {/* Map: full screen on mobile/tablet, right of the 420px column on desktop */}
+    <div className="relative h-dvh w-full overflow-hidden bg-background">
       {!mapFailed && (
-        <div className="absolute inset-0 min-[1200px]:left-[420px]">
+        <div className="absolute inset-0 md:left-[360px] min-[1200px]:left-[420px]">
           <ClientOnly fallback={<div className="h-full w-full bg-muted" />}>
             <Suspense fallback={<div className="h-full w-full bg-muted" />}>
-              <TruckMap pins={pins} center={center} radiusMi={radius} onSelect={setSelected} onCenterChange={setCenter} onFail={() => setMapFailed(true)} />
+              <TruckMap pins={pins} center={center} radiusMi={radius} onSelect={setSelected} onCenterChange={setCenter} onFail={() => setMapFailed(true)}
+                highlightId={hovered ?? selected} pillClass="top-[176px] md:top-3" locateClass="right-3 top-[176px] md:top-auto md:bottom-6" />
             </Suspense>
           </ClientOnly>
         </div>
       )}
 
       {/* Mobile top bar */}
-      <div className="absolute inset-x-0 top-0 z-[1000] space-y-2 border-b-2 border-border bg-card p-2 md:hidden">
-        {brandRow}
-        <div className="-mx-2 flex gap-2 overflow-x-auto px-2 pb-1 [scrollbar-width:none]">{chips}</div>
+      <div className="absolute inset-x-0 top-0 z-[1000] space-y-2 bg-card/95 p-3 pb-2 shadow-pop backdrop-blur md:hidden">
+        {searchRow}{quickRow}{activeRow}
       </div>
 
-      {/* Mobile bottom sheet (full screen list if the map fails) */}
-      <div className={`absolute inset-x-0 bottom-0 z-[1000] flex flex-col rounded-t-3xl border-2 border-b-0 border-border bg-card md:hidden ${mapFailed ? "top-[118px] rounded-none" : ""}`}
+      {/* Mobile bottom sheet */}
+      <div className={`absolute inset-x-0 bottom-0 z-[1000] flex flex-col rounded-t-3xl bg-background shadow-[0_-4px_16px_rgb(0_0_0/0.08)] md:hidden ${mapFailed ? "top-[150px] rounded-none" : ""}`}
         style={mapFailed ? undefined : { height: sheetH ?? "45dvh", transition: drag.current ? "none" : "height .25s" }}>
         {!mapFailed && (
           <button onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} aria-label="Drag to resize list"
-            className="flex h-11 shrink-0 touch-none flex-col items-center justify-center gap-1">
-            <span className="h-1.5 w-12 rounded-full bg-muted-foreground/40" />
+            className="flex h-8 shrink-0 touch-none items-center justify-center">
+            <span className="h-1.5 w-10 rounded-full bg-border" />
           </button>
         )}
-        {countLine}
-        <div className="mt-2 flex-1 overflow-y-auto overscroll-contain">{list}<SiteFooter /></div>
+        {listHeader}
+        <div className="mt-1 flex-1 overflow-y-auto overscroll-contain">{list}<SiteFooter /></div>
       </div>
 
-      {/* Tablet side panel (360px) / desktop column (420px); full width if the map fails */}
-      <aside className={`absolute inset-y-0 left-0 z-[1000] hidden flex-col border-r-2 border-border bg-card md:flex ${mapFailed ? "w-full" : "w-[360px] min-[1200px]:w-[420px]"}`}>
-        <div className={`space-y-3 border-b-2 border-border p-3 ${mapFailed ? "mx-auto w-full max-w-[1100px]" : ""}`}>
-          {brandRow}
-          <div className="flex flex-wrap gap-2">{chips}</div>
+      {/* Tablet / desktop column */}
+      <aside className={`absolute inset-y-0 left-0 z-[1000] hidden flex-col bg-secondary shadow-pop md:flex ${mapFailed ? "w-full" : "w-[360px] min-[1200px]:w-[420px]"}`}>
+        <div className={`space-y-2 bg-card p-3 shadow-pop ${mapFailed ? "mx-auto w-full max-w-[1100px]" : ""}`}>
+          <h1 className="px-1 text-lg font-extrabold"><span className="text-primary">FoodTruck</span>QC</h1>
+          {searchRow}{quickRow}{activeRow}
         </div>
-        <div className={`flex-1 overflow-y-auto pt-3 ${mapFailed ? "mx-auto w-full max-w-[1100px]" : ""}`}>{countLine}<div className="mt-2">{list}</div><SiteFooter /></div>
+        <div className={`flex-1 overflow-y-auto pt-2 ${mapFailed ? "mx-auto w-full max-w-[1100px]" : ""}`}>{listHeader}<div className="mt-1">{list}</div><SiteFooter /></div>
       </aside>
 
-      {/* Selected truck card */}
+      {/* Filters panel */}
+      {isMobile ? (
+        <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+          <SheetContent side="bottom" className="z-[1100] flex max-h-[90dvh] flex-col gap-0 rounded-t-3xl p-0">
+            <SheetHeader className="border-b border-border px-5 py-4"><SheetTitle>Filters</SheetTitle></SheetHeader>
+            <div className="flex-1 overflow-y-auto px-5 py-5">{filtersBody}</div>
+            {filtersFooter}
+          </SheetContent>
+        </Sheet>
+      ) : (
+        <Dialog open={filtersOpen} onOpenChange={setFiltersOpen}>
+          <DialogContent className="z-[1100] flex max-h-[85dvh] max-w-lg flex-col gap-0 overflow-hidden rounded-2xl p-0">
+            <DialogHeader className="border-b border-border px-5 py-4"><DialogTitle className="text-center">Filters</DialogTitle></DialogHeader>
+            <div className="flex-1 overflow-y-auto px-5 py-5">{filtersBody}</div>
+            {filtersFooter}
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Selected truck preview */}
       {sel && (
         <div className="absolute inset-x-0 bottom-[calc(45dvh+8px)] z-[1001] px-3 md:bottom-auto md:left-auto md:right-3 md:top-3 md:w-96 md:px-0">
-          <div className="panel p-4">
+          <div className="rounded-2xl bg-card p-4 shadow-[0_4px_20px_rgb(0_0_0/0.12)]">
             <div className="flex items-start gap-3">
-              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border-2 border-border bg-secondary text-2xl">{sel.t.emoji}</div>
-              <div className="min-w-0 flex-1">
-                <h2 className="truncate text-lg font-bold">{sel.t.name}</h2>
-                <p className="text-sm text-muted-foreground">{sel.t.category} · {sel.dist.toFixed(1)} mi · {sel.stop?.venue_name ?? sel.t.base_address ?? "Base location"}</p>
-                <p className="mt-1 flex items-center gap-1.5 text-sm font-medium">
-                  <span className={`h-2.5 w-2.5 rounded-full border border-border ${STATUS_DOT[sel.status]}`} />
-                  {sel.stop ? `${STATUS_TEXT[sel.status]} · ${fmtRange(sel.stop)}` : "Location not confirmed"}
-                </p>
-                {sel.stop && <p className="mt-0.5 text-xs text-muted-foreground">{SOURCE_LABEL[sel.stop.source]}</p>}
+              <div className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-xl bg-muted text-2xl">
+                {sel.t.logo_url ? <img src={sel.t.logo_url} alt="" className="h-full w-full object-cover" /> : sel.t.emoji}
               </div>
-              <button onClick={() => setSelected(null)} aria-label="Close" className="grid h-11 w-11 shrink-0 place-items-center text-muted-foreground">✕</button>
+              <div className="min-w-0 flex-1">
+                <h2 className="truncate text-base font-bold">{sel.t.name}</h2>
+                <p className="truncate text-sm text-muted-foreground">{sel.t.category} · {sel.dist.toFixed(1)} mi</p>
+                <span className={`mt-1 inline-flex max-w-full items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold ${PILL[sel.status]}`}>
+                  <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${DOT[sel.status]}`} /><span className="truncate">{statusText(sel)}</span>
+                </span>
+                {sel.stop && sel.status !== "none" && <p className="mt-1 text-xs text-muted-foreground">{SOURCE_LABEL[sel.stop.source]}</p>}
+              </div>
+              <button onClick={() => setSelected(null)} aria-label="Close" className={`grid h-11 w-11 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-muted ${focus}`}><X className="h-5 w-5" /></button>
             </div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button onClick={() => toggle(sel.t.id)} className={`chip h-11 ${isFav(sel.t.id) ? "chip-active" : ""}`}>♥ {isFav(sel.t.id) ? "Saved" : "Save"}</button>
-              <a target="_blank" rel="noreferrer" className="chip h-11" href={`https://www.google.com/maps/dir/?api=1&destination=${sel.lat},${sel.lng}`}>Directions</a>
-              {sel.t.phone && <a className="chip h-11" href={`tel:${sel.t.phone}`}>Call</a>}
-              {sel.t.website && <a target="_blank" rel="noreferrer" className="chip h-11" href={sel.t.website}>Website</a>}
-              {sel.t.instagram && <a target="_blank" rel="noreferrer" className="chip h-11" href={sel.t.instagram.startsWith("http") ? sel.t.instagram : `https://instagram.com/${sel.t.instagram.replace(/^@/, "")}`}>Instagram</a>}
-              <Link to="/truck/$id" params={{ id: sel.t.id }} className="chip ml-auto h-11 bg-primary text-primary-foreground">Details →</Link>
+            <div className="mt-3 grid grid-cols-4 gap-2">
+              <Action href={sel.t.phone ? `tel:${sel.t.phone}` : undefined} icon={<Phone className="h-4 w-4" />} label="Call" />
+              <Action href={sel.t.website ?? undefined} icon={<Globe className="h-4 w-4" />} label="Website" external />
+              <Action href={sel.t.instagram ? (sel.t.instagram.startsWith("http") ? sel.t.instagram : `https://instagram.com/${sel.t.instagram.replace(/^@/, "")}`) : undefined} icon={<Instagram className="h-4 w-4" />} label="Instagram" external />
+              <Action href={`https://www.google.com/maps/dir/?api=1&destination=${sel.lat},${sel.lng}`} icon={<Navigation className="h-4 w-4" />} label="Directions" external primary />
             </div>
+            <Link to="/truck/$id" params={{ id: sel.t.id }} className={`mt-2 flex h-11 items-center justify-center rounded-xl text-sm font-semibold text-primary hover:bg-muted ${focus}`}>View details →</Link>
           </div>
         </div>
       )}
     </div>
   );
+}
+
+function Section({ title, aside, children }: { title: string; aside?: ReactNode; children: ReactNode }) {
+  return (
+    <section>
+      <div className="mb-3 flex items-center justify-between"><h3 className="text-base font-semibold">{title}</h3>{aside}</div>
+      {children}
+    </section>
+  );
+}
+
+function Action({ href, icon, label, external, primary }: { href?: string | undefined; icon: ReactNode; label: string; external?: boolean; primary?: boolean }) {
+  const cls = `flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl text-xs font-medium transition-colors duration-150 ${focus} ${primary ? "bg-primary text-primary-foreground hover:bg-primary/90" : "bg-muted hover:bg-accent"}`;
+  if (!href) return <span className={`${cls} cursor-not-allowed opacity-40`} aria-disabled>{icon}{label}</span>;
+  return <a href={href} className={cls} {...(external ? { target: "_blank", rel: "noreferrer" } : {})}>{icon}{label}</a>;
 }
