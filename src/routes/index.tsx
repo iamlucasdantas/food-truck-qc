@@ -1,3 +1,4 @@
+import { matchesSearch } from "@/data/menu";
 import { Logo } from "@/components/Logo";
 import { SiteFooter } from "@/components/SiteFooter";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -117,7 +118,7 @@ function Index() {
         return p ? { t, stop: p.stop as Stop | null, status: p.status, lat: p.lat, lng: p.lng, dist: milesBetween(center, p) } : null;
       })
       .filter((r): r is NonNullable<typeof r> => !!r && r.dist <= radius)
-      .filter((r) => !term || [r.t.name, r.t.category, r.stop?.city ?? r.t.base_address ?? ""].some((s) => s.toLowerCase().includes(term)))
+      .filter((r) => !term || matchesSearch(term, [r.t.name, r.t.category, r.stop?.city ?? r.t.base_address ?? "", r.t.menu_search ?? ""].join(" ")))
       .filter((r) => cuisines.length === 0 || cuisines.includes(cuisineOf(r.t.category)))
       .filter((r) => !onlyFav || isFav(r.t.id))
       .filter((r) => !onlyOpen || r.status === "open")
