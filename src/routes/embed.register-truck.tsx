@@ -80,7 +80,7 @@ function EmbedForm() {
                 <option value="">Pick one…</option>
                 {CATS.map((c) => <option key={c}>{c}</option>)}
               </select>
-              {err.category && <span className="text-sm text-destructive">{err.category}</span>}
+              {err["category"] && <span className="text-sm text-destructive">{err["category"]}</span>}
             </label>
             {input("city", "City or usual spot", "text", "Davenport, IA")}
             <div className="grid gap-3 sm:grid-cols-3">{input("instagram", "Instagram")}{input("facebook", "Facebook")}{input("website", "Website")}</div>
