@@ -126,7 +126,6 @@
     font-family: var(--font-body);
   }
   h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; }
-  .border-2 { border-width: 1px; }
 }
 
 @utility chip {
@@ -152,3 +151,6 @@
 html, body { overflow-x: hidden; }
 .leaflet-container { font-family: var(--font-body); }
 .leaflet-control-zoom a { width: 44px !important; height: 44px !important; line-height: 44px !important; }
+
+/* Softer outlines everywhere: legacy thick borders render as hairlines. */
+.border-2 { border-width: 1px; }
