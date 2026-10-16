@@ -57,3 +57,8 @@ export function truckByline(truckName: string, businessName: string | null | und
   const b = (businessName ?? "").trim();
   return b && b.toLowerCase() !== truckName.trim().toLowerCase() ? `by ${b}` : "";
 }
+
+/** The first truck's name starts as the business name; later trucks start empty (names stay unique). */
+export function defaultTruckName(businessName: string, existingTruckNames: string[]) {
+  return existingTruckNames.length ? "" : businessName.trim();
+}
