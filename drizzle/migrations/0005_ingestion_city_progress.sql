@@ -1,0 +1,1 @@
+ALTER TABLE public.ingestion_runs ADD COLUMN IF NOT EXISTS cities_total text[] NOT NULL DEFAULT '{}', ADD COLUMN IF NOT EXISTS cities_done text[] NOT NULL DEFAULT '{}';

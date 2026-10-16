@@ -86,6 +86,8 @@ export type Database = {
       }
       ingestion_runs: {
         Row: {
+          cities_done: string[]
+          cities_total: string[]
           error: string | null
           finished_at: string | null
           id: string
@@ -97,6 +99,8 @@ export type Database = {
           status: string
         }
         Insert: {
+          cities_done?: string[]
+          cities_total?: string[]
           error?: string | null
           finished_at?: string | null
           id?: string
@@ -108,6 +112,8 @@ export type Database = {
           status?: string
         }
         Update: {
+          cities_done?: string[]
+          cities_total?: string[]
           error?: string | null
           finished_at?: string | null
           id?: string
