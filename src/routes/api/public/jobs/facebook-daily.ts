@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { authenticateCronRequest } from "@/integrations/supabase/cron-auth";
+import { isSocialScanTime } from "@/data/social-schedule";
+import { z } from "zod";
 
-/** Daily 6am Central: fires at 11:00 and 12:00 UTC; only the one that is 6am in Chicago runs (DST-safe). */
+/** Stable managed callback; accept the old contract until the schedule is replaced. */
 export const Route = createFileRoute("/api/public/jobs/facebook-daily")({
   staticData: { sitemap: false },
   server: {
@@ -9,8 +11,10 @@ export const Route = createFileRoute("/api/public/jobs/facebook-daily")({
       POST: async ({ request }) => {
         const authFailure = await authenticateCronRequest(request);
         if (authFailure) return authFailure;
+        const body = z.object({ kind: z.enum(["daily", "every-two-hours"]) }).strict().safeParse(await request.json().catch(() => null));
+        if (!body.success) return new Response("Bad request", { status: 400 });
         const hour = Number(new Intl.DateTimeFormat("en-US", { timeZone: "America/Chicago", hour: "numeric", hourCycle: "h23" }).format(new Date()));
-        if (hour !== 6) return Response.json({ skipped: true });
+        if (body.data.kind === "daily" ? hour !== 6 : !isSocialScanTime(new Date())) return Response.json({ skipped: true });
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data: open } = await supabaseAdmin.from("ingestion_runs").select("id").eq("source", "apify_facebook").eq("status", "running").limit(1);
         if (open?.length) return Response.json({ skipped: "already running" });
