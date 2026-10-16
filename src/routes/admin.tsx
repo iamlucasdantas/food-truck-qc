@@ -1,8 +1,8 @@
-import { Logo } from "@/components/Logo";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Check, X, BadgeCheck, Clock, ShieldAlert, LogIn, Truck as TruckIcon, Home, MapPin, PanelRightOpen } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { parseCsv, slugify } from "@/data/trucks";
@@ -13,6 +13,11 @@ import { startFacebookUpdate, continueFacebookUpdate } from "@/lib/facebook.func
 import { notifyCrmTruckDecision } from "@/lib/crm.functions";
 import { AdminTrucks } from "@/components/AdminTrucks";
 import { AdminSuggestions, FacebookSession, PastePost } from "@/components/AdminFacebookTools";
+import { AdminShell } from "@/components/admin/AdminShell";
+import { AdminOverview } from "@/components/admin/AdminOverview";
+import { EmptyState, IconAction, Initials, ListSkeleton, SectionHeader, StatusPill, btn, statusTone } from "@/components/admin/ui";
+import { sectionFromSearch } from "@/data/admin";
+import { LogoMark } from "@/components/Logo";
 
 export const Route = createFileRoute("/admin")({
   staticData: { sitemap: false },
@@ -31,39 +36,35 @@ export const Route = createFileRoute("/admin")({
   component: Admin,
 });
 
-const TABS = ["Claims", "Pending trucks", "Trucks", "CSV import", "Apify", "Facebook", "Logs"] as const;
 const err = (e: { message: string } | null) => (e ? (toast.error(e.message), true) : false);
 
 function Admin() {
   const { user, ready, isAdmin, openAuth } = useAuth();
   const search = Route.useSearch();
-  const navigate = Route.useNavigate();
-  const TAB_KEY: Record<string, (typeof TABS)[number]> = { pending: "Pending trucks", trucks: "Trucks" };
-  const tab: (typeof TABS)[number] = TAB_KEY[String(search["tab"] ?? "")] ?? (TABS.find((t) => t === search["tab"]) ?? "Claims");
-  const setTab = (t: (typeof TABS)[number]) => void navigate({ search: { tab: t === "Pending trucks" ? "pending" : t === "Trucks" ? "trucks" : t === "Claims" ? undefined : t } });
+  const section = sectionFromSearch(search["tab"]);
+  if (!ready) return <div className="grid min-h-dvh place-items-center bg-muted/50"><LogoMark className="h-10 w-auto animate-pulse" /></div>;
+  if (!user || !isAdmin) {
+    return (
+      <div className="grid min-h-dvh place-items-center bg-muted/50 p-4">
+        <div className="w-full max-w-sm">
+          {!user
+            ? <EmptyState icon={LogIn} title="Sign in to Admin" hint="This area is for FoodTruckQC admins." action={<button className={btn.primary} onClick={() => openAuth()}>Sign in</button>} />
+            : <EmptyState icon={ShieldAlert} title="Admins only" hint="Your account does not have admin access." action={<a href="/" className={btn.secondary}>Back to map</a>} />}
+        </div>
+      </div>
+    );
+  }
   return (
-    <div className="min-h-dvh bg-sidebar text-sidebar-foreground"><header className="border-b border-sidebar-border bg-sidebar"><div className="mx-auto flex w-full max-w-[1100px] items-center justify-between gap-3 p-4"><Logo /><Link to="/" className="chip">← Map</Link></div></header>
-    <main className="mx-auto w-full max-w-[1100px] min-w-0 space-y-4 p-4 pb-16">
-      <h1 className="text-3xl font-extrabold">Admin</h1>
-      {ready && !user && <button className="chip" onClick={() => openAuth()}>Sign in</button>}
-      {ready && user && !isAdmin && <p className="panel p-5">This area is for admins only.</p>}
-      {isAdmin && (
-        <>
-          <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
-            {TABS.map((t) => (
-              <button key={t} onClick={() => setTab(t)} className={`chip shrink-0 whitespace-nowrap ${tab === t ? "bg-primary text-primary-foreground" : ""}`}>{t}</button>
-            ))}
-          </div>
-          {tab === "Claims" && <Claims />}
-          {tab === "Pending trucks" && <PendingTrucks />}
-          {tab === "Trucks" && <AdminTrucks search={search} />}
-          {tab === "CSV import" && <CsvImport />}
-          {tab === "Apify" && <ApifySeed />}
-          {tab === "Facebook" && <FacebookTab />}
-          {tab === "Logs" && <Logs />}
-        </>
-      )}
-    </main></div>
+    <AdminShell section={section}>
+      {section === "overview" && <AdminOverview />}
+      {section === "claims" && <Claims />}
+      {section === "pending" && <PendingTrucks />}
+      {section === "trucks" && <AdminTrucks search={search} />}
+      {section === "csv" && <><SectionHeader title="CSV import" description="Bulk-add trucks from a spreadsheet." /><CsvImport /></>}
+      {section === "apify" && <><SectionHeader title="Google Maps seed" description="Find food trucks across Quad Cities towns." /><ApifySeed /></>}
+      {section === "facebook" && <><SectionHeader title="Facebook" description="Scan groups and pages for upcoming stops." /><FacebookTab /></>}
+      {section === "logs" && <><SectionHeader title="Import logs" description="Every CSV, Google Maps and Facebook run." /><Logs /></>}
+    </AdminShell>
   );
 }
 
@@ -74,7 +75,8 @@ function useInvalidate() {
 
 function Claims() {
   const inv = useInvalidate();
-  const { data = [] } = useQuery({
+  const [show, setShow] = useState<"pending" | "all">("pending");
+  const { data = [], isLoading } = useQuery({
     queryKey: ["admin", "claims"],
     queryFn: async () => (await supabase.from("claims").select("*, trucks(name, status)").order("created_at", { ascending: false }).limit(100)).data ?? [],
   });
@@ -84,33 +86,52 @@ function Claims() {
     const { error } = await supabase.rpc("review_claim", { _claim_id: id, _approve: approve, _reason: reason ?? "" });
     if (!err(error)) { toast.success(approve ? "Approved — owner role granted" : "Rejected"); inv(); }
   };
-  if (!data.length) return <p className="panel p-5 text-muted-foreground">No claims yet.</p>;
+  const list = show === "pending" ? data.filter((c) => c.status === "pending") : data;
   return (
-    <ul className="space-y-2">
-      {data.map((c) => (
-        <li key={c.id} className="panel space-y-1 p-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <b>{c.trucks?.name ?? c.truck_id}</b>
-            <span className="text-xs uppercase text-muted-foreground">{c.status}</span>
-          </div>
-          <p className="text-sm">{c.user_email} · {new Date(c.created_at).toLocaleString()}</p>
-          {c.message && <p className="text-sm text-muted-foreground">“{c.message}”</p>}
-          {c.reject_reason && <p className="text-sm text-destructive">Reason: {c.reject_reason}</p>}
-          {c.status === "pending" && (
-            <div className="flex gap-2 pt-1">
-              <button className="chip bg-primary text-primary-foreground" onClick={() => review(c.id, true)}>Approve</button>
-              <button className="chip" onClick={() => review(c.id, false)}>Reject</button>
-            </div>
-          )}
-        </li>
+    <>
+      <SectionHeader title="Claims" description="Owners asking to manage an existing listing."
+        actions={<Segmented value={show} onChange={setShow} options={[["pending", "Open"], ["all", "All"]]} />} />
+      {isLoading ? <ListSkeleton /> : !list.length ? (
+        <EmptyState icon={BadgeCheck} title={show === "pending" ? "No open claims" : "No claims yet"} hint="When an owner taps “Is this your truck?”, their request shows up here." />
+      ) : (
+        <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card shadow-pop">
+          {list.map((c) => (
+            <li key={c.id} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3 p-4">
+              <Initials name={c.trucks?.name ?? "?"} />
+              <div className="min-w-0 space-y-1">
+                <div className="flex flex-wrap items-center gap-2"><p className="truncate font-medium">{c.trucks?.name ?? c.truck_id}</p><StatusPill tone={statusTone(c.status)}>{c.status}</StatusPill></div>
+                <p className="truncate text-sm text-muted-foreground">{c.user_email} · {new Date(c.created_at).toLocaleString()}</p>
+                {c.message && <p className="text-sm">“{c.message}”</p>}
+                {c.reject_reason && <p className="text-sm text-destructive">Reason: {c.reject_reason}</p>}
+              </div>
+              {c.status === "pending" && (
+                <div className="flex gap-1">
+                  <IconAction label="Approve claim" icon={Check} tone="primary" onClick={() => void review(c.id, true)} />
+                  <IconAction label="Reject claim" icon={X} tone="danger" onClick={() => void review(c.id, false)} />
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
+  );
+}
+
+function Segmented<T extends string>({ value, onChange, options }: { value: T; onChange: (v: T) => void; options: [T, string][] }) {
+  return (
+    <div className="flex rounded-lg border border-border bg-card p-0.5 shadow-pop" role="group">
+      {options.map(([v, l]) => (
+        <button key={v} aria-pressed={value === v} onClick={() => onChange(v)} className={`h-8 rounded-md px-3 text-sm font-medium transition-colors ${value === v ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground"}`}>{l}</button>
       ))}
-    </ul>
+    </div>
   );
 }
 
 function PendingTrucks() {
   const inv = useInvalidate();
-  const { data = [] } = useQuery({
+  const navigate = Route.useNavigate();
+  const { data = [], isLoading } = useQuery({
     queryKey: ["admin", "pending"],
     queryFn: async () => (await supabase.from("trucks").select("*").eq("status", "pending").order("created_at")).data ?? [],
   });
@@ -126,27 +147,41 @@ function PendingTrucks() {
       .then((r) => { if (r && "skipped" in r && r.skipped) toast("CRM webhook not configured — no email sent."); })
       .catch(() => toast("CRM webhook failed — the decision was saved anyway."));
   };
-  if (!data.length) return <p className="panel p-5 text-muted-foreground">No trucks waiting for approval.</p>;
   return (
-    <ul className="space-y-2">
-      {data.map((t) => (
-        <li key={t.id} className="panel space-y-2 p-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div><b>{t.emoji} {t.name}</b> <span className="chip">{t.truck_type === "fixed" ? "🏠 Fixed" : "🚚 Mobile"}</span><p className="text-sm text-muted-foreground">{t.category} · {t.base_address ?? "no address"}</p></div>
-            <div className="flex gap-2">
-              <button className="chip bg-primary text-primary-foreground" onClick={() => decide(t.id, "approved")}>Approve</button>
-              <button className="chip" onClick={() => { setRejecting(rejecting === t.id ? null : t.id); setReason(""); }}>Reject</button>
-            </div>
-          </div>
-          {rejecting === t.id && (
-            <form className="flex flex-wrap gap-2" onSubmit={(e) => { e.preventDefault(); void decide(t.id, "rejected", reason.trim()); }}>
-              <input className="field min-w-0 flex-1" placeholder="Reason (sent to the owner)" value={reason} onChange={(e) => setReason(e.target.value)} />
-              <button className="chip bg-primary text-primary-foreground">Confirm rejection</button>
-            </form>
-          )}
-        </li>
-      ))}
-    </ul>
+    <>
+      <SectionHeader title="Pending trucks" description="New listings from the website form, owner dashboard and scrapers." />
+      {isLoading ? <ListSkeleton /> : !data.length ? (
+        <EmptyState icon={Clock} title="No trucks waiting for approval" hint="New sign-ups and detected trucks will appear here." />
+      ) : (
+        <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card shadow-pop">
+          {data.map((t) => (
+            <li key={t.id} className="space-y-3 p-4">
+              <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3">
+                {t.logo_url ? <img src={t.logo_url} alt="" className="h-8 w-8 rounded-lg border border-border object-cover" /> : <Initials name={t.name} emoji={t.emoji} />}
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="truncate font-medium">{t.name}</p>
+                    <StatusPill tone="neutral">{t.truck_type === "fixed" ? <><Home className="h-3 w-3" />Fixed</> : <><TruckIcon className="h-3 w-3" />Mobile</>}</StatusPill>
+                  </div>
+                  <p className="flex min-w-0 items-center gap-1 truncate text-sm text-muted-foreground">{t.category} · <MapPin className="h-3 w-3 shrink-0" />{t.base_address ?? "no address"}</p>
+                </div>
+                <div className="flex gap-1">
+                  <IconAction label="Open details" icon={PanelRightOpen} onClick={() => void navigate({ search: { tab: "trucks", truck: t.id } })} />
+                  <IconAction label="Approve" icon={Check} tone="primary" onClick={() => void decide(t.id, "approved")} />
+                  <IconAction label="Reject" icon={X} tone="danger" onClick={() => { setRejecting(rejecting === t.id ? null : t.id); setReason(""); }} />
+                </div>
+              </div>
+              {rejecting === t.id && (
+                <form className="flex flex-wrap gap-2 pl-11" onSubmit={(e) => { e.preventDefault(); void decide(t.id, "rejected", reason.trim()); }}>
+                  <input autoFocus className="h-9 min-w-0 flex-1 rounded-lg border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring" placeholder="Reason (sent to the owner)" value={reason} onChange={(e) => setReason(e.target.value)} />
+                  <button className={btn.primary}>Confirm rejection</button>
+                </form>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
   );
 }
 
