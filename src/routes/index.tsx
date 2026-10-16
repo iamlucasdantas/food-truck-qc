@@ -377,13 +377,13 @@ function Index() {
                 </span>
                 {sel.stop && sel.status !== "none" && <p className="mt-1 text-xs text-muted-foreground">{SOURCE_LABEL[sel.stop.source]}</p>}
               </div>
+              <button onClick={() => toggle(sel.t.id)} aria-label={isFav(sel.t.id) ? "Remove from favorites" : "Save to favorites"} className={`grid h-11 w-11 shrink-0 place-items-center rounded-full hover:bg-muted ${focus}`}><Heart className={`h-5 w-5 ${isFav(sel.t.id) ? "fill-primary text-primary" : "text-muted-foreground"}`} /></button>
               <button onClick={() => setSelected(null)} aria-label="Close" className={`grid h-11 w-11 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-muted ${focus}`}><X className="h-5 w-5" /></button>
             </div>
             <div className="mt-3 grid grid-cols-4 gap-2">
               <Action href={sel.t.phone ? `tel:${sel.t.phone}` : undefined} icon={<Phone className="h-4 w-4" />} label="Call" />
               <Action href={sel.t.website ?? undefined} icon={<Globe className="h-4 w-4" />} label="Website" external />
               <Action href={sel.t.instagram ? (sel.t.instagram.startsWith("http") ? sel.t.instagram : `https://instagram.com/${sel.t.instagram.replace(/^@/, "")}`) : undefined} icon={<Instagram className="h-4 w-4" />} label="Instagram" external />
-              <button onClick={() => toggle(sel.t.id)} aria-label={isFav(sel.t.id) ? "Remove from favorites" : "Save to favorites"} className="sr-only">fav</button>
               <Action href={`https://www.google.com/maps/dir/?api=1&destination=${sel.lat},${sel.lng}`} icon={<Navigation className="h-4 w-4" />} label="Directions" external primary />
             </div>
             <Link to="/truck/$id" params={{ id: sel.t.id }} className={`mt-2 flex h-11 items-center justify-center rounded-xl text-sm font-semibold text-primary hover:bg-muted ${focus}`}>View details →</Link>

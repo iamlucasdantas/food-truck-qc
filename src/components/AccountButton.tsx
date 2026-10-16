@@ -1,28 +1,43 @@
 import { Link } from "@tanstack/react-router";
-import { User } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/use-auth";
+import { useFavorites } from "@/hooks/use-favorites";
+import { useProfile, initials } from "@/hooks/use-profile";
 
-const trigger = "grid h-11 w-11 shrink-0 place-items-center rounded-full border border-border bg-card text-sm font-semibold shadow-pop transition-all duration-150 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+const ring = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 export function AccountButton() {
-  const { user, isAdmin, openAuth, signOut } = useAuth();
+  const { user, roles, isAdmin, openAuth, signOut } = useAuth();
+  const { ids } = useFavorites();
+  const { data: profile } = useProfile();
+  if (!user) {
+    return (
+      <button onClick={() => openAuth()} className={`h-11 shrink-0 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-pop transition-colors duration-150 hover:bg-primary/90 ${ring}`}>
+        Sign in
+      </button>
+    );
+  }
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className={user ? `${trigger} border-primary bg-primary text-primary-foreground hover:bg-primary/90` : trigger} aria-label="Account menu">
-        {user ? (user.email ?? "?")[0]!.toUpperCase() : <User className="h-5 w-5" />}
+      <DropdownMenuTrigger aria-label="Account menu" className={`grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-primary text-sm font-bold text-primary-foreground shadow-pop transition-colors duration-150 hover:bg-primary/90 ${ring}`}>
+        {profile?.avatar_url ? <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" /> : initials(profile?.display_name, user.email)}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        {user ? (
-          <DropdownMenuLabel className="truncate">{user.email}{isAdmin && " · admin"}</DropdownMenuLabel>
-        ) : (
-          <DropdownMenuItem onClick={() => openAuth()} className="min-h-11 font-semibold">Sign in</DropdownMenuItem>
-        )}
+      <DropdownMenuContent align="end" className="z-[1200] w-60">
+        <DropdownMenuLabel className="truncate">
+          <span className="block truncate">{profile?.display_name || "Your account"}</span>
+          <span className="block truncate text-xs font-normal text-muted-foreground">{user.email}</span>
+        </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild className="min-h-11"><Link to="/favorites">Favorites</Link></DropdownMenuItem>
-        <DropdownMenuItem asChild className="min-h-11"><Link to="/owner">Owner dashboard</Link></DropdownMenuItem>
+        <DropdownMenuItem asChild className="min-h-11">
+          <Link to="/favorites" className="flex justify-between">Favorites
+            {ids.length > 0 && <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground">{ids.length}</span>}
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild className="min-h-11"><Link to="/account">Account</Link></DropdownMenuItem>
+        {(roles.includes("owner") || isAdmin) && <DropdownMenuItem asChild className="min-h-11"><Link to="/owner">Owner dashboard</Link></DropdownMenuItem>}
         {isAdmin && <DropdownMenuItem asChild className="min-h-11"><Link to="/admin">Admin</Link></DropdownMenuItem>}
-        {user && <><DropdownMenuSeparator /><DropdownMenuItem onClick={() => void signOut()} className="min-h-11">Sign out</DropdownMenuItem></>}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => void signOut()} className="min-h-11">Sign out</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
