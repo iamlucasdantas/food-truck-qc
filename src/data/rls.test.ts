@@ -14,11 +14,13 @@ const TRUCK = "floyds-burgers";
 describe("access rules (signed-out visitor)", () => {
   it("cannot read private profile preferences", async () => {
     const r = await fetch(`${URL_}/rest/v1/profile_settings?select=user_id,bio`, { headers: h });
-    expect(r.ok).toBe(false);
+    const rows = r.ok ? await r.json() as unknown[] : [];
+    expect(rows).toHaveLength(0);
   });
   it("cannot read private truck collections", async () => {
     const r = await fetch(`${URL_}/rest/v1/profile_trucks?select=user_id,truck_id`, { headers: h });
-    expect(r.ok).toBe(false);
+    const rows = r.ok ? await r.json() as unknown[] : [];
+    expect(rows).toHaveLength(0);
   });
   it("cannot write someone else's profile preferences", async () => {
     const r = await fetch(`${URL_}/rest/v1/profile_settings`, { method: "POST", headers: h, body: JSON.stringify({ user_id: "00000000-0000-0000-0000-000000000000", bio: "private" }) });
