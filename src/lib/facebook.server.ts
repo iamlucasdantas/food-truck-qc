@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { splitVenues, resolvePostDate, mergeHints, type ExtractedStop } from "@/data/posts";
+import { resolveVenue } from "@/lib/venues.server";
 import { authorIsTruck, ownerHandles, centralToUtc, chicagoDate, keepExtraction, matchTruckByName, slugify } from "@/data/trucks";
 
 type DB = SupabaseClient<Database>;
@@ -121,7 +123,7 @@ function normalizeItem(kind: Kind, it: Item): Post | null {
   return { url, text, time: it.time ?? "", author: it.user?.name ?? it.pageName ?? "", inputUrl: it.inputUrl ?? it.facebookUrl ?? "" };
 }
 
-type Extracted = { truck_name: string; is_food_truck: boolean; date: string; start: string; end: string; venue: string; address: string; city: string; confidence: number };
+type Extracted = ExtractedStop;
 
 const SCHEMA = {
   type: "object", additionalProperties: false, required: ["stops"],
@@ -136,24 +138,43 @@ const SCHEMA = {
 
 class AiStop extends Error {}
 
-async function extract(text: string, postDate: string, url: string, pageOwner: string | null): Promise<Extracted[]> {
+const SYSTEM = `Extract food truck stops from a Quad Cities (Iowa/Illinois) social media post.
+Return ONE entry per venue + time range: "Jumpin Joey's 11-2 & Adventurous Brewing LLC 4-8pm" is two stops (11:00-14:00 and 16:00-20:00).
+Venue names are often Facebook place tags (a business name with no address): put that name in venue and leave address empty unless a street address is written.
+Dates: use the post date unless the post says tomorrow, today/tonight or a weekday name (next one on/after the post date). Times are local Central time, 24h HH:MM.
+Short ranges without am/pm: "11-2" = 11:00-14:00; "4-8" = 16:00-20:00. If no end time, assume 3 hours after start.
+truck_name = the truck the post is about (the poster when they write in first person). confidence 0-1 = how sure the truck will be at that place at that time.
+If the post announces no specific stop, return an empty list. is_food_truck = clearly a mobile food truck/trailer/cart.`;
+
+/** Central-time date of a post timestamp (falls back to today). */
+function postDay(time: string, today: string): string {
+  const t = Date.parse(time);
+  return Number.isFinite(t) ? chicagoDate(new Date(t)) : today;
+}
+
+async function extract(text: string, postTime: string, url: string, pageOwner: string | null, today: string): Promise<Extracted[]> {
   const key = process.env["LOVABLE_API_KEY"];
   if (!key) throw new AiStop("LOVABLE_API_KEY is not configured");
+  const day = postDay(postTime, today);
+  const hints = splitVenues(text);
+  const date = resolvePostDate(text, day);
   const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       model: MODEL,
       response_format: { type: "json_schema", json_schema: { name: "stops", strict: true, schema: SCHEMA } },
       messages: [
-        { role: "system", content: "Extract upcoming food truck stops from a Quad Cities (Iowa/Illinois) social media post. Return one entry per date/location announced. Resolve relative dates (today, tomorrow, Friday) against the post date. Times are local Central time, 24h HH:MM; if no end time, assume 3 hours after start. confidence 0-1 = how sure you are the truck will be at that place at that time. If the post announces no specific stop, return an empty list. is_food_truck = the truck is clearly a mobile food truck/trailer/cart." },
-        { role: "user", content: `Today: ${chicagoDate()}\nPost date: ${postDate}\nPost URL: ${url}\n${pageOwner ? `Posted by the truck: ${pageOwner}\n` : ""}Post:\n${text.slice(0, 4000)}` },
+        { role: "system", content: SYSTEM },
+        { role: "user", content: `Today: ${today}\nPost date: ${day}\nPost URL: ${url}\n${pageOwner ? `Posted by the truck: ${pageOwner}\n` : ""}${hints.length ? `Venue/time pairs found: ${hints.map((h) => `${h.venue} ${h.start}-${h.end}`).join("; ")}\n` : ""}Post:\n${text.slice(0, 4000)}` },
       ],
     }),
   });
   if (res.status === 402 || res.status === 403) throw new AiStop(`AI paused [${res.status}]: ${(await res.text()).slice(0, 200)}`);
   if (!res.ok) throw new Error(`AI failed [${res.status}]`);
   const j = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-  try { return (JSON.parse(j.choices?.[0]?.message?.content ?? "{}") as { stops?: Extracted[] }).stops ?? []; } catch { return []; }
+  let ai: Extracted[] = [];
+  try { ai = (JSON.parse(j.choices?.[0]?.message?.content ?? "{}") as { stops?: Extracted[] }).stops ?? []; } catch { ai = []; }
+  return mergeHints(ai, hints, date, pageOwner ?? "");
 }
 
 let lastNominatim = 0;
