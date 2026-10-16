@@ -301,7 +301,11 @@ export type Database = {
           created_at: string
           id: string
           kind: string
+          last_posts: number
+          last_reason: string | null
           last_run_at: string | null
+          last_status: string | null
+          last_stops: number
           name: string
           truck_id: string | null
           url: string
@@ -311,7 +315,11 @@ export type Database = {
           created_at?: string
           id?: string
           kind: string
+          last_posts?: number
+          last_reason?: string | null
           last_run_at?: string | null
+          last_status?: string | null
+          last_stops?: number
           name?: string
           truck_id?: string | null
           url: string
@@ -321,7 +329,11 @@ export type Database = {
           created_at?: string
           id?: string
           kind?: string
+          last_posts?: number
+          last_reason?: string | null
           last_run_at?: string | null
+          last_status?: string | null
+          last_stops?: number
           name?: string
           truck_id?: string | null
           url?: string
@@ -499,6 +511,7 @@ export type Database = {
           id: string
           lat: number | null
           lng: number | null
+          needs_address_check: boolean
           reviewed_at: string | null
           source: string
           source_url: string | null
@@ -517,6 +530,7 @@ export type Database = {
           id?: string
           lat?: number | null
           lng?: number | null
+          needs_address_check?: boolean
           reviewed_at?: string | null
           source?: string
           source_url?: string | null
@@ -535,6 +549,7 @@ export type Database = {
           id?: string
           lat?: number | null
           lng?: number | null
+          needs_address_check?: boolean
           reviewed_at?: string | null
           source?: string
           source_url?: string | null
@@ -747,6 +762,45 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      venues: {
+        Row: {
+          address: string | null
+          city: string
+          confirmed: boolean
+          created_at: string
+          id: string
+          lat: number
+          lng: number
+          name: string
+          norm_name: string
+          source: string
+        }
+        Insert: {
+          address?: string | null
+          city?: string
+          confirmed?: boolean
+          created_at?: string
+          id?: string
+          lat: number
+          lng: number
+          name: string
+          norm_name: string
+          source?: string
+        }
+        Update: {
+          address?: string | null
+          city?: string
+          confirmed?: boolean
+          created_at?: string
+          id?: string
+          lat?: number
+          lng?: number
+          name?: string
+          norm_name?: string
+          source?: string
         }
         Relationships: []
       }
