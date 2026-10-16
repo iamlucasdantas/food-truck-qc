@@ -20,6 +20,16 @@ export function LiveAlerts() {
   const ctx = useRef({ ids, trucks, on: true });
   ctx.current = { ids, trucks, on: profile?.notify_favorites ?? true };
   const seen = useRef(new Set<string>());
+  const crmSyncTried = useRef(false);
+
+  // Add every new user to the owner's HighLevel CRM (once per account).
+  useEffect(() => {
+    if (!user || crmSyncTried.current) return;
+    const synced = (profile as { crm_synced_at?: string | null } | null)?.crm_synced_at;
+    if (profile && synced) { crmSyncTried.current = true; return; }
+    crmSyncTried.current = true;
+    void syncCrmContact();
+  }, [user, profile]);
 
   useEffect(() => {
     if (!user) return;
@@ -31,10 +41,13 @@ export function LiveAlerts() {
         if (s.ends_at && new Date(s.ends_at) < new Date()) return;
         seen.current.add(s.id);
         const t = ctx.current.trucks.find((x) => x.id === s.truck_id);
-        toast(`${t?.name ?? "A favorite truck"} is now open${s.venue_name ? ` at ${s.venue_name}` : ""}`, {
+        const name = t?.name ?? "A favorite truck";
+        toast(`${name} is now open${s.venue_name ? ` at ${s.venue_name}` : ""}`, {
           duration: 10000,
           action: { label: "View", onClick: () => void navigate({ to: "/truck/$id", params: { id: s.truck_id! } }) },
         });
+        // Ask HighLevel to send the "favorite truck is live" email.
+        void notifyCrmLiveAlert({ data: { truckName: name, truckId: s.truck_id, venue: s.venue_name ?? null, endsAt: s.ends_at ?? null } });
       })
       .subscribe();
     return () => { void supabase.removeChannel(ch); };
