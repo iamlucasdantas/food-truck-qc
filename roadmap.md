@@ -1,5 +1,10 @@
 # Roadmap
 
+## Agent truck audit and fuzzy names (not published)
+- [x] Audited all 118 records: 24 newly excluded, 44 already excluded; 30 uncertain candidates retained for Admin review. Full audit delivered in Files, records/stops preserved. Lil Stevie's has food-trailer evidence and stays.
+- [x] Shared Levenshtein name matching and best-match ranking across both chat endpoints and MCP search tools; require explicit is_food_truck=true
+- [x] All 266 tests passed, automatic build OK. Both preview endpoints return Toni's first for Tony's Smoking Grill; live and preview exclude Bragg (200/zero results). Data flags affect live immediately; fuzzy-name code not published. Direct OAuth MCP invocation unavailable; shared implementation verified.
+
 ## Agent API camelCase compatibility (not published)
 - [x] Normalize all known camelCase aliases with the existing sanitizing rules for GET and POST on both endpoints
 - [x] All 52 focused tests passed; authenticated GET/POST search returned 200 with open_now applied (2 results), and upcoming stops returned only Toni's Smokin' Grill (2 stops). Automatic build OK; URLs, auth and CORS unchanged.
