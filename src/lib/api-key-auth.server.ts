@@ -10,12 +10,13 @@ async function sha256Hex(value: string): Promise<string> {
 export async function apiKeyUserId(request: Request): Promise<string | null> {
   const header = request.headers.get("authorization") ?? "";
   const match = /^Bearer\s+(ftqc_[a-f0-9]{48})$/i.exec(header.trim());
-  if (!match) return null;
+  const key = match?.[1]?.toLowerCase();
+  if (!key) return null;
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("api_keys")
     .select("id, user_id")
-    .eq("key_hash", await sha256Hex(match[1].toLowerCase()))
+    .eq("key_hash", await sha256Hex(key))
     .is("revoked_at", null)
     .maybeSingle();
   if (error || !data) return null;
