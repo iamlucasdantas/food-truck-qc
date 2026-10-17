@@ -1,8 +1,8 @@
 // Google Analytics (GA4) via gtag.js. The measurement ID is public by
 // nature (it appears on every site that uses GA), so it lives in a VITE_ var.
-const MEASUREMENT_ID = import.meta.env.VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID as
-  | string
-  | undefined;
+const MEASUREMENT_ID = import.meta.env[
+  "VITE_GOOGLE_ANALYTICS_MEASUREMENT_ID"
+] as string | undefined;
 
 declare global {
   interface Window {
