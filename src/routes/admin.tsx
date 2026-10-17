@@ -15,6 +15,7 @@ import { AdminTrucks } from "@/components/AdminTrucks";
 import { AdminSuggestions, FacebookSession, PastePost } from "@/components/AdminFacebookTools";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminOverview } from "@/components/admin/AdminOverview";
+import { AgentApiLog } from "@/components/admin/AgentApiLog";
 import { EmptyState, IconAction, Initials, ListSkeleton, SectionHeader, StatusPill, btn, statusTone } from "@/components/admin/ui";
 import { sectionFromSearch } from "@/data/admin";
 import { LogoMark } from "@/components/Logo";
@@ -64,6 +65,7 @@ function Admin() {
       {section === "apify" && <><SectionHeader title="Google Maps seed" description="Find food trucks across Quad Cities towns." /><ApifySeed /></>}
       {section === "facebook" && <><SectionHeader title="Facebook" description="Scan groups and pages for upcoming stops." /><FacebookTab /></>}
       {section === "logs" && <><SectionHeader title="Import logs" description="Every CSV, Google Maps and Facebook run." /><Logs /></>}
+      {section === "api" && <AgentApiLog />}
     </AdminShell>
   );
 }

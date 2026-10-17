@@ -85,3 +85,4 @@
 - [x] Added is_food_truck and classified imported chains/restaurants; public discovery and sitemap filter it, Admin edit retains classification control
 - [x] Updated docs with six real authenticated HTTP 200 responses; all 247 regression tests passed and automatic build OK; missing/incorrect key returns 401
 - [ ] Signed-in Admin classification save and OAuth MCP invocation unverified: requesting user's account unavailable for session minting; code/manifest verified, no publication requested
+- Voice agent tolerant params, POST/Bearer, Admin API log: done (not published)
