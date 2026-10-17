@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { CALENDAR_FETCH_LIMITS, PAGE_FETCH_LIMITS, isPublicAddress, readPublicLink, validateLinkUrl } from "./safe-link-fetch.server";
+import { CALENDAR_FETCH_LIMITS, PAGE_FETCH_LIMITS, isPublicAddress, readPublicLink, validateLinkUrl, validateProviderLink } from "./safe-link-fetch.server";
 
-const page = "https://business.example.com/";
+const page = "https://www.facebook.com/";
+const calendar = "https://calendar.google.com/";
 function mockNetwork(target: (url: URL, init?: RequestInit) => Response | Promise<Response>, records: Record<string, string[]> = {}) {
   const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = new URL(String(input));
@@ -34,7 +35,7 @@ describe("public link reader security", () => {
   });
   it.each([{ addresses: ["10.0.0.1"] }, { addresses: ["93.184.216.34", "fc00::1"] }, { addresses: [] }])("rejects DNS results $addresses before contacting target", async ({ addresses }) => {
     const target = vi.fn(() => new Response("private"));
-    mockNetwork(target, { "business.example.com": addresses });
+    mockNetwork(target, { "www.facebook.com": addresses });
     await expect(readPublicLink(page, PAGE_FETCH_LIMITS, {})).rejects.toThrow();
     expect(target).not.toHaveBeenCalled();
   });
@@ -45,16 +46,16 @@ describe("public link reader security", () => {
     expect(fetcher.mock.calls).toHaveLength(2);
   });
   it("checks the DNS destination of every redirect before contacting it", async () => {
-    const target = vi.fn(() => new Response(null, { status: 302, headers: { location: "https://rebound.example.com/" } }));
-    const fetcher = mockNetwork(target, { "rebound.example.com": ["169.254.169.254"] });
+    const target = vi.fn(() => new Response(null, { status: 302, headers: { location: "https://m.facebook.com/" } }));
+    const fetcher = mockNetwork(target, { "m.facebook.com": ["169.254.169.254"] });
     await expect(readPublicLink(page, PAGE_FETCH_LIMITS, {})).rejects.toThrow();
     expect(target).toHaveBeenCalledTimes(1);
-    expect(fetcher.mock.calls.filter(([url]) => String(url).includes("name=rebound.example.com"))).toHaveLength(2);
+    expect(fetcher.mock.calls.filter(([url]) => String(url).includes("name=m.facebook.com"))).toHaveLength(2);
   });
   it.each(["https://127.0.0.1/", "https://[::1]/", "http://business.example.com/"])("rejects unsafe calendar redirect %s", async (location) => {
     const target = vi.fn(() => new Response(null, { status: 302, headers: { location } }));
     mockNetwork(target);
-    await expect(readPublicLink(page, CALENDAR_FETCH_LIMITS, {})).rejects.toThrow();
+    await expect(readPublicLink(calendar, CALENDAR_FETCH_LIMITS, {})).rejects.toThrow();
     expect(target).toHaveBeenCalledTimes(1);
   });
   it("accepts safe relative redirects, uses manual redirects, preserves headers and content", async () => {
@@ -64,7 +65,7 @@ describe("public link reader security", () => {
       return url.pathname === "/" ? new Response(null, { status: 302, headers: { location: "/feed.ics" } }) : new Response("BEGIN:VCALENDAR\nEND:VCALENDAR");
     });
     const fetcher = mockNetwork(target);
-    expect(await readPublicLink(page, CALENDAR_FETCH_LIMITS, { Accept: "text/calendar" })).toEqual({ ok: true, status: 200, text: "BEGIN:VCALENDAR\nEND:VCALENDAR" });
+    expect(await readPublicLink(calendar, CALENDAR_FETCH_LIMITS, { Accept: "text/calendar" })).toEqual({ ok: true, status: 200, text: "BEGIN:VCALENDAR\nEND:VCALENDAR" });
     expect(fetcher.mock.calls.filter(([url]) => String(url).includes("cloudflare-dns.com"))).toHaveLength(4);
   });
   it("allows five redirects, never requests a sixth redirect destination", async () => {
@@ -84,7 +85,7 @@ describe("public link reader security", () => {
   it.each([PAGE_FETCH_LIMITS, CALENDAR_FETCH_LIMITS])("rejects declared downloads larger than the limit %j", async (limits) => {
     const cancel = vi.fn();
     mockNetwork(() => new Response(new ReadableStream({ cancel }), { headers: { "content-length": String(limits.maxBytes + 1) } }));
-    await expect(readPublicLink(page, limits, {})).rejects.toThrow("too large");
+    await expect(readPublicLink(limits.provider === "calendar" ? calendar : page, limits, {})).rejects.toThrow("too large");
     expect(cancel).toHaveBeenCalledTimes(1);
   });
   it("enforces byte limits while streaming, even with false Content-Length", async () => {

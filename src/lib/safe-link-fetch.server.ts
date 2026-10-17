@@ -1,8 +1,8 @@
 import ipaddr from "ipaddr.js";
 
-export const CALENDAR_FETCH_LIMITS = { maxBytes: 3_000_000, timeoutMs: 8_000, maxRedirects: 5, httpsOnly: true };
-export const PAGE_FETCH_LIMITS = { maxBytes: 300_000, timeoutMs: 8_000, maxRedirects: 5, httpsOnly: false };
-type Limits = typeof PAGE_FETCH_LIMITS;
+type Limits = { maxBytes: number; timeoutMs: number; maxRedirects: number; httpsOnly: boolean; provider: "calendar" | "social" };
+export const CALENDAR_FETCH_LIMITS: Limits = { maxBytes: 3_000_000, timeoutMs: 8_000, maxRedirects: 5, httpsOnly: true, provider: "calendar" };
+export const PAGE_FETCH_LIMITS: Limits = { maxBytes: 300_000, timeoutMs: 8_000, maxRedirects: 5, httpsOnly: true, provider: "social" };
 const redirects = new Set([301, 302, 303, 307, 308]);
 
 export function isPublicAddress(address: string): boolean {
@@ -18,6 +18,20 @@ export function validateLinkUrl(raw: string, httpsOnly: boolean): URL {
   if (/(^|\.)(localhost|local|internal|lan|home|test|invalid|example|onion)$/.test(host)) throw new Error("That link isn't allowed");
   if (ipaddr.isValid(host) && !isPublicAddress(host)) throw new Error("That link isn't allowed");
   url.hash = "";
+  return url;
+}
+
+/** Only provider-owned hosts, never arbitrary subdomains or IP literals. */
+export function validateProviderLink(raw: string, provider: Limits["provider"]): URL {
+  const url = validateLinkUrl(raw, true);
+  const host = url.hostname.toLowerCase();
+  const allowed = provider === "social"
+    ? ["facebook.com", "www.facebook.com", "m.facebook.com", "instagram.com", "www.instagram.com"].includes(host)
+    : ["calendar.google.com", "outlook.live.com", "outlook.office.com", "outlook.office365.com", "caldav.icloud.com"].includes(host)
+      || /^p\d{2,3}-caldav\.icloud\.com$/.test(host);
+  if (!allowed) throw new Error(provider === "calendar"
+    ? "Use a Google, Apple iCloud or Outlook calendar link. Custom calendar links aren't supported."
+    : "Only Facebook and Instagram links can prefill business details. Enter website details manually.");
   return url;
 }
 
@@ -71,9 +85,8 @@ async function validateDestination(url: URL, signal: AbortSignal): Promise<void>
 }
 
 /**
- * DNS preflight on every hop; no automatic redirects or forwarded credentials.
- * Workerd fetch resolves again on connection, so this does NOT fully prevent DNS rebinding.
- * A pinning egress service is required for that guarantee; do not mark SSRF findings resolved.
+ * Mandatory trusted-provider allowlist and DNS checks at entry and every redirect.
+ * This removes attacker-controlled DNS destinations; it is not arbitrary-domain IP pinning.
  */
 export async function readPublicLink(raw: string, limits: Limits, headers: Record<string, string>) {
   const controller = new AbortController();
@@ -85,7 +98,7 @@ export async function readPublicLink(raw: string, limits: Limits, headers: Recor
     }, limits.timeoutMs);
   });
   const run = async () => {
-    let url = validateLinkUrl(raw, limits.httpsOnly);
+    let url = validateProviderLink(raw, limits.provider);
     for (let hops = 0; ; hops++) {
       controller.signal.throwIfAborted();
       await validateDestination(url, controller.signal);
@@ -96,7 +109,7 @@ export async function readPublicLink(raw: string, limits: Limits, headers: Recor
         if (hops >= limits.maxRedirects) throw new Error("That link redirects too many times");
         const location = response.headers.get("location");
         if (!location) throw new Error("That link returned an invalid redirect");
-        url = validateLinkUrl(new URL(location, url).toString(), limits.httpsOnly);
+        url = validateProviderLink(new URL(location, url).toString(), limits.provider);
         continue;
       }
       if (!response.ok) {
