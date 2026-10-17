@@ -269,3 +269,23 @@ export function ownerHandles(
 export function publicDescription(d: string | null | undefined): string {
   return (d ?? "").split("\n").filter((l) => !/^(Owner contact|Business):/.test(l.trim())).join("\n").trim();
 }
+
+const venueKey = (s: string) => s.toLowerCase().replace(/\(.*?\)/g, "").replace(/[^a-z0-9]+/g, " ").replace(/\b(the|company|co|llc|inc)\b/g, "").replace(/\s+/g, " ").trim();
+
+/**
+ * Collapse repeated posts about the same outing: same truck, same venue name, overlapping times.
+ * The most recently created row wins (newest post = latest info); `merged` counts the rows folded in.
+ */
+export function groupStops<T extends Pick<Stop, "truck_id" | "venue_name" | "starts_at" | "ends_at" | "created_at">>(stops: T[]): (T & { merged: number })[] {
+  const out: (T & { merged: number })[] = [];
+  for (const s of stops) {
+    const k = venueKey(s.venue_name);
+    const hit = out.find((g) => g.truck_id === s.truck_id && venueKey(g.venue_name) === k && k !== ""
+      && new Date(g.starts_at) < new Date(s.ends_at) && new Date(s.starts_at) < new Date(g.ends_at));
+    if (!hit) { out.push({ ...s, merged: 1 }); continue; }
+    const n = hit.merged + 1;
+    if (s.created_at > hit.created_at) Object.assign(hit, s);
+    hit.merged = n;
+  }
+  return out.sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+}
