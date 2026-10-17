@@ -155,6 +155,20 @@
       "when": 1792180004589,
       "tag": "0021_owner_profile_favorite_summary",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1792244210078,
+      "tag": "0022_api_keys",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1792244252121,
+      "tag": "0023_api_keys_insert_policy",
+      "breakpoints": true
     }
   ]
 }
