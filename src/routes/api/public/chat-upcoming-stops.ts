@@ -23,16 +23,16 @@ export const Route = createFileRoute("/api/public/chat-upcoming-stops")({
         const sb = h.publicClient();
 
         let q = sb.from("stops")
-          .select("truck_id, address, city, starts_at, ends_at, trucks!inner(name, category, status, deleted_at)")
+          .select("truck_id, venue_name, address, city, starts_at, ends_at, created_at, trucks!inner(name, category, status, deleted_at)")
           .eq("cancelled", false).eq("trucks.status", "active").is("trucks.deleted_at", null)
           .gte("ends_at", now.toISOString()).lte("starts_at", until.toISOString())
-          .order("starts_at").limit(25);
+          .order("starts_at").limit(100);
         if (p.data.truck_id) q = q.eq("truck_id", p.data.truck_id);
         if (city) q = q.ilike("city", city);
         const { data, error } = await q;
         if (error) return h.json({ error: "lookup failed" }, 500);
 
-        const stops: Record<string, unknown>[] = (data ?? []).map((s) => ({
+        const stops: Record<string, unknown>[] = h.groupStops(data ?? []).slice(0, 25).map((s) => ({
           truck_id: s.truck_id,
           truck_name: s.trucks.name,
           cuisine: s.trucks.category || null,
