@@ -9,3 +9,4 @@
 - Placeholder truck names (isUnknownTruckName in src/data/posts.ts, unit-tested) never match or create trucks; unnamed posts become a pending truck named after the post author with the original post URL in its description, so admins approve them. Owners' pending trucks also feed social_sources so their own pages are scraped from signup.
 
 - Chat search and MCP share api-search.server.ts and pure agent-*.ts rules for smart locations, food matching and Chicago recurrence; caller-scoped MCP clients preserve OAuth/RLS.
+- Google weekly hours snapshots on trucks expand through data/google-hours.ts into marked apify_maps stops shared by public useStops and API/MCP; admin-only refresh batches at most 10 saved Places IDs so public reads never trigger billable lookups.

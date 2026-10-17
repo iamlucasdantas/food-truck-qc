@@ -229,10 +229,17 @@ export function chicagoDate(now = new Date()): string {
 /** Central local date + HH:MM → UTC Date (DST-aware). */
 export function centralToUtc(date: string, time: string): Date {
   const guess = new Date(`${date}T${time.padStart(5, "0")}:00Z`);
-  const p = new Intl.DateTimeFormat("en-US", { timeZone: "America/Chicago", hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).formatToParts(guess);
-  const g = (t: string) => Number(p.find((x) => x.type === t)!.value);
-  const asLocal = Date.UTC(g("year"), g("month") - 1, g("day"), g("hour"), g("minute"));
-  return new Date(guess.getTime() + (guess.getTime() - asLocal));
+  const format = new Intl.DateTimeFormat("en-US", { timeZone: "America/Chicago", hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+  let result = guess;
+  for (let i = 0; i < 3; i++) {
+    const parts = format.formatToParts(result);
+    const g = (t: string) => Number(parts.find(x => x.type === t)?.value ?? 0);
+    const wall = Date.UTC(g('year'), g('month') - 1, g('day'), g('hour'), g('minute'));
+    const correction = guess.getTime() - wall;
+    if (!correction) break;
+    result = new Date(result.getTime() + correction);
+  }
+  return result;
 }
 /** Keep an AI-extracted stop only if confident (≥ 0.7) and dated today through the next 30 days. */
 export function keepExtraction(e: { confidence: number; date: string }, today: string): boolean {
