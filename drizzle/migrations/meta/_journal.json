@@ -204,6 +204,13 @@
       "when": 1792260620803,
       "tag": "0028_truck_location_confirmation",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1792260713874,
+      "tag": "0029_protect_location_confirmation_inserts",
+      "breakpoints": true
     }
   ]
 }
