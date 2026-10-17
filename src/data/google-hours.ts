@@ -21,6 +21,12 @@ export function mobileEvidence(name: string, description = '', types: string[] =
 }
 const add = (d: string, n: number) => new Date(Date.parse(`${d}T12:00:00Z`) + n * 864e5).toISOString().slice(0, 10);
 const clock = (p: GooglePoint) => `${String(p.hour ?? 0).padStart(2, '0')}:${String(p.minute ?? 0).padStart(2, '0')}`;
+export function weeklyHoursLabels(value: unknown): string[] {
+  const hours = googleHours(value);
+  if (!hours) return [];
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  return hours.periods.map(p => p.close ? `${days[p.open.day]} ${clock(p.open)}–${p.close.day !== p.open.day ? `${days[p.close.day]} ` : ''}${clock(p.close)}` : 'Daily · 24 hours');
+}
 export const isGoogleHoursStop = (s: { source: string; note?: string | null | undefined }) => s.source === 'apify_maps' && s.note === 'Google opening hours';
 /** Expand stored weekly Google periods in Chicago, never the browser/server timezone. */
 export function expandGoogleHours(trucks: HoursTruck[], from: Date, to: Date): Stop[] {

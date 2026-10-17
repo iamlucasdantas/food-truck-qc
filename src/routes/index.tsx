@@ -249,6 +249,7 @@ function Index() {
               {truckByline(r.t.name, r.t.business_name) && <span className="block truncate text-xs text-muted-foreground">{truckByline(r.t.name, r.t.business_name)}</span>}
               <span className="block truncate text-sm">{r.t.category} · {r.dist.toFixed(1)} mi</span>
               <span className="block truncate text-xs text-muted-foreground">{r.stop && r.status !== "none" ? `${r.stop.venue_name}, ${r.stop.city}` : (r.t.base_address ?? "Base location")}</span>
+              {r.stop?.note === 'Google opening hours' && <span className="block text-xs text-muted-foreground">Google hours · {fmtRange(r.stop)} Central</span>}
               <span className={`mt-1 inline-flex max-w-full items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold ${PILL[r.status]}`}>
                 <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${DOT[r.status]}`} /><span className="truncate">{statusText(r)}</span>
               </span>
@@ -394,6 +395,7 @@ function Index() {
                 <h2 className="truncate text-base font-bold">{sel.t.name}</h2>
                 {truckByline(sel.t.name, sel.t.business_name) && <p className="truncate text-xs text-muted-foreground">{truckByline(sel.t.name, sel.t.business_name)}</p>}
                 <p className="truncate text-sm text-muted-foreground">{sel.t.category} · {sel.dist.toFixed(1)} mi</p>
+                {sel.stop?.note === 'Google opening hours' && <p className="text-xs text-muted-foreground">Google hours · {fmtRange(sel.stop)} Central</p>}
                 <span className={`mt-1 inline-flex max-w-full items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold ${PILL[sel.status]}`}>
                   <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${DOT[sel.status]}`} /><span className="truncate">{statusText(sel)}</span>
                 </span>
