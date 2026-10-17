@@ -1,9 +1,10 @@
 # Roadmap
 
 ## Location confirmation (not published)
-- [ ] Store verified-location evidence; show verified vs awaiting confirmation without implying opening hours.
-- [ ] Add Admin and approved-claim owner confirmation controls with protected permissions and address-change reset.
-- [ ] Test permissions and status rules; verify public label and available confirmation controls.
+- [x] Store explicit Google verification / owner confirmation; public base and Google-hours cards show verified vs awaiting confirmation independently of opening hours.
+- [x] Admin Trucks has a locations queue and drawer control; active claimed owner has a profile confirmation control. RPC enforces admin/active claimed owner permissions; direct writes cannot fake confirmation; changed address/coordinates reset evidence.
+- [x] 64 focused tests passed (including signed-out RPC denial); public label verified in browser without runtime errors; automatic build OK.
+- [ ] Confirm authenticated Admin/owner save/readback: requesting user has no matching app session; needs sign-in in preview. Google Place ID/regular hours do not establish merchant verification, so Admin must attest Google verification; no existing listings falsely auto-marked verified. Not published.
 
 ## Stationary trucks and Google hours (not published)
 - [x] Preserve explicit truck/category classification; store raw Google categories and weekly hours snapshots. Bonbon remains true and now fixed; no fabricated hours.
