@@ -46,7 +46,7 @@ export const Route = createFileRoute("/api/public/chat-upcoming-stops")({
 
         // Fixed trucks without a scheduled stop in range: report their base location (hours unknown).
         if (stops.length < 25) {
-          const scheduled = new Set(stops.map((s) => s.truck_id));
+          const scheduled = new Set(stops.map((s) => s["truck_id"]));
           let b = sb.from("trucks").select("id, name, category, base_address")
             .eq("status", "active").is("deleted_at", null).eq("truck_type", "fixed")
             .not("base_address", "is", null).neq("base_address", "").order("name").limit(100);
