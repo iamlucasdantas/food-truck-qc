@@ -40,3 +40,15 @@ describe("menu parsing", () => {
     expect(matchesSearch("pizza", text)).toBe(false);
   });
 });
+
+import { postMenuToSections } from "./menu";
+describe("menu from a social post", () => {
+  it("returns null when the post has no menu (keep the current one)", () => {
+    expect(postMenuToSections([])).toBeNull();
+    expect(postMenuToSections([{ section: "Specials", items: [{ name: " ", price: null, description: "" }] }])).toBeNull();
+  });
+  it("turns a post menu into sections that replace the current menu", () => {
+    expect(postMenuToSections([{ section: "", items: [{ name: "Brisket plate", price: 14, description: "" }] }]))
+      .toEqual([{ name: "Menu", items: [{ name: "Brisket plate", description: "", price: 14, tags: [], lowConfidence: false }] }]);
+  });
+});
