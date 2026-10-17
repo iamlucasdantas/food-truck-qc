@@ -15,7 +15,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CUISINES, adminStatus, cityOf, filtersToSearch, matchesFilters, parseFilters, restoreDaysLeft, type AdminStatus, type Filters } from "@/data/filters";
+import { CUISINES, adminDefaultVisible, adminStatus, cityOf, filtersToSearch, parseFilters, restoreDaysLeft, type AdminStatus, type Filters } from "@/data/filters";
 import { EmptyState, IconAction, Initials, SectionHeader, StatusPill, btn, statusTone } from "@/components/admin/ui";
 import { TruckDrawer } from "@/components/admin/TruckDrawer";
 import { cn } from "@/lib/utils";
@@ -24,9 +24,9 @@ const PAGE = 50;
 const STATUS_LABEL: Record<AdminStatus, string> = { approved: "Approved", pending: "Pending", rejected: "Rejected", deleted: "Deleted" };
 const SOURCE_LABEL: Record<string, string> = { apify_maps: "Google Maps", apify: "Google Maps", embed_form: "Website form", manual: "Manual", owner: "Owner", scraper: "Scraper" };
 const PRESET_VIEWS: { name: string; search: S }[] = [
-  { name: "All trucks", search: {} },
+  { name: "Active trucks", search: {} },
   { name: "Waiting for approval", search: { status: "pending" } },
-  { name: "Live on the map", search: { status: "approved" } },
+  { name: "Every status", search: { status: "approved,pending,rejected,deleted" } },
   { name: "Fixed locations", search: { type: "fixed" } },
   { name: "Recently deleted", search: { status: "deleted" } },
 ];
@@ -35,7 +35,7 @@ const DENSITY_KEY = "ftqc-admin-density";
 
 type Row = {
   id: string; name: string; business_name: string; category: string; emoji: string; base_address: string | null; logo_url: string | null;
-  truck_type: string; status: string; claimed_by: string | null; source: string; updated_at: string; deleted_at: string | null;
+  truck_type: string; status: string; claimed_by: string | null; source: string; created_at: string; updated_at: string; deleted_at: string | null;
   menu_search: string; merged_into: string | null; phone: string | null; website: string | null; instagram: string | null; facebook: string | null;
 };
 
@@ -73,12 +73,12 @@ export function AdminTrucks({ search }: { search: S }) {
   const { data = [], isLoading } = useQuery({
     queryKey: ["admin", "trucks"],
     queryFn: async () => ((await supabase.from("trucks")
-      .select("id,name,business_name,category,emoji,base_address,logo_url,truck_type,status,claimed_by,source,updated_at,deleted_at,menu_search,merged_into,phone,website,instagram,facebook")
-      .order("name").limit(5000)).data ?? []) as Row[],
+      .select("id,name,business_name,category,emoji,base_address,logo_url,truck_type,status,claimed_by,source,created_at,updated_at,deleted_at,menu_search,merged_into,phone,website,instagram,facebook")
+      .order("created_at", { ascending: false }).limit(5000)).data ?? []) as Row[],
   });
   const rows = useMemo(() => data.map((t) => ({ ...t, city: cityOf(t.base_address), adminStatus: adminStatus(t) })), [data]);
   const cities = useMemo(() => Array.from(new Set(rows.map((r) => r.city).filter(Boolean))).sort(), [rows]);
-  const list = rows.filter((r) => matchesFilters(r, f));
+  const list = rows.filter((r) => adminDefaultVisible(r, f));
   const pages = Math.max(1, Math.ceil(list.length / PAGE));
   const cur = Math.min(page, pages);
   const shown = list.slice((cur - 1) * PAGE, cur * PAGE);

@@ -76,6 +76,12 @@ export function matchesFilters(r: FilterRow, f: Filters): boolean {
   return true;
 }
 
+/** Admin trucks default view: with no status filter selected, only approved (active) trucks are listed. */
+export function adminDefaultVisible(r: FilterRow, f: Filters): boolean {
+  if (!matchesFilters(r, f)) return false;
+  return f.status.length > 0 || r.adminStatus === "approved";
+}
+
 /** Status shown to admins: active → approved, archived → rejected, soft-deleted → deleted. */
 export function adminStatus(t: { status: string; deleted_at?: string | null }): AdminStatus {
   if (t.deleted_at) return "deleted";
