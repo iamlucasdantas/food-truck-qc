@@ -4,8 +4,8 @@ import { groupStops, milesBetween } from "@/data/trucks";
 // Pure search rules shared by the public API endpoints (chat agent + personal-key v1), unit-tested.
 
 export type SearchParams = {
-  query?: string; location?: string; cuisine?: string; dish?: string; open_now?: boolean;
-  lat?: number; lng?: number; radius_miles?: number; days: number; limit: number;
+  query?: string | undefined; location?: string | undefined; cuisine?: string | undefined; dish?: string | undefined; open_now?: boolean | undefined;
+  lat?: number | undefined; lng?: number | undefined; radius_miles?: number | undefined; days: number; limit: number;
 };
 export type ApiTruck = {
   id: string; name: string; category: string; menu_search: string | null; truck_type: string;
