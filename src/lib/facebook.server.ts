@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { splitVenues, resolvePostDate, mergeHints, type ExtractedStop } from "@/data/posts";
+import { splitVenues, resolvePostDate, mergeHints, isUnknownTruckName, reviewTruckName, type ExtractedStop } from "@/data/posts";
 import { resolveVenue } from "@/lib/venues.server";
 import { authorIsTruck, ownerHandles, centralToUtc, chicagoDate, keepExtraction, matchTruckByName, slugify, groupStops } from "@/data/trucks";
 
@@ -31,7 +31,8 @@ function apifyToken() {
 
 /** Every truck with a social URL/handle is also a source of that kind. */
 async function syncTruckSources(db: DB) {
-  const { data: rawTrucks } = await db.from("trucks").select("id, name, claimed_by, facebook, instagram, reddit").eq("status", "active");
+  const { data: rawTrucks } = await db.from("trucks").select("id, name, claimed_by, created_by, status, facebook, instagram, reddit")
+    .is("deleted_at", null).or("status.eq.active,and(status.eq.pending,or(claimed_by.not.is.null,created_by.not.is.null))");
   const { data: bizRows } = await db.from("businesses").select("owner_id, facebook, instagram, reddit");
   const biz = new Map((bizRows ?? []).map((b) => [b.owner_id, b]));
   // Business handles win over legacy per-truck values; one source per handle (first truck of the business).
@@ -217,8 +218,10 @@ export async function ingestPost(ctx: IngestCtx, kind: Kind | "paste", p: Post, 
   for (const e of ex) {
     const base = { venue: e.venue, address: e.address || null, city: e.city, date: e.date, start: e.start, end: e.end, own: false, checkAddress: false, newTruck: false };
     // A business page can post for any of its trucks: prefer the named truck of the same business.
-    const sibling = owner?.claimed_by ? matchTruckByName(e.truck_name, trucks.filter((t) => sameBusiness(t, owner))) : null;
-    let truck = sibling ?? owner ?? matchTruckByName(e.truck_name, trucks)
+    // Placeholder names ("Unknown") never match or create a truck by name.
+    const named = !isUnknownTruckName(e.truck_name);
+    const sibling = named && owner?.claimed_by ? matchTruckByName(e.truck_name, trucks.filter((t) => sameBusiness(t, owner))) : null;
+    let truck = sibling ?? owner ?? (named ? matchTruckByName(e.truck_name, trucks) : null)
       ?? (p.author ? trucks.find((t) => authorIsTruck(p.author, handlesOf(t))) ?? matchTruckByName(p.author, trucks) : null);
     const own = !!truck && (authorIsTruck(p.author, handlesOf(truck)) || (owner != null && sameBusiness(truck, owner) && kind !== "group" && kind !== "reddit" && kind !== "paste"));
     const geo = await resolveVenue(db, e.venue, e.city, e.address);
@@ -227,14 +230,17 @@ export async function ingestPost(ctx: IngestCtx, kind: Kind | "paste", p: Post, 
     if (!keepExtraction(e, today)) { out.push({ ...r, status: "low-confidence" }); continue; }
     if (!geo) { out.push({ ...r, status: "no-address" }); continue; }
     if (ctx.dryRun) { out.push({ ...r, newTruck: !truck, status: "preview" }); continue; }
-    if (!truck && (kind === "group" || kind === "reddit" || kind === "paste") && e.is_food_truck && e.truck_name.trim().length >= 3) {
-      const id = `${slugify(e.truck_name)}-${Math.random().toString(36).slice(2, 7)}`;
-      const { error } = await db.from("trucks").insert({ id, name: e.truck_name.trim(), status: "pending", source: kind === "paste" ? "admin_paste" : `apify_${kind}` });
+    if (!truck && (kind === "group" || kind === "reddit" || kind === "paste") && e.is_food_truck) {
+      // Unnamed in the post: still goes to admin approval, named after the post author, with the original post attached.
+      const newName = named ? e.truck_name.trim() : reviewTruckName(p.author);
+      const id = `${slugify(newName)}-${Math.random().toString(36).slice(2, 7)}`;
+      const { error } = await db.from("trucks").insert({ id, name: newName, status: "pending", source: kind === "paste" ? "admin_paste" : `apify_${kind}`,
+        description: named ? "" : `Truck name not stated in the original post — please confirm before approving.\nOriginal post: ${p.url}` });
       if (!error) {
         const { postOwnerWebhook } = await import("@/lib/owner-webhook.server");
         await postOwnerWebhook({ source: "scraper", isNewBusiness: true, contact: { name: "", email: "", phone: "" }, businessName: "",
-          truckId: id, truckName: e.truck_name.trim(), truckType: "mobile", cuisine: "", city: e.city || "", description: p.url });
-        truck = { id, name: e.truck_name.trim(), claimed_by: null, phone: null, instagram: null, facebook: null, reddit: null };
+          truckId: id, truckName: newName, truckType: "mobile", cuisine: "", city: e.city || "", description: p.url });
+        truck = { id, name: newName, claimed_by: null, phone: null, instagram: null, facebook: null, reddit: null };
         trucks.push(truck);
         r.newTruck = true; r.truckId = id; r.truckName = truck.name;
       }
