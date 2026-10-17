@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { splitVenues, resolvePostDate, mergeHints, isUnknownTruckName, reviewTruckName, type ExtractedStop } from "@/data/posts";
+import { postMenuToSections, menuSearchText, type PostMenu } from "@/data/menu";
 import { resolveVenue } from "@/lib/venues.server";
 import { authorIsTruck, ownerHandles, centralToUtc, chicagoDate, keepExtraction, matchTruckByName, slugify, groupStops } from "@/data/trucks";
 
@@ -138,8 +139,11 @@ function normalizeItem(kind: Kind, it: Item): Post | null {
 type Extracted = ExtractedStop;
 
 const SCHEMA = {
-  type: "object", additionalProperties: false, required: ["stops"],
-  properties: { stops: { type: "array", items: { type: "object", additionalProperties: false,
+  type: "object", additionalProperties: false, required: ["stops", "menu"],
+  properties: { menu: { type: "array", description: "Menu items the post lists (dishes, prices). Empty when the post shows no menu.", items: { type: "object", additionalProperties: false,
+    required: ["section", "items"], properties: { section: { type: "string" }, items: { type: "array", items: { type: "object", additionalProperties: false,
+      required: ["name", "price", "description"], properties: { name: { type: "string" }, price: { type: ["number", "null"] }, description: { type: "string" } } } } } } },
+  stops: { type: "array", items: { type: "object", additionalProperties: false,
     required: ["truck_name", "is_food_truck", "date", "start", "end", "venue", "address", "city", "confidence"],
     properties: {
       truck_name: { type: "string" }, is_food_truck: { type: "boolean" }, date: { type: "string", description: "YYYY-MM-DD" },
@@ -156,7 +160,8 @@ Venue names are often Facebook place tags (a business name with no address): put
 Dates: use the post date unless the post says tomorrow, today/tonight or a weekday name (next one on/after the post date). Times are local Central time, 24h HH:MM.
 Short ranges without am/pm: "11-2" = 11:00-14:00; "4-8" = 16:00-20:00. If no end time, assume 3 hours after start.
 truck_name = the truck the post is about (the poster when they write in first person). confidence 0-1 = how sure the truck will be at that place at that time.
-If the post announces no specific stop, return an empty list. is_food_truck = clearly a mobile food truck/trailer/cart.`;
+If the post announces no specific stop, return an empty list. is_food_truck = clearly a mobile food truck/trailer/cart.
+menu = dishes/items the post says will be served (with prices if written), grouped in sections; empty list when the post lists no menu items. Never invent items.`;
 
 /** Central-time date of a post timestamp (falls back to today). */
 function postDay(time: string, today: string): string {
@@ -164,7 +169,7 @@ function postDay(time: string, today: string): string {
   return Number.isFinite(t) ? chicagoDate(new Date(t)) : today;
 }
 
-async function extract(text: string, postTime: string, url: string, pageOwner: string | null, today: string): Promise<Extracted[]> {
+async function extract(text: string, postTime: string, url: string, pageOwner: string | null, today: string): Promise<{ stops: Extracted[]; menu: PostMenu }> {
   const key = process.env["LOVABLE_API_KEY"];
   if (!key) throw new AiStop("LOVABLE_API_KEY is not configured");
   const day = postDay(postTime, today);
@@ -184,9 +189,9 @@ async function extract(text: string, postTime: string, url: string, pageOwner: s
   if (res.status === 402 || res.status === 403) throw new AiStop(`AI paused [${res.status}]: ${(await res.text()).slice(0, 200)}`);
   if (!res.ok) throw new Error(`AI failed [${res.status}]`);
   const j = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-  let ai: Extracted[] = [];
-  try { ai = (JSON.parse(j.choices?.[0]?.message?.content ?? "{}") as { stops?: Extracted[] }).stops ?? []; } catch { ai = []; }
-  return mergeHints(ai, hints, date, pageOwner ?? "");
+  let ai: Extracted[] = [], menu: PostMenu = [];
+  try { const o = JSON.parse(j.choices?.[0]?.message?.content ?? "{}") as { stops?: Extracted[]; menu?: PostMenu }; ai = o.stops ?? []; menu = o.menu ?? []; } catch { ai = []; }
+  return { stops: mergeHints(ai, hints, date, pageOwner ?? ""), menu };
 }
 
 
@@ -214,7 +219,8 @@ export async function ingestPost(ctx: IngestCtx, kind: Kind | "paste", p: Post, 
   const handlesOf = (t: TruckLite) => ownerHandles(t, t.claimed_by ? ctx.bizByOwner.get(t.claimed_by) : null);
   const sameBusiness = (a: TruckLite, b: TruckLite) => a.id === b.id || (!!a.claimed_by && a.claimed_by === b.claimed_by);
   const out: StopResult[] = [];
-  const ex = await extract(p.text, p.time, p.url, owner?.name ?? null, today);
+  const { stops: ex, menu } = await extract(p.text, p.time, p.url, owner?.name ?? null, today);
+  let menuTruck: TruckLite | null = null;
   for (const e of ex) {
     const base = { venue: e.venue, address: e.address || null, city: e.city, date: e.date, start: e.start, end: e.end, own: false, checkAddress: false, newTruck: false };
     // A business page can post for any of its trucks: prefer the named truck of the same business.
