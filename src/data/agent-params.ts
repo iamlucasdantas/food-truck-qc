@@ -20,7 +20,7 @@ const FALSE = /^(false|no|n|0|off)$/i;
 export function cleanAgentParams(raw: Record<string, unknown>): Record<string, string> {
   const out: Record<string, string> = {};
   for (const [k0, v0] of Object.entries(raw ?? {})) {
-    const k = k0.trim().toLowerCase();
+    const k = k0.trim().replace(/([a-z0-9])([A-Z])/g, "$1_$2").toLowerCase();
     if (!KNOWN.has(k) || isBlankParam(v0)) continue;
     const v = typeof v0 === "string" ? v0.trim() : typeof v0 === "number" || typeof v0 === "boolean" ? String(v0) : null;
     if (v == null) continue;

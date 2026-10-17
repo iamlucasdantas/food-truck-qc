@@ -1,5 +1,9 @@
 # Roadmap
 
+## Agent API camelCase compatibility (not published)
+- [ ] Normalize all known camelCase aliases with the existing sanitizing rules for GET and POST on both endpoints
+- [ ] Run focused regression tests and authenticated POST checks with real truck data; confirm automatic build
+
 ## Dependency security updates (not published)
 - [x] Updated @lovable.dev/mcp-js to 3.1.1; refreshed only source-map-js to 1.2.2 and js-yaml to 4.3.2 in the text lockfile, without transitive overrides or unrelated version changes
 - [x] All 209 regression tests passed; automatic build OK; fresh dependency scan confirms @tailwindcss/vite and @tanstack/react-start advisories cleared
