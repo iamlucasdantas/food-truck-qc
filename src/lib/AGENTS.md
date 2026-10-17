@@ -7,3 +7,5 @@
 - Venue addresses resolve via saved venues → confirmed owner stops → Google Places (Maps connector, server-side, Quad Cities bias) and are cached in venues; low-confidence matches become suggested_stops with needs_address_check, even for own posts, so nothing unverified goes public.
 - Optional logged-in Facebook scraping reads the FACEBOOK_COOKIES_JSON secret (entered by the admin in Settings) and passes it as the Apify `cookies` input; per-source run results are stored on social_sources (last_status/posts/stops/reason).
 - Placeholder truck names (isUnknownTruckName in src/data/posts.ts, unit-tested) never match or create trucks; unnamed posts become a pending truck named after the post author with the original post URL in its description, so admins approve them. Owners' pending trucks also feed social_sources so their own pages are scraped from signup.
+
+- Chat search and MCP share api-search.server.ts and pure agent-*.ts rules for smart locations, food matching and Chicago recurrence; caller-scoped MCP clients preserve OAuth/RLS.

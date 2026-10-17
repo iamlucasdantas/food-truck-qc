@@ -19,7 +19,7 @@
       {
         "name": "search_trucks",
         "title": "Search food trucks",
-        "description": "Find approved Quad Cities food trucks by name, cuisine or dish.",
+        "description": "Find approved Quad Cities food trucks by smart location, cuisine, published dishes and Central-time schedules including recurring stops.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -30,12 +30,69 @@
           "type": "object",
           "properties": {
             "query": {
-              "description": "Truck name, cuisine or dish, e.g. 'tacos'. Omit to list all.",
               "type": "string",
               "maxLength": 100
             },
+            "location": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "city": {
+              "type": "string",
+              "maxLength": 80
+            },
+            "cuisine": {
+              "type": "string",
+              "maxLength": 60
+            },
+            "dish": {
+              "type": "string",
+              "maxLength": 80
+            },
+            "menu_item": {
+              "type": "string",
+              "maxLength": 80
+            },
+            "near": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "address": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "truck_id": {
+              "type": "string",
+              "maxLength": 120,
+              "pattern": "^[a-z0-9-]+$"
+            },
+            "when": {
+              "type": "string"
+            },
+            "open_now": {
+              "type": "boolean"
+            },
+            "lat": {
+              "type": "number",
+              "minimum": -90,
+              "maximum": 90
+            },
+            "lng": {
+              "type": "number",
+              "minimum": -180,
+              "maximum": 180
+            },
+            "radius_miles": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "days": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 14
+            },
             "limit": {
-              "description": "Max results (default 20).",
               "type": "integer",
               "minimum": 1,
               "maximum": 50
@@ -48,7 +105,7 @@
       {
         "name": "upcoming_stops",
         "title": "Upcoming truck stops",
-        "description": "List where food trucks will be (or are now) over the next days, optionally for one truck or city. Times are Central.",
+        "description": "Find approved Quad Cities food trucks by smart location, cuisine, published dishes and Central-time schedules including recurring stops.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -58,22 +115,73 @@
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "object",
           "properties": {
-            "truck_id": {
-              "description": "Only this truck (id from search_trucks).",
+            "query": {
               "type": "string",
-              "format": "uuid",
-              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              "maxLength": 100
+            },
+            "location": {
+              "type": "string",
+              "maxLength": 200
             },
             "city": {
-              "description": "Only stops in this city, e.g. 'Davenport'.",
+              "type": "string",
+              "maxLength": 80
+            },
+            "cuisine": {
               "type": "string",
               "maxLength": 60
             },
+            "dish": {
+              "type": "string",
+              "maxLength": 80
+            },
+            "menu_item": {
+              "type": "string",
+              "maxLength": 80
+            },
+            "near": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "address": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "truck_id": {
+              "type": "string",
+              "maxLength": 120,
+              "pattern": "^[a-z0-9-]+$"
+            },
+            "when": {
+              "type": "string"
+            },
+            "open_now": {
+              "type": "boolean"
+            },
+            "lat": {
+              "type": "number",
+              "minimum": -90,
+              "maximum": 90
+            },
+            "lng": {
+              "type": "number",
+              "minimum": -180,
+              "maximum": 180
+            },
+            "radius_miles": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 100
+            },
             "days": {
-              "description": "How many days ahead (default 3).",
               "type": "integer",
               "minimum": 1,
               "maximum": 14
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
             }
           },
           "additionalProperties": false

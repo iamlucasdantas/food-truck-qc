@@ -11,7 +11,7 @@ export const Route = createFileRoute("/api/public/v1/stops")({
         const p = SearchQuery.safeParse(Object.fromEntries(new URL(request.url).searchParams));
         if (!p.success) return Response.json({ error: "invalid query" }, { status: 400 });
         const r = await runSearch({ ...p.data, limit: 50 }, { days: 3, limit: 50 });
-        if ("error" in r) return Response.json({ error: r.error }, { status: r.error === "address not found" ? 400 : 500 });
+        if ("error" in r) return Response.json({ error: r.error }, { status: r.error === "location not found" ? 400 : 500 });
         const stops = r.hits.flatMap((hit) => hit.stops
           .filter((s) => !p.data.open_now || s.open_now)
           .map((s) => ({ truck_id: hit.truck.id, truck: hit.truck.name, venue: s.venue_name, address: s.address, city: s.city,

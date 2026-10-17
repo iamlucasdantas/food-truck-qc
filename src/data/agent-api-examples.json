@@ -1,0 +1,1296 @@
+[
+  {
+    "request": "chat-search-trucks?open_now=true",
+    "status": 200,
+    "response": {
+      "resolved_location": {
+        "input": "",
+        "type": "default",
+        "name": "Quad Cities",
+        "lat": 41.5236,
+        "lng": -90.5776,
+        "radius_miles": 15
+      },
+      "filters": {
+        "query": null,
+        "cuisine": null,
+        "dish": null,
+        "open_now": true,
+        "when": "today"
+      },
+      "count": 2,
+      "results": [
+        {
+          "truck_id": "toni-s-smokin-grill-e8mrk",
+          "name": "Toni's Smokin' Grill",
+          "cuisine": "Other",
+          "open_now": true,
+          "is_base_location": false,
+          "distance_miles": 1.2,
+          "stop": {
+            "venue": "Bent River Brewing Company",
+            "address": "512 24th St, Rock Island, IL 61201, USA",
+            "city": "Rock Island",
+            "starts_at": "Sat, Oct 17, 11:00 AM",
+            "ends_at": "Sat, Oct 17, 2:00 PM"
+          },
+          "base_address": null,
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/toni-s-smokin-grill-e8mrk"
+        },
+        {
+          "truck_id": "mi-oaxaca-wekgq",
+          "name": "MI Oaxaca",
+          "cuisine": "Mexican",
+          "open_now": true,
+          "is_base_location": false,
+          "distance_miles": 3.2,
+          "stop": {
+            "venue": "Mercado On Fifth",
+            "address": "423 12th St, Moline, IL 61265, USA",
+            "city": "Moline",
+            "starts_at": "Sat, Oct 17, 11:00 AM",
+            "ends_at": "Sat, Oct 17, 2:00 PM"
+          },
+          "base_address": null,
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/mi-oaxaca-wekgq"
+        }
+      ],
+      "message": "2 trucks open now within 15 mi of Quad Cities",
+      "next_available": null,
+      "origin": "Quad Cities",
+      "radius_miles": 15,
+      "trucks": [
+        {
+          "truck_id": "toni-s-smokin-grill-e8mrk",
+          "name": "Toni's Smokin' Grill",
+          "cuisine": "Other",
+          "open_now": true,
+          "is_base_location": false,
+          "distance_miles": 1.2,
+          "stop": {
+            "venue": "Bent River Brewing Company",
+            "address": "512 24th St, Rock Island, IL 61201, USA",
+            "city": "Rock Island",
+            "starts_at": "Sat, Oct 17, 11:00 AM",
+            "ends_at": "Sat, Oct 17, 2:00 PM"
+          },
+          "base_address": null,
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/toni-s-smokin-grill-e8mrk",
+          "city": "Rock Island",
+          "current_or_next_stop": {
+            "venue": "Bent River Brewing Company",
+            "address": "512 24th St, Rock Island, IL 61201, USA",
+            "city": "Rock Island",
+            "starts_at": "Sat, Oct 17, 11:00 AM",
+            "ends_at": "Sat, Oct 17, 2:00 PM"
+          }
+        },
+        {
+          "truck_id": "mi-oaxaca-wekgq",
+          "name": "MI Oaxaca",
+          "cuisine": "Mexican",
+          "open_now": true,
+          "is_base_location": false,
+          "distance_miles": 3.2,
+          "stop": {
+            "venue": "Mercado On Fifth",
+            "address": "423 12th St, Moline, IL 61265, USA",
+            "city": "Moline",
+            "starts_at": "Sat, Oct 17, 11:00 AM",
+            "ends_at": "Sat, Oct 17, 2:00 PM"
+          },
+          "base_address": null,
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/mi-oaxaca-wekgq",
+          "city": "Moline",
+          "current_or_next_stop": {
+            "venue": "Mercado On Fifth",
+            "address": "423 12th St, Moline, IL 61265, USA",
+            "city": "Moline",
+            "starts_at": "Sat, Oct 17, 11:00 AM",
+            "ends_at": "Sat, Oct 17, 2:00 PM"
+          }
+        }
+      ],
+      "stops": [
+        {
+          "truck_id": "toni-s-smokin-grill-e8mrk",
+          "truck_name": "Toni's Smokin' Grill",
+          "cuisine": "Other",
+          "distance_miles": 1.2,
+          "is_base_location": false,
+          "open_now": true,
+          "venue": "Bent River Brewing Company",
+          "address": "512 24th St, Rock Island, IL 61201, USA",
+          "city": "Rock Island",
+          "starts_at": "Sat, Oct 17, 11:00 AM",
+          "ends_at": "Sat, Oct 17, 2:00 PM"
+        },
+        {
+          "truck_id": "mi-oaxaca-wekgq",
+          "truck_name": "MI Oaxaca",
+          "cuisine": "Mexican",
+          "distance_miles": 3.2,
+          "is_base_location": false,
+          "open_now": true,
+          "venue": "Mercado On Fifth",
+          "address": "423 12th St, Moline, IL 61265, USA",
+          "city": "Moline",
+          "starts_at": "Sat, Oct 17, 11:00 AM",
+          "ends_at": "Sat, Oct 17, 2:00 PM"
+        }
+      ]
+    }
+  },
+  {
+    "request": "chat-search-trucks?location=Berendorf%20IA&open_now=true",
+    "status": 200,
+    "response": {
+      "resolved_location": {
+        "input": "Berendorf IA",
+        "type": "city",
+        "name": "Bettendorf",
+        "lat": 41.525,
+        "lng": -90.5151,
+        "radius_miles": 5
+      },
+      "filters": {
+        "query": null,
+        "cuisine": null,
+        "dish": null,
+        "open_now": true,
+        "when": "today"
+      },
+      "count": 2,
+      "results": [
+        {
+          "truck_id": "mi-oaxaca-wekgq",
+          "name": "MI Oaxaca",
+          "cuisine": "Mexican",
+          "open_now": true,
+          "is_base_location": false,
+          "distance_miles": 1.4,
+          "stop": {
+            "venue": "Mercado On Fifth",
+            "address": "423 12th St, Moline, IL 61265, USA",
+            "city": "Moline",
+            "starts_at": "Sat, Oct 17, 11:00 AM",
+            "ends_at": "Sat, Oct 17, 2:00 PM"
+          },
+          "base_address": null,
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/mi-oaxaca-wekgq"
+        },
+        {
+          "truck_id": "toni-s-smokin-grill-e8mrk",
+          "name": "Toni's Smokin' Grill",
+          "cuisine": "Other",
+          "open_now": true,
+          "is_base_location": false,
+          "distance_miles": 2.9,
+          "stop": {
+            "venue": "Bent River Brewing Company",
+            "address": "512 24th St, Rock Island, IL 61201, USA",
+            "city": "Rock Island",
+            "starts_at": "Sat, Oct 17, 11:00 AM",
+            "ends_at": "Sat, Oct 17, 2:00 PM"
+          },
+          "base_address": null,
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/toni-s-smokin-grill-e8mrk"
+        }
+      ],
+      "message": "2 trucks open now in Bettendorf",
+      "next_available": null,
+      "origin": "Bettendorf",
+      "radius_miles": 5,
+      "trucks": [
+        {
+          "truck_id": "mi-oaxaca-wekgq",
+          "name": "MI Oaxaca",
+          "cuisine": "Mexican",
+          "open_now": true,
+          "is_base_location": false,
+          "distance_miles": 1.4,
+          "stop": {
+            "venue": "Mercado On Fifth",
+            "address": "423 12th St, Moline, IL 61265, USA",
+            "city": "Moline",
+            "starts_at": "Sat, Oct 17, 11:00 AM",
+            "ends_at": "Sat, Oct 17, 2:00 PM"
+          },
+          "base_address": null,
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/mi-oaxaca-wekgq",
+          "city": "Moline",
+          "current_or_next_stop": {
+            "venue": "Mercado On Fifth",
+            "address": "423 12th St, Moline, IL 61265, USA",
+            "city": "Moline",
+            "starts_at": "Sat, Oct 17, 11:00 AM",
+            "ends_at": "Sat, Oct 17, 2:00 PM"
+          }
+        },
+        {
+          "truck_id": "toni-s-smokin-grill-e8mrk",
+          "name": "Toni's Smokin' Grill",
+          "cuisine": "Other",
+          "open_now": true,
+          "is_base_location": false,
+          "distance_miles": 2.9,
+          "stop": {
+            "venue": "Bent River Brewing Company",
+            "address": "512 24th St, Rock Island, IL 61201, USA",
+            "city": "Rock Island",
+            "starts_at": "Sat, Oct 17, 11:00 AM",
+            "ends_at": "Sat, Oct 17, 2:00 PM"
+          },
+          "base_address": null,
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/toni-s-smokin-grill-e8mrk",
+          "city": "Rock Island",
+          "current_or_next_stop": {
+            "venue": "Bent River Brewing Company",
+            "address": "512 24th St, Rock Island, IL 61201, USA",
+            "city": "Rock Island",
+            "starts_at": "Sat, Oct 17, 11:00 AM",
+            "ends_at": "Sat, Oct 17, 2:00 PM"
+          }
+        }
+      ],
+      "stops": [
+        {
+          "truck_id": "mi-oaxaca-wekgq",
+          "truck_name": "MI Oaxaca",
+          "cuisine": "Mexican",
+          "distance_miles": 1.4,
+          "is_base_location": false,
+          "open_now": true,
+          "venue": "Mercado On Fifth",
+          "address": "423 12th St, Moline, IL 61265, USA",
+          "city": "Moline",
+          "starts_at": "Sat, Oct 17, 11:00 AM",
+          "ends_at": "Sat, Oct 17, 2:00 PM"
+        },
+        {
+          "truck_id": "toni-s-smokin-grill-e8mrk",
+          "truck_name": "Toni's Smokin' Grill",
+          "cuisine": "Other",
+          "distance_miles": 2.9,
+          "is_base_location": false,
+          "open_now": true,
+          "venue": "Bent River Brewing Company",
+          "address": "512 24th St, Rock Island, IL 61201, USA",
+          "city": "Rock Island",
+          "starts_at": "Sat, Oct 17, 11:00 AM",
+          "ends_at": "Sat, Oct 17, 2:00 PM"
+        }
+      ]
+    }
+  },
+  {
+    "request": "chat-search-trucks?location=QC&cuisine=tacos&open_now=true",
+    "status": 200,
+    "response": {
+      "resolved_location": {
+        "input": "QC",
+        "type": "region",
+        "name": "Quad Cities",
+        "lat": 41.5236,
+        "lng": -90.5776,
+        "radius_miles": 15
+      },
+      "filters": {
+        "query": null,
+        "cuisine": "tacos",
+        "dish": null,
+        "open_now": true,
+        "when": "today"
+      },
+      "count": 1,
+      "results": [
+        {
+          "truck_id": "mi-oaxaca-wekgq",
+          "name": "MI Oaxaca",
+          "cuisine": "Mexican",
+          "open_now": true,
+          "is_base_location": false,
+          "distance_miles": 3.2,
+          "stop": {
+            "venue": "Mercado On Fifth",
+            "address": "423 12th St, Moline, IL 61265, USA",
+            "city": "Moline",
+            "starts_at": "Sat, Oct 17, 11:00 AM",
+            "ends_at": "Sat, Oct 17, 2:00 PM"
+          },
+          "base_address": null,
+          "matched_on": [
+            "cuisine"
+          ],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/mi-oaxaca-wekgq"
+        }
+      ],
+      "message": "1 tacos trucks open now within 15 mi of Quad Cities",
+      "next_available": null,
+      "origin": "Quad Cities",
+      "radius_miles": 15,
+      "trucks": [
+        {
+          "truck_id": "mi-oaxaca-wekgq",
+          "name": "MI Oaxaca",
+          "cuisine": "Mexican",
+          "open_now": true,
+          "is_base_location": false,
+          "distance_miles": 3.2,
+          "stop": {
+            "venue": "Mercado On Fifth",
+            "address": "423 12th St, Moline, IL 61265, USA",
+            "city": "Moline",
+            "starts_at": "Sat, Oct 17, 11:00 AM",
+            "ends_at": "Sat, Oct 17, 2:00 PM"
+          },
+          "base_address": null,
+          "matched_on": [
+            "cuisine"
+          ],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/mi-oaxaca-wekgq",
+          "city": "Moline",
+          "current_or_next_stop": {
+            "venue": "Mercado On Fifth",
+            "address": "423 12th St, Moline, IL 61265, USA",
+            "city": "Moline",
+            "starts_at": "Sat, Oct 17, 11:00 AM",
+            "ends_at": "Sat, Oct 17, 2:00 PM"
+          }
+        }
+      ],
+      "stops": [
+        {
+          "truck_id": "mi-oaxaca-wekgq",
+          "truck_name": "MI Oaxaca",
+          "cuisine": "Mexican",
+          "distance_miles": 3.2,
+          "is_base_location": false,
+          "open_now": true,
+          "venue": "Mercado On Fifth",
+          "address": "423 12th St, Moline, IL 61265, USA",
+          "city": "Moline",
+          "starts_at": "Sat, Oct 17, 11:00 AM",
+          "ends_at": "Sat, Oct 17, 2:00 PM"
+        }
+      ]
+    }
+  },
+  {
+    "request": "chat-search-trucks?dish=birria%20tacos&when=today",
+    "status": 200,
+    "response": {
+      "resolved_location": {
+        "input": "",
+        "type": "default",
+        "name": "Quad Cities",
+        "lat": 41.5236,
+        "lng": -90.5776,
+        "radius_miles": 15
+      },
+      "filters": {
+        "query": null,
+        "cuisine": null,
+        "dish": "birria tacos",
+        "open_now": false,
+        "when": "today"
+      },
+      "count": 0,
+      "results": [],
+      "message": "No birria tacos trucks with matching locations for today within 15 mi of Quad Cities.",
+      "next_available": null,
+      "origin": "Quad Cities",
+      "radius_miles": 15,
+      "trucks": [],
+      "stops": []
+    }
+  },
+  {
+    "request": "chat-upcoming-stops?location=Rock%20Island&days=7",
+    "status": 200,
+    "response": {
+      "resolved_location": {
+        "input": "Rock Island",
+        "type": "city",
+        "name": "Rock Island",
+        "lat": 41.5095,
+        "lng": -90.5787,
+        "radius_miles": 5
+      },
+      "filters": {
+        "query": null,
+        "cuisine": null,
+        "dish": null,
+        "open_now": false,
+        "when": "7_days"
+      },
+      "count": 10,
+      "results": [
+        {
+          "truck_id": "toni-s-smokin-grill-e8mrk",
+          "name": "Toni's Smokin' Grill",
+          "cuisine": "Other",
+          "open_now": true,
+          "is_base_location": false,
+          "distance_miles": 0.6,
+          "stop": {
+            "venue": "Bent River Brewing Company",
+            "address": "512 24th St, Rock Island, IL 61201, USA",
+            "city": "Rock Island",
+            "starts_at": "Sat, Oct 17, 11:00 AM",
+            "ends_at": "Sat, Oct 17, 2:00 PM"
+          },
+          "base_address": null,
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/toni-s-smokin-grill-e8mrk"
+        },
+        {
+          "truck_id": "mi-oaxaca-wekgq",
+          "name": "MI Oaxaca",
+          "cuisine": "Mexican",
+          "open_now": true,
+          "is_base_location": false,
+          "distance_miles": 3,
+          "stop": {
+            "venue": "Mercado On Fifth",
+            "address": "423 12th St, Moline, IL 61265, USA",
+            "city": "Moline",
+            "starts_at": "Sat, Oct 17, 11:00 AM",
+            "ends_at": "Sat, Oct 17, 2:00 PM"
+          },
+          "base_address": null,
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/mi-oaxaca-wekgq"
+        },
+        {
+          "truck_id": "toni-s-smokin-grill-e8mrk",
+          "name": "Toni's Smokin' Grill",
+          "cuisine": "Other",
+          "open_now": false,
+          "is_base_location": false,
+          "distance_miles": 0.6,
+          "stop": {
+            "venue": "Bent River Brewing Company",
+            "address": "512 24th St, Rock Island, IL 61201, USA",
+            "city": "Rock Island",
+            "starts_at": "Sun, Oct 18, 11:00 AM",
+            "ends_at": "Sun, Oct 18, 2:00 PM"
+          },
+          "base_address": null,
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/toni-s-smokin-grill-e8mrk"
+        },
+        {
+          "truck_id": "las-salsas-dona-mary-zqbe4",
+          "name": "Las Salsas Dona Mary",
+          "cuisine": "Mexican",
+          "open_now": false,
+          "is_base_location": false,
+          "distance_miles": 3,
+          "stop": {
+            "venue": "Mercado on 5th",
+            "address": "423 12th St, Moline, IL 61265, USA",
+            "city": "Moline",
+            "starts_at": "Tue, Oct 20, 5:00 PM",
+            "ends_at": "Tue, Oct 20, 7:00 PM"
+          },
+          "base_address": null,
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/las-salsas-dona-mary-zqbe4"
+        },
+        {
+          "truck_id": "bragg-bbq-egpri",
+          "name": "Bragg BBQ",
+          "cuisine": "BBQ",
+          "open_now": false,
+          "is_base_location": false,
+          "distance_miles": 3.4,
+          "stop": {
+            "venue": "Mercado on 5th",
+            "address": "1630 5th Ave",
+            "city": "Moline",
+            "starts_at": "Tue, Oct 20, 5:00 PM",
+            "ends_at": "Tue, Oct 20, 7:00 PM"
+          },
+          "base_address": null,
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/bragg-bbq-egpri"
+        },
+        {
+          "truck_id": "chick-n-dips-8uajs",
+          "name": "Chick N\u2019Dips",
+          "cuisine": "Chicken",
+          "open_now": false,
+          "is_base_location": true,
+          "distance_miles": 0.7,
+          "stop": null,
+          "base_address": "421 W River Dr, Davenport, IA 52801",
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/chick-n-dips-8uajs"
+        },
+        {
+          "truck_id": "bonbon-s-tacos-yp_1i",
+          "name": "Bonbon\u2019s Tacos",
+          "cuisine": "Mexican",
+          "open_now": false,
+          "is_base_location": true,
+          "distance_miles": 1.6,
+          "stop": null,
+          "base_address": "1218 N Brady St, Davenport, IA 52803",
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/bonbon-s-tacos-yp_1i"
+        },
+        {
+          "truck_id": "justin-s-tacos-5iq6k",
+          "name": "Justin\u2019s Tacos",
+          "cuisine": "Mexican",
+          "open_now": false,
+          "is_base_location": true,
+          "distance_miles": 2,
+          "stop": null,
+          "base_address": "1817 38th St, Rock Island, IL 61201",
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/justin-s-tacos-5iq6k"
+        },
+        {
+          "truck_id": "new-york-style-hot-dog-3lzvs",
+          "name": "New York Style Hot Dog",
+          "cuisine": "Hot Dogs",
+          "open_now": false,
+          "is_base_location": true,
+          "distance_miles": 2,
+          "stop": null,
+          "base_address": "500 44th St, Rock Island, IL 61201",
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/new-york-style-hot-dog-3lzvs"
+        },
+        {
+          "truck_id": "luna-kitchen-liggw",
+          "name": "Luna Kitchen",
+          "cuisine": "Other",
+          "open_now": false,
+          "is_base_location": true,
+          "distance_miles": 2.2,
+          "stop": null,
+          "base_address": null,
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/luna-kitchen-liggw"
+        }
+      ],
+      "message": "10 trucks in Rock Island",
+      "next_available": null,
+      "origin": "Rock Island",
+      "radius_miles": 5,
+      "trucks": [
+        {
+          "truck_id": "toni-s-smokin-grill-e8mrk",
+          "name": "Toni's Smokin' Grill",
+          "cuisine": "Other",
+          "open_now": true,
+          "is_base_location": false,
+          "distance_miles": 0.6,
+          "stop": {
+            "venue": "Bent River Brewing Company",
+            "address": "512 24th St, Rock Island, IL 61201, USA",
+            "city": "Rock Island",
+            "starts_at": "Sat, Oct 17, 11:00 AM",
+            "ends_at": "Sat, Oct 17, 2:00 PM"
+          },
+          "base_address": null,
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/toni-s-smokin-grill-e8mrk",
+          "city": "Rock Island",
+          "current_or_next_stop": {
+            "venue": "Bent River Brewing Company",
+            "address": "512 24th St, Rock Island, IL 61201, USA",
+            "city": "Rock Island",
+            "starts_at": "Sat, Oct 17, 11:00 AM",
+            "ends_at": "Sat, Oct 17, 2:00 PM"
+          }
+        },
+        {
+          "truck_id": "mi-oaxaca-wekgq",
+          "name": "MI Oaxaca",
+          "cuisine": "Mexican",
+          "open_now": true,
+          "is_base_location": false,
+          "distance_miles": 3,
+          "stop": {
+            "venue": "Mercado On Fifth",
+            "address": "423 12th St, Moline, IL 61265, USA",
+            "city": "Moline",
+            "starts_at": "Sat, Oct 17, 11:00 AM",
+            "ends_at": "Sat, Oct 17, 2:00 PM"
+          },
+          "base_address": null,
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/mi-oaxaca-wekgq",
+          "city": "Moline",
+          "current_or_next_stop": {
+            "venue": "Mercado On Fifth",
+            "address": "423 12th St, Moline, IL 61265, USA",
+            "city": "Moline",
+            "starts_at": "Sat, Oct 17, 11:00 AM",
+            "ends_at": "Sat, Oct 17, 2:00 PM"
+          }
+        },
+        {
+          "truck_id": "toni-s-smokin-grill-e8mrk",
+          "name": "Toni's Smokin' Grill",
+          "cuisine": "Other",
+          "open_now": false,
+          "is_base_location": false,
+          "distance_miles": 0.6,
+          "stop": {
+            "venue": "Bent River Brewing Company",
+            "address": "512 24th St, Rock Island, IL 61201, USA",
+            "city": "Rock Island",
+            "starts_at": "Sun, Oct 18, 11:00 AM",
+            "ends_at": "Sun, Oct 18, 2:00 PM"
+          },
+          "base_address": null,
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/toni-s-smokin-grill-e8mrk",
+          "city": "Rock Island",
+          "current_or_next_stop": {
+            "venue": "Bent River Brewing Company",
+            "address": "512 24th St, Rock Island, IL 61201, USA",
+            "city": "Rock Island",
+            "starts_at": "Sun, Oct 18, 11:00 AM",
+            "ends_at": "Sun, Oct 18, 2:00 PM"
+          }
+        },
+        {
+          "truck_id": "las-salsas-dona-mary-zqbe4",
+          "name": "Las Salsas Dona Mary",
+          "cuisine": "Mexican",
+          "open_now": false,
+          "is_base_location": false,
+          "distance_miles": 3,
+          "stop": {
+            "venue": "Mercado on 5th",
+            "address": "423 12th St, Moline, IL 61265, USA",
+            "city": "Moline",
+            "starts_at": "Tue, Oct 20, 5:00 PM",
+            "ends_at": "Tue, Oct 20, 7:00 PM"
+          },
+          "base_address": null,
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/las-salsas-dona-mary-zqbe4",
+          "city": "Moline",
+          "current_or_next_stop": {
+            "venue": "Mercado on 5th",
+            "address": "423 12th St, Moline, IL 61265, USA",
+            "city": "Moline",
+            "starts_at": "Tue, Oct 20, 5:00 PM",
+            "ends_at": "Tue, Oct 20, 7:00 PM"
+          }
+        },
+        {
+          "truck_id": "bragg-bbq-egpri",
+          "name": "Bragg BBQ",
+          "cuisine": "BBQ",
+          "open_now": false,
+          "is_base_location": false,
+          "distance_miles": 3.4,
+          "stop": {
+            "venue": "Mercado on 5th",
+            "address": "1630 5th Ave",
+            "city": "Moline",
+            "starts_at": "Tue, Oct 20, 5:00 PM",
+            "ends_at": "Tue, Oct 20, 7:00 PM"
+          },
+          "base_address": null,
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/bragg-bbq-egpri",
+          "city": "Moline",
+          "current_or_next_stop": {
+            "venue": "Mercado on 5th",
+            "address": "1630 5th Ave",
+            "city": "Moline",
+            "starts_at": "Tue, Oct 20, 5:00 PM",
+            "ends_at": "Tue, Oct 20, 7:00 PM"
+          }
+        },
+        {
+          "truck_id": "chick-n-dips-8uajs",
+          "name": "Chick N\u2019Dips",
+          "cuisine": "Chicken",
+          "open_now": false,
+          "is_base_location": true,
+          "distance_miles": 0.7,
+          "stop": null,
+          "base_address": "421 W River Dr, Davenport, IA 52801",
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/chick-n-dips-8uajs",
+          "city": null,
+          "current_or_next_stop": null
+        },
+        {
+          "truck_id": "bonbon-s-tacos-yp_1i",
+          "name": "Bonbon\u2019s Tacos",
+          "cuisine": "Mexican",
+          "open_now": false,
+          "is_base_location": true,
+          "distance_miles": 1.6,
+          "stop": null,
+          "base_address": "1218 N Brady St, Davenport, IA 52803",
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/bonbon-s-tacos-yp_1i",
+          "city": null,
+          "current_or_next_stop": null
+        },
+        {
+          "truck_id": "justin-s-tacos-5iq6k",
+          "name": "Justin\u2019s Tacos",
+          "cuisine": "Mexican",
+          "open_now": false,
+          "is_base_location": true,
+          "distance_miles": 2,
+          "stop": null,
+          "base_address": "1817 38th St, Rock Island, IL 61201",
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/justin-s-tacos-5iq6k",
+          "city": null,
+          "current_or_next_stop": null
+        },
+        {
+          "truck_id": "new-york-style-hot-dog-3lzvs",
+          "name": "New York Style Hot Dog",
+          "cuisine": "Hot Dogs",
+          "open_now": false,
+          "is_base_location": true,
+          "distance_miles": 2,
+          "stop": null,
+          "base_address": "500 44th St, Rock Island, IL 61201",
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/new-york-style-hot-dog-3lzvs",
+          "city": null,
+          "current_or_next_stop": null
+        },
+        {
+          "truck_id": "luna-kitchen-liggw",
+          "name": "Luna Kitchen",
+          "cuisine": "Other",
+          "open_now": false,
+          "is_base_location": true,
+          "distance_miles": 2.2,
+          "stop": null,
+          "base_address": null,
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/luna-kitchen-liggw",
+          "city": null,
+          "current_or_next_stop": null
+        }
+      ],
+      "stops": [
+        {
+          "truck_id": "toni-s-smokin-grill-e8mrk",
+          "truck_name": "Toni's Smokin' Grill",
+          "cuisine": "Other",
+          "distance_miles": 0.6,
+          "is_base_location": false,
+          "open_now": true,
+          "venue": "Bent River Brewing Company",
+          "address": "512 24th St, Rock Island, IL 61201, USA",
+          "city": "Rock Island",
+          "starts_at": "Sat, Oct 17, 11:00 AM",
+          "ends_at": "Sat, Oct 17, 2:00 PM"
+        },
+        {
+          "truck_id": "mi-oaxaca-wekgq",
+          "truck_name": "MI Oaxaca",
+          "cuisine": "Mexican",
+          "distance_miles": 3,
+          "is_base_location": false,
+          "open_now": true,
+          "venue": "Mercado On Fifth",
+          "address": "423 12th St, Moline, IL 61265, USA",
+          "city": "Moline",
+          "starts_at": "Sat, Oct 17, 11:00 AM",
+          "ends_at": "Sat, Oct 17, 2:00 PM"
+        },
+        {
+          "truck_id": "toni-s-smokin-grill-e8mrk",
+          "truck_name": "Toni's Smokin' Grill",
+          "cuisine": "Other",
+          "distance_miles": 0.6,
+          "is_base_location": false,
+          "open_now": false,
+          "venue": "Bent River Brewing Company",
+          "address": "512 24th St, Rock Island, IL 61201, USA",
+          "city": "Rock Island",
+          "starts_at": "Sun, Oct 18, 11:00 AM",
+          "ends_at": "Sun, Oct 18, 2:00 PM"
+        },
+        {
+          "truck_id": "las-salsas-dona-mary-zqbe4",
+          "truck_name": "Las Salsas Dona Mary",
+          "cuisine": "Mexican",
+          "distance_miles": 3,
+          "is_base_location": false,
+          "open_now": false,
+          "venue": "Mercado on 5th",
+          "address": "423 12th St, Moline, IL 61265, USA",
+          "city": "Moline",
+          "starts_at": "Tue, Oct 20, 5:00 PM",
+          "ends_at": "Tue, Oct 20, 7:00 PM"
+        },
+        {
+          "truck_id": "bragg-bbq-egpri",
+          "truck_name": "Bragg BBQ",
+          "cuisine": "BBQ",
+          "distance_miles": 3.4,
+          "is_base_location": false,
+          "open_now": false,
+          "venue": "Mercado on 5th",
+          "address": "1630 5th Ave",
+          "city": "Moline",
+          "starts_at": "Tue, Oct 20, 5:00 PM",
+          "ends_at": "Tue, Oct 20, 7:00 PM"
+        },
+        {
+          "truck_id": "chick-n-dips-8uajs",
+          "truck_name": "Chick N\u2019Dips",
+          "cuisine": "Chicken",
+          "distance_miles": 0.7,
+          "is_base_location": true,
+          "open_now": null,
+          "venue": null,
+          "address": "421 W River Dr, Davenport, IA 52801",
+          "city": null,
+          "starts_at": null,
+          "ends_at": null
+        },
+        {
+          "truck_id": "bonbon-s-tacos-yp_1i",
+          "truck_name": "Bonbon\u2019s Tacos",
+          "cuisine": "Mexican",
+          "distance_miles": 1.6,
+          "is_base_location": true,
+          "open_now": null,
+          "venue": null,
+          "address": "1218 N Brady St, Davenport, IA 52803",
+          "city": null,
+          "starts_at": null,
+          "ends_at": null
+        },
+        {
+          "truck_id": "justin-s-tacos-5iq6k",
+          "truck_name": "Justin\u2019s Tacos",
+          "cuisine": "Mexican",
+          "distance_miles": 2,
+          "is_base_location": true,
+          "open_now": null,
+          "venue": null,
+          "address": "1817 38th St, Rock Island, IL 61201",
+          "city": null,
+          "starts_at": null,
+          "ends_at": null
+        },
+        {
+          "truck_id": "new-york-style-hot-dog-3lzvs",
+          "truck_name": "New York Style Hot Dog",
+          "cuisine": "Hot Dogs",
+          "distance_miles": 2,
+          "is_base_location": true,
+          "open_now": null,
+          "venue": null,
+          "address": "500 44th St, Rock Island, IL 61201",
+          "city": null,
+          "starts_at": null,
+          "ends_at": null
+        },
+        {
+          "truck_id": "luna-kitchen-liggw",
+          "truck_name": "Luna Kitchen",
+          "cuisine": "Other",
+          "distance_miles": 2.2,
+          "is_base_location": true,
+          "open_now": null,
+          "venue": null,
+          "address": null,
+          "city": null,
+          "starts_at": null,
+          "ends_at": null
+        }
+      ]
+    }
+  },
+  {
+    "request": "chat-search-trucks?location=2nd%20St%20Davenport&radius_miles=3",
+    "status": 200,
+    "response": {
+      "resolved_location": {
+        "input": "2nd St Davenport",
+        "type": "address",
+        "name": "West 2nd Street, Davenport, Rockingham Township, Scott County, Iowa, 52802, United States",
+        "lat": 41.5212961,
+        "lng": -90.5920349,
+        "radius_miles": 3
+      },
+      "filters": {
+        "query": null,
+        "cuisine": null,
+        "dish": null,
+        "open_now": false,
+        "when": "today"
+      },
+      "count": 6,
+      "results": [
+        {
+          "truck_id": "toni-s-smokin-grill-e8mrk",
+          "name": "Toni's Smokin' Grill",
+          "cuisine": "Other",
+          "open_now": true,
+          "is_base_location": false,
+          "distance_miles": 1.6,
+          "stop": {
+            "venue": "Bent River Brewing Company",
+            "address": "512 24th St, Rock Island, IL 61201, USA",
+            "city": "Rock Island",
+            "starts_at": "Sat, Oct 17, 11:00 AM",
+            "ends_at": "Sat, Oct 17, 2:00 PM"
+          },
+          "base_address": null,
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/toni-s-smokin-grill-e8mrk"
+        },
+        {
+          "truck_id": "chick-n-dips-8uajs",
+          "name": "Chick N\u2019Dips",
+          "cuisine": "Chicken",
+          "open_now": false,
+          "is_base_location": true,
+          "distance_miles": 0.6,
+          "stop": null,
+          "base_address": "421 W River Dr, Davenport, IA 52801",
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/chick-n-dips-8uajs"
+        },
+        {
+          "truck_id": "bonbon-s-tacos-yp_1i",
+          "name": "Bonbon\u2019s Tacos",
+          "cuisine": "Mexican",
+          "open_now": false,
+          "is_base_location": true,
+          "distance_miles": 1.2,
+          "stop": null,
+          "base_address": "1218 N Brady St, Davenport, IA 52803",
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/bonbon-s-tacos-yp_1i"
+        },
+        {
+          "truck_id": "luna-kitchen-liggw",
+          "name": "Luna Kitchen",
+          "cuisine": "Other",
+          "open_now": false,
+          "is_base_location": true,
+          "distance_miles": 1.4,
+          "stop": null,
+          "base_address": null,
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/luna-kitchen-liggw"
+        },
+        {
+          "truck_id": "mo-flava-hdsqo",
+          "name": "Mo Flava",
+          "cuisine": "Other",
+          "open_now": false,
+          "is_base_location": true,
+          "distance_miles": 2.7,
+          "stop": null,
+          "base_address": "3622 N Brady St, Davenport, IA 52806",
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/mo-flava-hdsqo"
+        },
+        {
+          "truck_id": "new-york-style-hot-dog-3lzvs",
+          "name": "New York Style Hot Dog",
+          "cuisine": "Hot Dogs",
+          "open_now": false,
+          "is_base_location": true,
+          "distance_miles": 2.9,
+          "stop": null,
+          "base_address": "500 44th St, Rock Island, IL 61201",
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/new-york-style-hot-dog-3lzvs"
+        }
+      ],
+      "message": "6 trucks within 3 mi of West 2nd Street, Davenport, Rockingham Township, Scott County, Iowa, 52802, United States",
+      "next_available": null,
+      "origin": "West 2nd Street, Davenport, Rockingham Township, Scott County, Iowa, 52802, United States",
+      "radius_miles": 3,
+      "trucks": [
+        {
+          "truck_id": "toni-s-smokin-grill-e8mrk",
+          "name": "Toni's Smokin' Grill",
+          "cuisine": "Other",
+          "open_now": true,
+          "is_base_location": false,
+          "distance_miles": 1.6,
+          "stop": {
+            "venue": "Bent River Brewing Company",
+            "address": "512 24th St, Rock Island, IL 61201, USA",
+            "city": "Rock Island",
+            "starts_at": "Sat, Oct 17, 11:00 AM",
+            "ends_at": "Sat, Oct 17, 2:00 PM"
+          },
+          "base_address": null,
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/toni-s-smokin-grill-e8mrk",
+          "city": "Rock Island",
+          "current_or_next_stop": {
+            "venue": "Bent River Brewing Company",
+            "address": "512 24th St, Rock Island, IL 61201, USA",
+            "city": "Rock Island",
+            "starts_at": "Sat, Oct 17, 11:00 AM",
+            "ends_at": "Sat, Oct 17, 2:00 PM"
+          }
+        },
+        {
+          "truck_id": "chick-n-dips-8uajs",
+          "name": "Chick N\u2019Dips",
+          "cuisine": "Chicken",
+          "open_now": false,
+          "is_base_location": true,
+          "distance_miles": 0.6,
+          "stop": null,
+          "base_address": "421 W River Dr, Davenport, IA 52801",
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/chick-n-dips-8uajs",
+          "city": null,
+          "current_or_next_stop": null
+        },
+        {
+          "truck_id": "bonbon-s-tacos-yp_1i",
+          "name": "Bonbon\u2019s Tacos",
+          "cuisine": "Mexican",
+          "open_now": false,
+          "is_base_location": true,
+          "distance_miles": 1.2,
+          "stop": null,
+          "base_address": "1218 N Brady St, Davenport, IA 52803",
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/bonbon-s-tacos-yp_1i",
+          "city": null,
+          "current_or_next_stop": null
+        },
+        {
+          "truck_id": "luna-kitchen-liggw",
+          "name": "Luna Kitchen",
+          "cuisine": "Other",
+          "open_now": false,
+          "is_base_location": true,
+          "distance_miles": 1.4,
+          "stop": null,
+          "base_address": null,
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/luna-kitchen-liggw",
+          "city": null,
+          "current_or_next_stop": null
+        },
+        {
+          "truck_id": "mo-flava-hdsqo",
+          "name": "Mo Flava",
+          "cuisine": "Other",
+          "open_now": false,
+          "is_base_location": true,
+          "distance_miles": 2.7,
+          "stop": null,
+          "base_address": "3622 N Brady St, Davenport, IA 52806",
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/mo-flava-hdsqo",
+          "city": null,
+          "current_or_next_stop": null
+        },
+        {
+          "truck_id": "new-york-style-hot-dog-3lzvs",
+          "name": "New York Style Hot Dog",
+          "cuisine": "Hot Dogs",
+          "open_now": false,
+          "is_base_location": true,
+          "distance_miles": 2.9,
+          "stop": null,
+          "base_address": "500 44th St, Rock Island, IL 61201",
+          "matched_on": [],
+          "matched_items": [],
+          "menu_highlights": [],
+          "app_url": "https://app.foodtruckqc.com/truck/new-york-style-hot-dog-3lzvs",
+          "city": null,
+          "current_or_next_stop": null
+        }
+      ],
+      "stops": [
+        {
+          "truck_id": "toni-s-smokin-grill-e8mrk",
+          "truck_name": "Toni's Smokin' Grill",
+          "cuisine": "Other",
+          "distance_miles": 1.6,
+          "is_base_location": false,
+          "open_now": true,
+          "venue": "Bent River Brewing Company",
+          "address": "512 24th St, Rock Island, IL 61201, USA",
+          "city": "Rock Island",
+          "starts_at": "Sat, Oct 17, 11:00 AM",
+          "ends_at": "Sat, Oct 17, 2:00 PM"
+        },
+        {
+          "truck_id": "chick-n-dips-8uajs",
+          "truck_name": "Chick N\u2019Dips",
+          "cuisine": "Chicken",
+          "distance_miles": 0.6,
+          "is_base_location": true,
+          "open_now": null,
+          "venue": null,
+          "address": "421 W River Dr, Davenport, IA 52801",
+          "city": null,
+          "starts_at": null,
+          "ends_at": null
+        },
+        {
+          "truck_id": "bonbon-s-tacos-yp_1i",
+          "truck_name": "Bonbon\u2019s Tacos",
+          "cuisine": "Mexican",
+          "distance_miles": 1.2,
+          "is_base_location": true,
+          "open_now": null,
+          "venue": null,
+          "address": "1218 N Brady St, Davenport, IA 52803",
+          "city": null,
+          "starts_at": null,
+          "ends_at": null
+        },
+        {
+          "truck_id": "luna-kitchen-liggw",
+          "truck_name": "Luna Kitchen",
+          "cuisine": "Other",
+          "distance_miles": 1.4,
+          "is_base_location": true,
+          "open_now": null,
+          "venue": null,
+          "address": null,
+          "city": null,
+          "starts_at": null,
+          "ends_at": null
+        },
+        {
+          "truck_id": "mo-flava-hdsqo",
+          "truck_name": "Mo Flava",
+          "cuisine": "Other",
+          "distance_miles": 2.7,
+          "is_base_location": true,
+          "open_now": null,
+          "venue": null,
+          "address": "3622 N Brady St, Davenport, IA 52806",
+          "city": null,
+          "starts_at": null,
+          "ends_at": null
+        },
+        {
+          "truck_id": "new-york-style-hot-dog-3lzvs",
+          "truck_name": "New York Style Hot Dog",
+          "cuisine": "Hot Dogs",
+          "distance_miles": 2.9,
+          "is_base_location": true,
+          "open_now": null,
+          "venue": null,
+          "address": "500 44th St, Rock Island, IL 61201",
+          "city": null,
+          "starts_at": null,
+          "ends_at": null
+        }
+      ]
+    }
+  }
+]

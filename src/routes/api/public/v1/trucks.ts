@@ -12,7 +12,7 @@ export const Route = createFileRoute("/api/public/v1/trucks")({
         const p = SearchQuery.safeParse(Object.fromEntries(new URL(request.url).searchParams));
         if (!p.success) return Response.json({ error: "invalid query" }, { status: 400 });
         const r = await runSearch(p.data, { days: 3, limit: 20 });
-        if ("error" in r) return Response.json({ error: r.error }, { status: r.error === "address not found" ? 400 : 500 });
+        if ("error" in r) return Response.json({ error: r.error }, { status: r.error === "location not found" ? 400 : 500 });
         return Response.json({
           origin: r.origin?.label || null, radius_miles: r.radius,
           trucks: r.hits.map(({ truck: t, stops, open_now, distance_miles, is_base_location }) => ({

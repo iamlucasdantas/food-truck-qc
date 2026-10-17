@@ -8,7 +8,7 @@ export function useTrucks() {
   return useQuery({
     queryKey: ["trucks"],
     queryFn: async (): Promise<Truck[]> => {
-      const { data, error } = await supabase.from("trucks").select("*").eq("status", "active").order("name");
+      const { data, error } = await supabase.from("trucks").select("*").eq("status", "active").eq("is_food_truck", true).order("name");
       if (error) throw error;
       return data;
     },

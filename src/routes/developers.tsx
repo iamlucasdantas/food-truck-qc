@@ -1,6 +1,8 @@
 import { Logo } from "@/components/Logo";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
+import examples from "@/data/agent-api-examples.json";
+
 const BASE = "https://app.foodtruckqc.com";
 
 export const Route = createFileRoute("/developers")({
@@ -19,17 +21,17 @@ export const Route = createFileRoute("/developers")({
 });
 
 const PARAMS: [string, string][] = [
-  ["query", "Free text over name, cuisine and menu (e.g. tacos)"],
-  ["location / city", "City or place name, e.g. Moline"],
-  ["cuisine", "Type of food, e.g. bbq, mexican, pizza"],
-  ["dish / menu_item", "Item on the published menu, e.g. birria"],
-  ["open_now", "true = only trucks open right now"],
-  ["near / address", "Your address; results include distance_miles and are sorted nearest first"],
-  ["lat + lng", "Coordinates instead of an address"],
-  ["radius_miles", "Max distance from near / lat+lng (default 10, max 100)"],
-  ["truck_id", "Limit to one truck"],
-  ["days", "How many days ahead to look (1–14, default 3)"],
-  ["limit", "Max results (1–50)"],
+  ["location", "Smart city, typo, QC alias, address or landmark. Empty defaults to Quad Cities: 15 miles around Davenport (41.5236, -90.5776). Cities use 5 miles plus saved-city matches; addresses use 5 miles. Berendorf IA resolves to Bettendorf. State suffixes and downtown are ignored."],
+  ["city / near / address / lat + lng", "Backwards-compatible aliases for location. Precedence: location, city, near, address, then coordinate pair. QC, QCA, quad cities, around here and anywhere mean the whole region."],
+  ["radius_miles", "Override radius: 1–100 miles. Defaults: region 15; city/address 5."],
+  ["cuisine", "Cuisine plus synonyms: tacos/taqueria/Mexican, BBQ/barbecue/smoked, burgers, Asian, dessert and more."],
+  ["dish / menu_item", "Fuzzy, plural-insensitive published item names/descriptions; quesabirria matches Birria Tacos. Description fallback only without a menu."],
+  ["query", "Fuzzy truck name, cuisine, description and published menu; exact truck names first."],
+  ["open_now", "true = a real stop happening now; base locations never count as open."],
+  ["when", "now, today, tomorrow, this_week (through Sunday), or YYYY-MM-DD. Chicago time; search defaults today."],
+  ["days", "Upcoming window: 1–14 days, default 3; when overrides days."],
+  ["truck_id", "Only one truck (IDs may contain letters/numbers/hyphens)."],
+  ["limit", "1–50, default 10; count is the number returned, not total matches."],
 ];
 
 function Code({ children }: { children: string }) {
@@ -56,7 +58,7 @@ function Developers() {
       </ul>
 
       <h2 className="text-xl font-bold">Search parameters</h2>
-      <p className="text-sm text-muted-foreground">Supported by all truck and stop endpoints; combine freely.</p>
+      <p className="text-sm text-muted-foreground">Smart behavior is shared by the two chat endpoints and MCP search_trucks / upcoming_stops; combine filters freely. Personal endpoints retain their existing response fields.</p>
       <div className="overflow-x-auto rounded-lg border">
         <table className="w-full text-sm">
           <thead className="bg-muted text-left"><tr><th className="p-2">Parameter</th><th className="p-2">Description</th></tr></thead>
@@ -64,33 +66,24 @@ function Developers() {
         </table>
       </div>
 
-      <h2 className="text-xl font-bold">Examples</h2>
-      <p className="text-sm">BBQ trucks within 5 miles of an address, open now:</p>
-      <Code>{`curl -H "x-api-key: YOUR_KEY" \\
-  "${BASE}/api/public/chat-search-trucks?near=2nd%20St%2C%20Davenport&radius_miles=5&cuisine=bbq&open_now=true"`}</Code>
-      <p className="text-sm">Response:</p>
-      <Code>{`{
-  "origin": "West 2nd Street, Davenport, Iowa, 52802, United States",
-  "radius_miles": 5,
-  "trucks": [{
-    "truck_id": "…", "name": "…", "cuisine": "BBQ", "city": "Davenport",
-    "open_now": true, "distance_miles": 0.4, "is_base_location": false,
-    "current_or_next_stop": { "venue": "…", "address": "…", "starts_at": "Sat, Oct 17, 11:00 AM", "ends_at": "Sat, Oct 17, 2:00 PM" },
-    "base_address": null,
-    "menu_highlights": ["Brisket plate $14"],
-    "app_url": "${BASE}/truck/…"
-  }]
-}`}</Code>
-      <p className="text-sm">Stops in Moline serving tacos over the next 7 days:</p>
-      <Code>{`curl -H "x-api-key: YOUR_KEY" "${BASE}/api/public/chat-upcoming-stops?city=Moline&dish=tacos&days=7"`}</Code>
-      <p className="text-sm">With a personal key:</p>
-      <Code>{`curl -H "Authorization: Bearer ftqc_YOUR_KEY" "${BASE}/api/public/v1/trucks?cuisine=pizza&limit=5"`}</Code>
-
+      <h2 className="text-xl font-bold">Response</h2>
+      <p className="text-sm">Both chat endpoints and MCP tools return resolved_location, filters, count, results, message and next_available. Each result has truck_id, name, cuisine, open_now, is_base_location, distance_miles, stop, base_address, matched_on, matched_items, menu_highlights and app_url. Stops use Central time. Legacy trucks, stops, current_or_next_stop and origin remain available.</p>
+      <Code>{JSON.stringify(examples[0]?.response, null, 2)}</Code>
+      <h2 className="text-xl font-bold">Verified example requests</h2>
+      <p className="text-sm text-muted-foreground">Real responses captured October 17, 2026. Opening hours and results change over time; no menu or schedule is invented.</p>
+      {examples.map((example, i) => <section key={example.request} className="space-y-2 border-t pt-4">
+        <h3 className="font-semibold">{i + 1}. {example.request}</h3>
+        <Code>{`curl -H "x-api-key: YOUR_KEY" "${BASE}/api/public/${example.request}"`}</Code>
+        <p className="text-sm">HTTP {example.status} · {example.response.count} results</p>
+        <details><summary className="cursor-pointer text-sm font-medium">Real JSON response</summary><Code>{JSON.stringify(example.response, null, 2)}</Code></details>
+      </section>)}
       <h2 className="text-xl font-bold">Notes</h2>
       <ul className="list-disc space-y-1 pl-5 text-sm">
         <li>Fixed-location trucks without a scheduled stop appear with <code>is_base_location: true</code> and no hours.</li>
-        <li>Duplicate announcements of the same outing are merged into one stop.</li>
-        <li>An address that can't be found returns <code>400 {"{"}"error":"address not found"{"}"}</code>.</li>
+        <li>Weekly/biweekly/monthly schedules expand into real Chicago-time stops. Duplicate announcements of the same outing are merged.</li>
+        <li>An unresolved location returns HTTP 400 with error "location not found" and hint "try a city like Davenport or a nearby street".</li>
+        <li>Restaurants and chains are excluded; Admin can change the food truck classification. Zero results include the next matching stop within 7 days when known.</li>
+        <li>Results sort open now, soonest stop, then distance; an exact truck-name search takes priority.</li>
         <li>CORS is enabled on the chat agent endpoints. An MCP server is also available at <code>{BASE}/mcp</code> (sign-in required).</li>
       </ul>
     </main>

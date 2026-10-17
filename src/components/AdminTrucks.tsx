@@ -35,7 +35,7 @@ const DENSITY_KEY = "ftqc-admin-density";
 
 type Row = {
   id: string; name: string; business_name: string; category: string; emoji: string; base_address: string | null; logo_url: string | null;
-  truck_type: string; status: string; claimed_by: string | null; source: string; created_at: string; updated_at: string; deleted_at: string | null;
+  truck_type: string; is_food_truck: boolean; status: string; claimed_by: string | null; source: string; created_at: string; updated_at: string; deleted_at: string | null;
   menu_search: string; merged_into: string | null; phone: string | null; website: string | null; instagram: string | null; facebook: string | null;
 };
 
@@ -73,7 +73,7 @@ export function AdminTrucks({ search }: { search: S }) {
   const { data = [], isLoading } = useQuery({
     queryKey: ["admin", "trucks"],
     queryFn: async () => ((await supabase.from("trucks")
-      .select("id,name,business_name,category,emoji,base_address,logo_url,truck_type,status,claimed_by,source,created_at,updated_at,deleted_at,menu_search,merged_into,phone,website,instagram,facebook")
+      .select("id,name,business_name,category,emoji,base_address,logo_url,truck_type,is_food_truck,status,claimed_by,source,created_at,updated_at,deleted_at,menu_search,merged_into,phone,website,instagram,facebook")
       .order("created_at", { ascending: false }).limit(5000)).data ?? []) as Row[],
   });
   const rows = useMemo(() => data.map((t) => ({ ...t, city: cityOf(t.base_address), adminStatus: adminStatus(t) })), [data]);
@@ -109,7 +109,7 @@ export function AdminTrucks({ search }: { search: S }) {
   async function save(id: string, fd: FormData) {
     const g = (k: string) => String(fd.get(k) ?? "").trim() || null;
     const tt = g("truck_type");
-    const { error } = await supabase.from("trucks").update({ name: g("name") ?? "Untitled", category: g("category") ?? "Other", phone: g("phone"), website: g("website"), instagram: g("instagram"), facebook: g("facebook"), ...(tt === "fixed" || tt === "mobile" ? { truck_type: tt } : {}) }).eq("id", id);
+    const { error } = await supabase.from("trucks").update({ is_food_truck: fd.get("is_food_truck") === "on", name: g("name") ?? "Untitled", category: g("category") ?? "Other", phone: g("phone"), website: g("website"), instagram: g("instagram"), facebook: g("facebook"), ...(tt === "fixed" || tt === "mobile" ? { truck_type: tt } : {}) }).eq("id", id);
     if (error) return void toast.error(error.message);
     toast.success("Saved"); setEdit(null); inv();
   }
@@ -339,6 +339,7 @@ export function AdminTrucks({ search }: { search: S }) {
                   <input name={k} className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring" defaultValue={editing[k] ?? ""} />
                 </label>
               ))}
+              <label className="flex items-center gap-2 text-sm sm:col-span-2"><input type="checkbox" name="is_food_truck" defaultChecked={editing.is_food_truck} />Food truck, trailer or cart</label>
               <label className="space-y-1 text-sm sm:col-span-2"><span className="text-muted-foreground">Type</span>
                 <select name="truck_type" className="h-9 w-full rounded-lg border border-input bg-background px-2 text-sm" defaultValue={editing.truck_type}>
                   <option value="mobile">Mobile</option><option value="fixed">Fixed location</option>
