@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as DevelopersRouteImport } from './routes/developers'
 import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as OwnerRouteImport } from './routes/owner'
@@ -55,6 +56,11 @@ const AdminRoute = AdminRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DevelopersRoute = DevelopersRouteImport.update({
+  id: '/developers',
+  path: '/developers',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FavoritesRoute = FavoritesRouteImport.update({
@@ -186,6 +192,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/developers': typeof DevelopersRoute
   '/favorites': typeof FavoritesRoute
   '/mcp': typeof McpRoute
   '/owner': typeof OwnerRouteWithChildren
@@ -215,6 +222,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/developers': typeof DevelopersRoute
   '/favorites': typeof FavoritesRoute
   '/mcp': typeof McpRoute
   '/owner': typeof OwnerRouteWithChildren
@@ -246,6 +254,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
+  '/developers': typeof DevelopersRoute
   '/favorites': typeof FavoritesRoute
   '/mcp': typeof McpRoute
   '/owner': typeof OwnerRouteWithChildren
@@ -277,6 +286,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/developers'
     | '/favorites'
     | '/mcp'
     | '/owner'
@@ -306,6 +316,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/auth'
+    | '/developers'
     | '/favorites'
     | '/mcp'
     | '/owner'
@@ -336,6 +347,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/admin'
     | '/auth'
+    | '/developers'
     | '/favorites'
     | '/mcp'
     | '/owner'
@@ -367,6 +379,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
+  DevelopersRoute: typeof DevelopersRoute
   FavoritesRoute: typeof FavoritesRoute
   McpRoute: typeof McpRoute
   OwnerRoute: typeof OwnerRouteWithChildren
@@ -417,6 +430,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/developers': {
+      id: '/developers'
+      path: '/developers'
+      fullPath: '/developers'
+      preLoaderRoute: typeof DevelopersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/favorites': {
@@ -620,6 +640,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
+  DevelopersRoute: DevelopersRoute,
   FavoritesRoute: FavoritesRoute,
   McpRoute: McpRoute,
   OwnerRoute: OwnerRouteWithChildren,
