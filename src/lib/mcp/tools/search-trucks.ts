@@ -1,29 +1,18 @@
-import { defineTool, ToolError } from "@lovable.dev/mcp-js";
-import { z } from "zod";
-import { supabaseForUser } from "../supabase";
-
+import { defineTool, ToolError } from '@lovable.dev/mcp-js';
+import { z } from 'zod';
+import { supabaseForUser } from '../supabase';
+import { AgentInputShape, runSearch, agentResponse } from '@/lib/api-search.server';
 export default defineTool({
-  name: "search_trucks",
-  title: "Search food trucks",
-  description: "Find approved Quad Cities food trucks by name, cuisine or dish.",
-  inputSchema: {
-    query: z.string().max(100).optional().describe("Truck name, cuisine or dish, e.g. 'tacos'. Omit to list all."),
-    limit: z.number().int().min(1).max(50).optional().describe("Max results (default 20)."),
-  },
-  annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
-  handler: async ({ query, limit }, ctx) => {
-    const sb = supabaseForUser(ctx);
-    let q = sb.from("trucks").select("id, name, business_name, category, description, truck_type, website")
-      .eq("status", "active").is("deleted_at", null).order("name").limit(limit ?? 20);
-    const term = query?.trim().replace(/[%,()]/g, " ");
-    if (term) q = q.or(`name.ilike.%${term}%,category.ilike.%${term}%,menu_search.ilike.%${term}%,description.ilike.%${term}%`);
-    const { data, error } = await q;
-    if (error) throw new ToolError(error.message);
-    const trucks = (data ?? []).map((t) => ({
-      id: t.id, name: t.name, business: t.business_name ?? null, cuisine: t.category ?? null,
-      type: t.truck_type ?? null, website: t.website ?? null,
-    }));
-    const text = trucks.length ? trucks.map((t) => `${t.id}: ${t.name}${t.cuisine ? ` (${t.cuisine})` : ""}`).join("\n") : "No trucks found.";
-    return { content: [{ type: "text", text }], structuredContent: { trucks } };
+  name: 'search_trucks',
+  title: 'Search food trucks',
+  description: 'Find approved Quad Cities food trucks by smart location, cuisine, published dishes and Central-time schedules including recurring stops.',
+  inputSchema: {...AgentInputShape,open_now:z.boolean().optional(),lat:z.number().min(-90).max(90).optional(),lng:z.number().min(-180).max(180).optional(),radius_miles:z.number().min(1).max(100).optional(),days:z.number().int().min(1).max(14).optional(),limit:z.number().int().min(1).max(50).optional()},
+  annotations: { readOnlyHint:true,idempotentHint:true,openWorldHint:false },
+  handler: async (input,ctx) => {
+    if ((input.lat == null) !== (input.lng == null)) throw new ToolError('Provide lat and lng together');
+    const r = await runSearch(input,{days:3,limit:10,upcoming:false},supabaseForUser(ctx));
+    if ('error' in r) throw new ToolError(r.error);
+    const response = agentResponse(r,false);
+    return {content:[{type:'text',text:JSON.stringify(response)}],structuredContent:response};
   },
 });

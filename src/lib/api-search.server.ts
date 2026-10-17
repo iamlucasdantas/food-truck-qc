@@ -39,15 +39,14 @@ export async function runSearch(input:SearchInput, defaults:{days:number;limit:n
   const p = {query:input.query,cuisine:input.cuisine,dish:input.dish ?? input.menu_item,open_now:input.open_now,when:input.when,limit:input.limit ?? defaults.limit};
   const hits = agentSearch(tr.data ?? [],stops,p,resolved,window.from,window.to,now);
   const next = hits.length ? null : agentSearch(tr.data ?? [],stops,{...p,open_now:false,when:undefined,limit:50},resolved,now,future,now).filter(h => h.stops.some(s => new Date(s.starts_at) > now)).sort((a,b) => (a.stops.find(s => new Date(s.starts_at)>now)?.starts_at ?? '9').localeCompare(b.stops.find(s => new Date(s.starts_at)>now)?.starts_at ?? '9'))[0];
-  return {hits,origin:{lat:resolved.lat,lng:resolved.lng,label:resolved.name},radius:resolved.radius_miles,resolved,filters:{query:input.query ?? null,cuisine:input.cuisine ?? null,dish:input.dish ?? input.menu_item ?? null,open_now:input.open_now === true || input.when === 'now',when:window.when},next,now};
+  return {hits,limit:p.limit,origin:{lat:resolved.lat,lng:resolved.lng,label:resolved.name},radius:resolved.radius_miles,resolved,filters:{query:input.query ?? null,cuisine:input.cuisine ?? null,dish:input.dish ?? input.menu_item ?? null,open_now:input.open_now === true || input.when === 'now',when:window.when},next,now};
 }
 type SearchSuccess = Exclude<Awaited<ReturnType<typeof runSearch>>, {error:string}>;
 export function agentResponse(r:SearchSuccess, upcoming=false) {
   const result = (h:SearchSuccess['hits'][number], s = h.stops[0]) => ({truck_id:h.truck.id,name:h.truck.name,cuisine:h.truck.category || null,open_now:s?.open_now ?? false,is_base_location:!s,distance_miles:h.distance_miles,stop:s ? {venue:s.venue_name,address:s.address,city:s.city,starts_at:chicago(s.starts_at),ends_at:chicago(s.ends_at)} : null,base_address:!s ? h.truck.base_address : null,matched_on:h.matched_on,matched_items:h.matched_items,menu_highlights:h.menu_highlights,app_url:`https://app.foodtruckqc.com/truck/${h.truck.id}`});
   const results = upcoming ? r.hits.flatMap(h => h.stops.length ? h.stops.map(s => result(h,s)) : [result(h)]) : r.hits.map(h => result(h));
-  results.sort((a,b) => Number(b.open_now)-Number(a.open_now));
-  const limited = results.slice(0,r.hits.length ? Math.max(1,r.hits.length) : 10); // endpoint limit applied below for stop results
-  const display = upcoming ? results : limited;
+  if (upcoming) results.sort((a,b) => Number(b.open_now)-Number(a.open_now) || Date.parse(a.stop?.starts_at ?? '9999-01-01')-Date.parse(b.stop?.starts_at ?? '9999-01-01') || (a.distance_miles ?? Infinity)-(b.distance_miles ?? Infinity));
+  const display = results.slice(0,r.limit);
   const next = r.next ? result(r.next,r.next.stops.find(s => new Date(s.starts_at)>r.now)) : null;
   const where = r.resolved.type === 'city' ? `in ${r.resolved.name}` : `within ${r.radius} mi of ${r.resolved.name}`;
   const food = r.filters.dish || r.filters.cuisine || '';
