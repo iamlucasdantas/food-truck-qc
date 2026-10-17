@@ -1,0 +1,3 @@
+ALTER TABLE public.trucks ADD COLUMN is_food_truck boolean NOT NULL DEFAULT true;
+COMMENT ON COLUMN public.trucks.is_food_truck IS 'Admin classification: false excludes restaurants and chains from public truck discovery.';
+UPDATE public.trucks SET is_food_truck = false WHERE lower(regexp_replace(name, '[^a-zA-Z0-9]', '', 'g')) ~ '^(mcdonalds|wendys|papajohns|dennys|caseys|kwikstar|pandaexpress|chickfila|hardees|sonic|portillos|godfathers|burgerking|tacobell|kfc|subway|dominos|pizzahut|arbys|culvers|dairyqueen|jimmyjohns|applebees|ihop|panerabread|chipotle|buffalowildwings|olivegarden|redlobster|texasroadhouse)' ;

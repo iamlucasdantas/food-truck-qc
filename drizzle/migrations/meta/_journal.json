@@ -176,6 +176,13 @@
       "when": 1792250543053,
       "tag": "0024_venues_admin_only_read",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1792254586680,
+      "tag": "0025_classify_food_trucks",
+      "breakpoints": true
     }
   ]
 }

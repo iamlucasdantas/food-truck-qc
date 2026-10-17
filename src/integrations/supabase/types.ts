@@ -767,6 +767,7 @@ export type Database = {
           google_place_id: string | null
           id: string
           instagram: string | null
+          is_food_truck: boolean
           logo_url: string | null
           menu: Json
           menu_search: string
@@ -803,6 +804,7 @@ export type Database = {
           google_place_id?: string | null
           id: string
           instagram?: string | null
+          is_food_truck?: boolean
           logo_url?: string | null
           menu?: Json
           menu_search?: string
@@ -839,6 +841,7 @@ export type Database = {
           google_place_id?: string | null
           id?: string
           instagram?: string | null
+          is_food_truck?: boolean
           logo_url?: string | null
           menu?: Json
           menu_search?: string
