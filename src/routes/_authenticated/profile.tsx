@@ -14,6 +14,7 @@ import { OwnerHome } from '@/components/profile/OwnerHome';
 import { BusinessSettings } from '@/components/profile/BusinessSettings';
 import { SecuritySettings } from '@/components/profile/SecuritySettings';
 import { Section } from '@/components/profile/shared';
+import { ApiKeys } from '@/components/profile/ApiKeys';
 import { toast } from 'sonner';
 import type { Tables } from '@/integrations/supabase/types';
 export const Route=createFileRoute('/_authenticated/profile')({staticData:{sitemap:false},validateSearch:(s:Record<string,unknown>)=>({view:s['view']==='foodie'?'foodie':s['view']==='owner'?'owner':undefined,section:typeof s['section']==='string'?s['section']:'home'}),head:()=>({meta:[{title:'Your profile | FoodTruckQC'},{name:'description',content:'Your Foodie collections, owner home and private account settings.'},{property:'og:title',content:'Your profile | FoodTruckQC'},{property:'og:description',content:'Your personal FoodTruckQC home.'},{property:'og:type',content:'website'},{name:'twitter:card',content:'summary'},{name:'robots',content:'noindex'}]}),component:ProfileHub});
