@@ -3,6 +3,7 @@ import { Logo } from "@/components/Logo";
 import { OwnerSchedule } from "@/components/OwnerSchedule";
 import { OwnerPhotos } from "@/components/OwnerPhotos";
 import { OwnerMenu } from "@/components/OwnerMenu";
+import { LocationConfirmation } from '@/components/LocationConfirmation';
 import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { ClientOnly } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -368,6 +369,7 @@ function ProfileForm({ truck, siblings }: { truck: Truck; siblings: string[] }) 
         </select>
       </label>
       {f.truck_type === "fixed" && txt("base_address", "Address of your fixed location")}
+      {truck.status === 'active' && <LocationConfirmation truck={truck} />}
       {txt("phone", "Truck phone (optional)")}
       <fieldset className="space-y-2">
         <legend className="text-sm font-semibold">Payment methods</legend>

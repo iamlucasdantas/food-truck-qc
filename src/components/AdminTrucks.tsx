@@ -19,6 +19,7 @@ import { CUISINES, adminDefaultVisible, adminStatus, cityOf, filtersToSearch, pa
 import { EmptyState, IconAction, Initials, SectionHeader, StatusPill, btn, statusTone } from "@/components/admin/ui";
 import { TruckDrawer } from "@/components/admin/TruckDrawer";
 import { cn } from "@/lib/utils";
+import { LocationQueue } from '@/components/admin/LocationQueue';
 
 const PAGE = 50;
 const STATUS_LABEL: Record<AdminStatus, string> = { approved: "Approved", pending: "Pending", rejected: "Rejected", deleted: "Deleted" };
@@ -186,6 +187,7 @@ export function AdminTrucks({ search }: { search: S }) {
 
   return (
     <div className="space-y-4">
+      <LocationQueue />
       <SectionHeader title="Trucks" description="Search, edit, merge, archive and restore every listing."
         actions={
           <DropdownMenu>

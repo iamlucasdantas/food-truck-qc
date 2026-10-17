@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { LocationConfirmation } from '@/components/LocationConfirmation';
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { ExternalLink, Pencil, GitMerge, Archive, CheckCircle2, Trash2, RotateCcw, UtensilsCrossed, ImageOff, CalendarX, History } from "lucide-react";
@@ -78,6 +79,7 @@ function Body({ id, actions }: { id: string; actions: DrawerActions }) {
               ))}
             </dl>
             {t.description && <p className="mt-6 whitespace-pre-line text-sm text-muted-foreground">{t.description}</p>}
+            {!t.deleted_at && <LocationConfirmation truck={t} admin />}
           </TabsContent>
           <TabsContent value="menu" className="mt-0"><MenuTab sections={(t.menu_sections as MenuSection[] | null) ?? []} /></TabsContent>
           <TabsContent value="photos" className="mt-0"><PhotosTab id={t.id} /></TabsContent>

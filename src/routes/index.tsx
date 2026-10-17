@@ -1,5 +1,6 @@
 import { CUISINES, cityOf, matchesFilters, parseFilters, filtersToSearch, type CuisineKey, type Filters } from "@/data/filters";
 import { truckByline } from "@/data/onboarding";
+import { locationVerified } from '@/data/location-confirmation';
 import { Logo } from "@/components/Logo";
 import { SiteFooter } from "@/components/SiteFooter";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -220,7 +221,7 @@ function Index() {
   );
 
   const statusText = (r: (typeof results)[number]) =>
-    !r.stop || r.status === "none" ? "Location not confirmed"
+    !r.stop || r.status === "none" ? (locationVerified(r.truck) ? "Location verified" : "Location awaiting confirmation")
       : r.status === "open" ? (r.stop.is_live ? `Here until ${fmtCentral(r.stop.ends_at)}` : `Open now · until ${fmtTime(r.stop.ends_at)}`)
         : `${dayIdx === 0 ? "Today" : dayIdx === 1 ? "Tomorrow" : "Scheduled"} ${fmtRange(r.stop)}`;
 
