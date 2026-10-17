@@ -611,18 +611,18 @@
           "app_url": "https://app.foodtruckqc.com/truck/new-york-style-hot-dog-3lzvs"
         },
         {
-          "truck_id": "grilled-cheese-bar-_dfk8",
-          "name": "Grilled Cheese Bar",
-          "cuisine": "Sandwiches",
+          "truck_id": "luna-kitchen-liggw",
+          "name": "Luna Kitchen",
+          "cuisine": "Other",
           "open_now": false,
           "is_base_location": true,
           "distance_miles": 2.2,
           "stop": null,
-          "base_address": "1019 Mound St, Davenport, IA 52803",
+          "base_address": null,
           "matched_on": [],
           "matched_items": [],
           "menu_highlights": [],
-          "app_url": "https://app.foodtruckqc.com/truck/grilled-cheese-bar-_dfk8"
+          "app_url": "https://app.foodtruckqc.com/truck/luna-kitchen-liggw"
         }
       ],
       "message": "10 trucks in Rock Island",
@@ -835,18 +835,18 @@
           "current_or_next_stop": null
         },
         {
-          "truck_id": "grilled-cheese-bar-_dfk8",
-          "name": "Grilled Cheese Bar",
-          "cuisine": "Sandwiches",
+          "truck_id": "luna-kitchen-liggw",
+          "name": "Luna Kitchen",
+          "cuisine": "Other",
           "open_now": false,
           "is_base_location": true,
           "distance_miles": 2.2,
           "stop": null,
-          "base_address": "1019 Mound St, Davenport, IA 52803",
+          "base_address": null,
           "matched_on": [],
           "matched_items": [],
           "menu_highlights": [],
-          "app_url": "https://app.foodtruckqc.com/truck/grilled-cheese-bar-_dfk8",
+          "app_url": "https://app.foodtruckqc.com/truck/luna-kitchen-liggw",
           "city": null,
           "current_or_next_stop": null
         }
@@ -970,14 +970,14 @@
           "ends_at": null
         },
         {
-          "truck_id": "grilled-cheese-bar-_dfk8",
-          "truck_name": "Grilled Cheese Bar",
-          "cuisine": "Sandwiches",
+          "truck_id": "luna-kitchen-liggw",
+          "truck_name": "Luna Kitchen",
+          "cuisine": "Other",
           "distance_miles": 2.2,
           "is_base_location": true,
           "open_now": null,
           "venue": null,
-          "address": "1019 Mound St, Davenport, IA 52803",
+          "address": null,
           "city": null,
           "starts_at": null,
           "ends_at": null
@@ -1004,7 +1004,7 @@
         "open_now": false,
         "when": "today"
       },
-      "count": 9,
+      "count": 6,
       "results": [
         {
           "truck_id": "toni-s-smokin-grill-e8mrk",
@@ -1069,48 +1069,6 @@
           "app_url": "https://app.foodtruckqc.com/truck/luna-kitchen-liggw"
         },
         {
-          "truck_id": "gunchies-davenport-tptjo",
-          "name": "Gunchies Davenport",
-          "cuisine": "Other",
-          "open_now": false,
-          "is_base_location": true,
-          "distance_miles": 1.6,
-          "stop": null,
-          "base_address": "2905 Telegraph Rd, Davenport, IA 52804",
-          "matched_on": [],
-          "matched_items": [],
-          "menu_highlights": [],
-          "app_url": "https://app.foodtruckqc.com/truck/gunchies-davenport-tptjo"
-        },
-        {
-          "truck_id": "uncle-bill-s-pizza-ln-5s",
-          "name": "Uncle Bill's Pizza",
-          "cuisine": "Pizza",
-          "open_now": false,
-          "is_base_location": true,
-          "distance_miles": 2.3,
-          "stop": null,
-          "base_address": "3610 W Locust St, Davenport, IA 52804",
-          "matched_on": [],
-          "matched_items": [],
-          "menu_highlights": [],
-          "app_url": "https://app.foodtruckqc.com/truck/uncle-bill-s-pizza-ln-5s"
-        },
-        {
-          "truck_id": "grilled-cheese-bar-_dfk8",
-          "name": "Grilled Cheese Bar",
-          "cuisine": "Sandwiches",
-          "open_now": false,
-          "is_base_location": true,
-          "distance_miles": 2.5,
-          "stop": null,
-          "base_address": "1019 Mound St, Davenport, IA 52803",
-          "matched_on": [],
-          "matched_items": [],
-          "menu_highlights": [],
-          "app_url": "https://app.foodtruckqc.com/truck/grilled-cheese-bar-_dfk8"
-        },
-        {
           "truck_id": "mo-flava-hdsqo",
           "name": "Mo Flava",
           "cuisine": "Other",
@@ -1139,7 +1097,7 @@
           "app_url": "https://app.foodtruckqc.com/truck/new-york-style-hot-dog-3lzvs"
         }
       ],
-      "message": "9 trucks within 3 mi of West 2nd Street, Davenport, Rockingham Township, Scott County, Iowa, 52802, United States",
+      "message": "6 trucks within 3 mi of West 2nd Street, Davenport, Rockingham Township, Scott County, Iowa, 52802, United States",
       "next_available": null,
       "origin": "West 2nd Street, Davenport, Rockingham Township, Scott County, Iowa, 52802, United States",
       "radius_miles": 3,
@@ -1217,54 +1175,6 @@
           "matched_items": [],
           "menu_highlights": [],
           "app_url": "https://app.foodtruckqc.com/truck/luna-kitchen-liggw",
-          "city": null,
-          "current_or_next_stop": null
-        },
-        {
-          "truck_id": "gunchies-davenport-tptjo",
-          "name": "Gunchies Davenport",
-          "cuisine": "Other",
-          "open_now": false,
-          "is_base_location": true,
-          "distance_miles": 1.6,
-          "stop": null,
-          "base_address": "2905 Telegraph Rd, Davenport, IA 52804",
-          "matched_on": [],
-          "matched_items": [],
-          "menu_highlights": [],
-          "app_url": "https://app.foodtruckqc.com/truck/gunchies-davenport-tptjo",
-          "city": null,
-          "current_or_next_stop": null
-        },
-        {
-          "truck_id": "uncle-bill-s-pizza-ln-5s",
-          "name": "Uncle Bill's Pizza",
-          "cuisine": "Pizza",
-          "open_now": false,
-          "is_base_location": true,
-          "distance_miles": 2.3,
-          "stop": null,
-          "base_address": "3610 W Locust St, Davenport, IA 52804",
-          "matched_on": [],
-          "matched_items": [],
-          "menu_highlights": [],
-          "app_url": "https://app.foodtruckqc.com/truck/uncle-bill-s-pizza-ln-5s",
-          "city": null,
-          "current_or_next_stop": null
-        },
-        {
-          "truck_id": "grilled-cheese-bar-_dfk8",
-          "name": "Grilled Cheese Bar",
-          "cuisine": "Sandwiches",
-          "open_now": false,
-          "is_base_location": true,
-          "distance_miles": 2.5,
-          "stop": null,
-          "base_address": "1019 Mound St, Davenport, IA 52803",
-          "matched_on": [],
-          "matched_items": [],
-          "menu_highlights": [],
-          "app_url": "https://app.foodtruckqc.com/truck/grilled-cheese-bar-_dfk8",
           "city": null,
           "current_or_next_stop": null
         },
@@ -1350,45 +1260,6 @@
           "open_now": null,
           "venue": null,
           "address": null,
-          "city": null,
-          "starts_at": null,
-          "ends_at": null
-        },
-        {
-          "truck_id": "gunchies-davenport-tptjo",
-          "truck_name": "Gunchies Davenport",
-          "cuisine": "Other",
-          "distance_miles": 1.6,
-          "is_base_location": true,
-          "open_now": null,
-          "venue": null,
-          "address": "2905 Telegraph Rd, Davenport, IA 52804",
-          "city": null,
-          "starts_at": null,
-          "ends_at": null
-        },
-        {
-          "truck_id": "uncle-bill-s-pizza-ln-5s",
-          "truck_name": "Uncle Bill's Pizza",
-          "cuisine": "Pizza",
-          "distance_miles": 2.3,
-          "is_base_location": true,
-          "open_now": null,
-          "venue": null,
-          "address": "3610 W Locust St, Davenport, IA 52804",
-          "city": null,
-          "starts_at": null,
-          "ends_at": null
-        },
-        {
-          "truck_id": "grilled-cheese-bar-_dfk8",
-          "truck_name": "Grilled Cheese Bar",
-          "cuisine": "Sandwiches",
-          "distance_miles": 2.5,
-          "is_base_location": true,
-          "open_now": null,
-          "venue": null,
-          "address": "1019 Mound St, Davenport, IA 52803",
           "city": null,
           "starts_at": null,
           "ends_at": null
