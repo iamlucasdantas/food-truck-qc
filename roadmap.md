@@ -1,5 +1,9 @@
 # Roadmap
 
+## Dependency security updates (not published)
+- [ ] Refresh affected dependency chains without transitive package overrides; verify every affected lockfile resolution and report unavailable fixes
+- [ ] Rerun dependency scan and regression tests; verify automatic build result
+
 ## Unsafe link-fetching fixes (not published)
 - [x] Add DNS preflight for both address families on every hop, manual redirects (max 5), 8-second total deadline and streaming byte limits (calendar 3 MB; page 300 KB)
 - [x] 47 focused security tests and 31 existing onboarding/calendar tests passed; real public HTML and iCal downloads passed; build OK; unrelated findings unchanged
