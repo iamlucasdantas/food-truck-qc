@@ -10,7 +10,7 @@ const trucks = [
 ];
 const stops = [
   S({ truck_id: "taco" }),
-  S({ truck_id: "bbq", city: "Davenport", address: "2 Brady St, Davenport, IA", lat: 41.55, lng: -90.6, starts_at: "2026-10-18T16:00:00Z", ends_at: "2026-10-18T20:00:00Z" }),
+  S({ truck_id: "bbq", city: "Davenport", address: "2 Brady St, Davenport, IA", lat: 41.55, lng: -90.6, starts_at: "2026-10-18T18:00:00Z", ends_at: "2026-10-18T22:00:00Z" }),
 ];
 const base = { days: 3, limit: 25 };
 const ids = (p: Parameters<typeof searchTrucks>[2]) => searchTrucks(trucks, stops, p, now).map((h) => h.truck.id);
