@@ -3,7 +3,7 @@ import { CalendarDays, List, ChevronDown } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import type { Stop } from '@/data/trucks';
-import { fmtRange } from '@/data/trucks';
+import { fmtCentral } from '@/data/trucks';
 import { UPCOMING_LIMIT, chicagoDay, calendarDate } from '@/data/public-schedule';
 
 export function PublicTruckSchedule({ stops, name }: { stops: Stop[]; name: string }) {
@@ -16,7 +16,7 @@ export function PublicTruckSchedule({ stops, name }: { stops: Stop[]; name: stri
   function entries(items: Stop[]) {
     return <ul className="divide-y divide-border">{items.map(s => <li key={s.id} className="grid gap-1 py-3 text-sm sm:grid-cols-[8rem_minmax(0,1fr)]">
       <span className="font-semibold">{new Date(s.starts_at).toLocaleDateString('en-US',{timeZone:'America/Chicago',weekday:'short',month:'short',day:'numeric'})}</span>
-      <div className="min-w-0"><p className="break-words font-medium">{s.venue_name}, {s.city}</p><p className="text-muted-foreground">{fmtRange(s)} · Central</p>{s.address && <p className="break-words text-muted-foreground">{s.address}</p>}</div>
+      <div className="min-w-0"><p className="break-words font-medium">{s.venue_name}, {s.city}</p><p className="text-muted-foreground">{fmtCentral(s.starts_at)}–{fmtCentral(s.ends_at)} · Central</p>{s.address && <p className="break-words text-muted-foreground">{s.address}</p>}</div>
     </li>)}</ul>;
   }
   return <section className="space-y-4 border-y border-border py-5" aria-labelledby="schedule-heading">
