@@ -793,6 +793,7 @@ export type Database = {
           base_address: string | null
           base_lat: number | null
           base_lng: number | null
+          base_location_confirmed_at: string | null
           business_name: string
           category: string
           claimed_by: string | null
@@ -804,6 +805,7 @@ export type Database = {
           emoji: string
           facebook: string | null
           google_hours_updated_at: string | null
+          google_location_verified: boolean
           google_place_id: string | null
           google_regular_hours: Json | null
           google_types: string[]
@@ -833,6 +835,7 @@ export type Database = {
           base_address?: string | null
           base_lat?: number | null
           base_lng?: number | null
+          base_location_confirmed_at?: string | null
           business_name?: string
           category?: string
           claimed_by?: string | null
@@ -844,6 +847,7 @@ export type Database = {
           emoji?: string
           facebook?: string | null
           google_hours_updated_at?: string | null
+          google_location_verified?: boolean
           google_place_id?: string | null
           google_regular_hours?: Json | null
           google_types?: string[]
@@ -873,6 +877,7 @@ export type Database = {
           base_address?: string | null
           base_lat?: number | null
           base_lng?: number | null
+          base_location_confirmed_at?: string | null
           business_name?: string
           category?: string
           claimed_by?: string | null
@@ -884,6 +889,7 @@ export type Database = {
           emoji?: string
           facebook?: string | null
           google_hours_updated_at?: string | null
+          google_location_verified?: boolean
           google_place_id?: string | null
           google_regular_hours?: Json | null
           google_types?: string[]
@@ -974,6 +980,10 @@ export type Database = {
     Functions: {
       admin_delete_trucks: { Args: { _ids: string[] }; Returns: number }
       admin_restore_truck: { Args: { _id: string }; Returns: undefined }
+      confirm_truck_location: {
+        Args: { _google_verified?: boolean; _truck_id: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

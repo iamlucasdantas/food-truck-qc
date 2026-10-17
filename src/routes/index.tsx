@@ -1,5 +1,6 @@
 import { CUISINES, cityOf, matchesFilters, parseFilters, filtersToSearch, type CuisineKey, type Filters } from "@/data/filters";
 import { truckByline } from "@/data/onboarding";
+import { locationVerified } from '@/data/location-confirmation';
 import { Logo } from "@/components/Logo";
 import { SiteFooter } from "@/components/SiteFooter";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -220,7 +221,7 @@ function Index() {
   );
 
   const statusText = (r: (typeof results)[number]) =>
-    !r.stop || r.status === "none" ? "Location not confirmed"
+    !r.stop || r.status === "none" ? (locationVerified(r.t) ? "Location verified" : "Location awaiting confirmation")
       : r.status === "open" ? (r.stop.is_live ? `Here until ${fmtCentral(r.stop.ends_at)}` : `Open now · until ${fmtTime(r.stop.ends_at)}`)
         : `${dayIdx === 0 ? "Today" : dayIdx === 1 ? "Tomorrow" : "Scheduled"} ${fmtRange(r.stop)}`;
 
@@ -250,6 +251,7 @@ function Index() {
               <span className="block truncate text-sm">{r.t.category} · {r.dist.toFixed(1)} mi</span>
               <span className="block truncate text-xs text-muted-foreground">{r.stop && r.status !== "none" ? `${r.stop.venue_name}, ${r.stop.city}` : (r.t.base_address ?? "Base location")}</span>
               {r.stop?.note === 'Google opening hours' && <span className="block text-xs text-muted-foreground">Google hours · {fmtRange(r.stop)} Central</span>}
+              {r.stop?.note === 'Google opening hours' && <span className="block text-xs text-muted-foreground">{locationVerified(r.t) ? 'Location verified' : 'Location awaiting confirmation'}</span>}
               <span className={`mt-1 inline-flex max-w-full items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold ${PILL[r.status]}`}>
                 <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${DOT[r.status]}`} /><span className="truncate">{statusText(r)}</span>
               </span>

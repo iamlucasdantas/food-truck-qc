@@ -12,6 +12,10 @@ const h = { apikey: KEY, "Content-Type": "application/json", Prefer: "return=rep
 const TRUCK = "floyds-burgers";
 
 describe("access rules (signed-out visitor)", () => {
+  it('cannot confirm a truck location without signing in', async () => {
+    const r = await fetch(`${URL_}/rest/v1/rpc/confirm_truck_location`, { method: 'POST', headers: h, body: JSON.stringify({ _truck_id: TRUCK, _google_verified: false }) });
+    expect(r.ok).toBe(false);
+  });
   it("cannot read private profile preferences", async () => {
     const r = await fetch(`${URL_}/rest/v1/profile_settings?select=user_id,bio`, { headers: h });
     const rows = r.ok ? await r.json() as unknown[] : [];
