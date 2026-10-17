@@ -169,6 +169,13 @@
       "when": 1792244252121,
       "tag": "0023_api_keys_insert_policy",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1792250543053,
+      "tag": "0024_venues_admin_only_read",
+      "breakpoints": true
     }
   ]
 }
