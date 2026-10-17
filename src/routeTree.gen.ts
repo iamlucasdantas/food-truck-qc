@@ -32,6 +32,9 @@ import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.
 import { Route as ApiPublicApifyWebhookRouteImport } from './routes/api/public/apify-webhook'
 import { Route as ApiPublicCalendarIdRouteImport } from './routes/api/public/calendar.$id'
 import { Route as ApiPublicJobsFacebookDailyRouteImport } from './routes/api/public/jobs/facebook-daily'
+import { Route as ApiPublicV1FavoritesRouteImport } from './routes/api/public/v1/favorites'
+import { Route as ApiPublicV1StopsRouteImport } from './routes/api/public/v1/stops'
+import { Route as ApiPublicV1TrucksRouteImport } from './routes/api/public/v1/trucks'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -149,6 +152,21 @@ const ApiPublicJobsFacebookDailyRoute =
     path: '/api/public/jobs/facebook-daily',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicV1FavoritesRoute = ApiPublicV1FavoritesRouteImport.update({
+  id: '/api/public/v1/favorites',
+  path: '/api/public/v1/favorites',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicV1StopsRoute = ApiPublicV1StopsRouteImport.update({
+  id: '/api/public/v1/stops',
+  path: '/api/public/v1/stops',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicV1TrucksRoute = ApiPublicV1TrucksRouteImport.update({
+  id: '/api/public/v1/trucks',
+  path: '/api/public/v1/trucks',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -173,6 +191,9 @@ export interface FileRoutesByFullPath {
   '/api/public/apify-webhook': typeof ApiPublicApifyWebhookRoute
   '/api/public/calendar/$id': typeof ApiPublicCalendarIdRoute
   '/api/public/jobs/facebook-daily': typeof ApiPublicJobsFacebookDailyRoute
+  '/api/public/v1/favorites': typeof ApiPublicV1FavoritesRoute
+  '/api/public/v1/stops': typeof ApiPublicV1StopsRoute
+  '/api/public/v1/trucks': typeof ApiPublicV1TrucksRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -197,6 +218,9 @@ export interface FileRoutesByTo {
   '/api/public/apify-webhook': typeof ApiPublicApifyWebhookRoute
   '/api/public/calendar/$id': typeof ApiPublicCalendarIdRoute
   '/api/public/jobs/facebook-daily': typeof ApiPublicJobsFacebookDailyRoute
+  '/api/public/v1/favorites': typeof ApiPublicV1FavoritesRoute
+  '/api/public/v1/stops': typeof ApiPublicV1StopsRoute
+  '/api/public/v1/trucks': typeof ApiPublicV1TrucksRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -223,6 +247,9 @@ export interface FileRoutesById {
   '/api/public/apify-webhook': typeof ApiPublicApifyWebhookRoute
   '/api/public/calendar/$id': typeof ApiPublicCalendarIdRoute
   '/api/public/jobs/facebook-daily': typeof ApiPublicJobsFacebookDailyRoute
+  '/api/public/v1/favorites': typeof ApiPublicV1FavoritesRoute
+  '/api/public/v1/stops': typeof ApiPublicV1StopsRoute
+  '/api/public/v1/trucks': typeof ApiPublicV1TrucksRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -249,6 +276,9 @@ export interface FileRouteTypes {
     | '/api/public/apify-webhook'
     | '/api/public/calendar/$id'
     | '/api/public/jobs/facebook-daily'
+    | '/api/public/v1/favorites'
+    | '/api/public/v1/stops'
+    | '/api/public/v1/trucks'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -273,6 +303,9 @@ export interface FileRouteTypes {
     | '/api/public/apify-webhook'
     | '/api/public/calendar/$id'
     | '/api/public/jobs/facebook-daily'
+    | '/api/public/v1/favorites'
+    | '/api/public/v1/stops'
+    | '/api/public/v1/trucks'
   id:
     | '__root__'
     | '/'
@@ -298,6 +331,9 @@ export interface FileRouteTypes {
     | '/api/public/apify-webhook'
     | '/api/public/calendar/$id'
     | '/api/public/jobs/facebook-daily'
+    | '/api/public/v1/favorites'
+    | '/api/public/v1/stops'
+    | '/api/public/v1/trucks'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -320,6 +356,9 @@ export interface RootRouteChildren {
   ApiPublicApifyWebhookRoute: typeof ApiPublicApifyWebhookRoute
   ApiPublicCalendarIdRoute: typeof ApiPublicCalendarIdRoute
   ApiPublicJobsFacebookDailyRoute: typeof ApiPublicJobsFacebookDailyRoute
+  ApiPublicV1FavoritesRoute: typeof ApiPublicV1FavoritesRoute
+  ApiPublicV1StopsRoute: typeof ApiPublicV1StopsRoute
+  ApiPublicV1TrucksRoute: typeof ApiPublicV1TrucksRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -485,6 +524,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicJobsFacebookDailyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/v1/favorites': {
+      id: '/api/public/v1/favorites'
+      path: '/api/public/v1/favorites'
+      fullPath: '/api/public/v1/favorites'
+      preLoaderRoute: typeof ApiPublicV1FavoritesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/v1/stops': {
+      id: '/api/public/v1/stops'
+      path: '/api/public/v1/stops'
+      fullPath: '/api/public/v1/stops'
+      preLoaderRoute: typeof ApiPublicV1StopsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/v1/trucks': {
+      id: '/api/public/v1/trucks'
+      path: '/api/public/v1/trucks'
+      fullPath: '/api/public/v1/trucks'
+      preLoaderRoute: typeof ApiPublicV1TrucksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -534,6 +594,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicApifyWebhookRoute: ApiPublicApifyWebhookRoute,
   ApiPublicCalendarIdRoute: ApiPublicCalendarIdRoute,
   ApiPublicJobsFacebookDailyRoute: ApiPublicJobsFacebookDailyRoute,
+  ApiPublicV1FavoritesRoute: ApiPublicV1FavoritesRoute,
+  ApiPublicV1StopsRoute: ApiPublicV1StopsRoute,
+  ApiPublicV1TrucksRoute: ApiPublicV1TrucksRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
