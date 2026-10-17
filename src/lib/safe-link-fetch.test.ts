@@ -1,4 +1,3 @@
-// @vitest-environment node
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CALENDAR_FETCH_LIMITS, PAGE_FETCH_LIMITS, isPublicAddress, readPublicLink, validateLinkUrl } from "./safe-link-fetch.server";
 
