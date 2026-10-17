@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EMPTY_FILTERS, adminStatus, cityOf, filtersToSearch, matchesFilters, parseFilters, restoreDaysLeft, type FilterRow } from "./filters";
+import { EMPTY_FILTERS, adminDefaultVisible, adminStatus, cityOf, filtersToSearch, matchesFilters, parseFilters, restoreDaysLeft, type FilterRow } from "./filters";
 
 const row = (o: Partial<FilterRow> = {}): FilterRow => ({
   name: "Ana's Tacos", business_name: "Ana Foods", category: "Mexican", menu_search: "carne asada burrito elote", city: "Moline", truck_type: "mobile", ...o,
@@ -34,6 +34,14 @@ describe("filters", () => {
   it("reads the city from an address", () => {
     expect(cityOf("1200 River Dr, Moline, IL 61265")).toBe("Moline");
     expect(cityOf("500 Main St, Rock Island, IL")).toBe("Rock Island");
+  });
+  it("admin trucks default view shows only approved trucks until a status filter is picked", () => {
+    expect(adminDefaultVisible(row({ adminStatus: "approved" }), EMPTY_FILTERS)).toBe(true);
+    expect(adminDefaultVisible(row({ adminStatus: "pending" }), EMPTY_FILTERS)).toBe(false);
+    expect(adminDefaultVisible(row({ adminStatus: "rejected" }), EMPTY_FILTERS)).toBe(false);
+    expect(adminDefaultVisible(row({ adminStatus: "deleted" }), EMPTY_FILTERS)).toBe(false);
+    expect(adminDefaultVisible(row({ adminStatus: "pending" }), { ...EMPTY_FILTERS, status: ["pending"] })).toBe(true);
+    expect(adminDefaultVisible(row({ adminStatus: "approved" }), { ...EMPTY_FILTERS, status: ["pending"] })).toBe(false);
   });
   it("admin status and 30-day restore window", () => {
     expect(adminStatus({ status: "active" })).toBe("approved");
