@@ -53,7 +53,7 @@ const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
 /** Best stop for one truck on a date/time window, with status relative to now. */
 /** Google Maps base-location stops are low-confidence: shown gray ("none"), only when no real stop matches. */
 export function pickStop(stops: Stop[], date: Date, win: Window, now: Date): { stop: Stop | null; status: Status } {
-  const real = pickReal(stops.filter((s) => s.source !== "apify_maps"), date, win, now);
+  const real = pickReal(stops.filter((s) => s.source !== "apify_maps" || s.note === "Google opening hours"), date, win, now);
   if (real.stop) return real;
   const base = stops.find((s) => !s.cancelled && s.source === "apify_maps" && sameDay(new Date(s.starts_at), date));
   return base ? { stop: base, status: "none" } : real;
@@ -94,6 +94,10 @@ export function fmtTime(iso: string | Date) {
 }
 
 export function fmtRange(s: Stop) {
+  if (s.note === 'Google opening hours') {
+    const time = (iso: string) => new Date(iso).toLocaleTimeString('en-US', { timeZone: 'America/Chicago', hour: 'numeric', minute: '2-digit' });
+    return `${time(s.starts_at)}–${time(s.ends_at)}`;
+  }
   return `${fmtTime(s.starts_at)}–${fmtTime(s.ends_at)}`;
 }
 
@@ -174,8 +178,9 @@ const NON_FOOD = /repair|dealer|rental|auto|parking|storage|wash|towing|moving|s
 /** Keep Google Maps results that are food trucks / food businesses; drop dealers, repair shops, etc. */
 export function isFoodTruckPlace(categoryName?: string, categories?: string[], title?: string): boolean {
   const cats = [categoryName ?? "", ...(categories ?? [])].join(" | ");
-  if (/food truck/i.test(cats) || /food truck/i.test(title ?? "")) return true;
+  if ([categoryName ?? '', ...(categories ?? [])].some(c => /^(food[ _]truck|food[ _]stand|mobile[ _]caterer)$/i.test(c.trim()))) return true;
   if (NON_FOOD.test(cats)) return false;
+  if (/\b(?:truck|trailer|cart)s?\b/i.test(title ?? '')) return true;
   return FOOD_WORDS.test(cats);
 }
 
@@ -228,10 +233,17 @@ export function chicagoDate(now = new Date()): string {
 /** Central local date + HH:MM → UTC Date (DST-aware). */
 export function centralToUtc(date: string, time: string): Date {
   const guess = new Date(`${date}T${time.padStart(5, "0")}:00Z`);
-  const p = new Intl.DateTimeFormat("en-US", { timeZone: "America/Chicago", hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).formatToParts(guess);
-  const g = (t: string) => Number(p.find((x) => x.type === t)!.value);
-  const asLocal = Date.UTC(g("year"), g("month") - 1, g("day"), g("hour"), g("minute"));
-  return new Date(guess.getTime() + (guess.getTime() - asLocal));
+  const format = new Intl.DateTimeFormat("en-US", { timeZone: "America/Chicago", hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+  let result = guess;
+  for (let i = 0; i < 3; i++) {
+    const parts = format.formatToParts(result);
+    const g = (t: string) => Number(parts.find(x => x.type === t)?.value ?? 0);
+    const wall = Date.UTC(g('year'), g('month') - 1, g('day'), g('hour'), g('minute'));
+    const correction = guess.getTime() - wall;
+    if (!correction) break;
+    result = new Date(result.getTime() + correction);
+  }
+  return result;
 }
 /** Keep an AI-extracted stop only if confident (≥ 0.7) and dated today through the next 30 days. */
 export function keepExtraction(e: { confidence: number; date: string }, today: string): boolean {

@@ -50,7 +50,7 @@ function TruckPage() {
     queryFn: async () => (await supabase.from("businesses").select("*").eq("owner_id", t!.claimed_by!).maybeSingle()).data,
   });
   const { data: allStops = [] } = useStops(from, to, [id]);
-  const stops = groupStops(allStops.filter((s) => s.source !== "apify_maps" || allStops.every((x) => x.source === "apify_maps"))).slice(0, 20);
+  const stops = groupStops(allStops.filter((s) => s.source !== "apify_maps" || s.note === 'Google opening hours' || allStops.every((x) => x.source === "apify_maps"))).slice(0, 20);
   useStopsRealtime();
   const [mapFailed, setMapFailed] = useState(false);
   const [tick, setTick] = useState<number | null>(null);

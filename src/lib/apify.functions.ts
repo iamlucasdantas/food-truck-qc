@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { mapApifyCategory, isFoodTruckPlace, slugify } from "@/data/trucks";
+import { mobileEvidence } from '@/data/google-hours';
 
 export const SEED_CITIES = ["Davenport, IA", "Bettendorf, IA", "Rock Island, IL", "Moline, IL", "East Moline, IL", "Muscatine, IA", "Clinton, IA"];
 
@@ -32,7 +33,7 @@ export const seedCity = createServerFn({ method: "POST" })
     const places = ((await res.json()) as Place[]).filter((p) => p.placeId && p.title && p.location && isFoodTruckPlace(p.categoryName, p.categories, p.title));
 
     const ids = places.map((p) => p.placeId!);
-    const { data: existing } = ids.length ? await supabase.from("trucks").select("id, google_place_id, claimed_by").in("google_place_id", ids) : { data: [] };
+    const { data: existing } = ids.length ? await supabase.from("trucks").select("id, google_place_id, claimed_by, is_food_truck").in("google_place_id", ids) : { data: [] };
     const byPlace = new Map((existing ?? []).map((t) => [t.google_place_id!, t]));
     let created = 0, updated = 0;
     const errors: string[] = [];
@@ -42,8 +43,11 @@ export const seedCity = createServerFn({ method: "POST" })
         name: p.title!, category: mapApifyCategory(p.categoryName), phone: p.phone ?? null, website: p.website ?? null,
         base_address: p.address ?? null, base_lat: p.location!.lat, base_lng: p.location!.lng, logo_url: p.imageUrl ?? null,
         instagram: p.instagrams?.[0] ?? null, facebook: p.facebooks?.[0] ?? null, source: "apify", google_place_id: p.placeId!,
+        google_types: [...new Set([p.categoryName ?? '', ...(p.categories ?? [])].filter(Boolean))],
+        is_food_truck: mobileEvidence(p.title ?? '', '', [p.categoryName ?? '', ...(p.categories ?? [])]),
       };
       const ex = byPlace.get(p.placeId!);
+      if (ex?.is_food_truck) fields.is_food_truck = true;
       let truckId: string;
       if (ex) {
         if (ex.claimed_by) continue; // owner manages this truck — never overwrite

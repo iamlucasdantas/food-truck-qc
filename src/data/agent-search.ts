@@ -2,10 +2,11 @@ import { groupStops, milesBetween } from './trucks';
 import { knownLocation, normalizeLocation, type ResolvedLocation } from './agent-location';
 import { matchFood } from './agent-food';
 import type { ApiStop, ApiTruck } from './api-search';
-export type AgentTruck = ApiTruck & { description?:string | null; menu_sections?:unknown; menu?:unknown; is_food_truck?:boolean };
+import { googleHours, isGoogleHoursStop } from './google-hours';
+export type AgentTruck = ApiTruck & { description?:string | null; menu_sections?:unknown; menu?:unknown; is_food_truck?:boolean; google_regular_hours?:unknown };
 export type AgentParams = { query?:string | undefined; cuisine?:string | undefined; dish?:string | undefined; open_now?:boolean | undefined; when?:string | undefined; limit:number };
 export function agentSearch<T extends AgentTruck>(trucks:T[], allStops:ApiStop[], p:AgentParams, location:ResolvedLocation, from:Date, to:Date, now:Date) {
-  const stops = groupStops(allStops.filter(s => s.source !== 'apify_maps' && new Date(s.ends_at) > from && new Date(s.starts_at) < to));
+  const stops = groupStops(allStops.filter(s => (s.source !== 'apify_maps' || isGoogleHoursStop(s)) && new Date(s.ends_at) > from && new Date(s.starts_at) < to));
   const out = [];
   for (const t of trucks) {
     if (t.is_food_truck !== true) continue;
@@ -22,7 +23,7 @@ export function agentSearch<T extends AgentTruck>(trucks:T[], allStops:ApiStop[]
     mine.sort((a,b) => Number(b.open_now)-Number(a.open_now) || Date.parse(a.starts_at)-Date.parse(b.starts_at));
     const base = inPlace({lat:t.base_lat,lng:t.base_lng,city:t.base_address?.split(',').slice(-2,-1)[0]});
     const hasBase = t.truck_type === 'fixed' || allStops.some(s => s.truck_id === t.id && s.source === 'apify_maps');
-    if (!mine.length && !(hasBase && base.yes && !p.open_now && p.when !== 'now')) continue;
+    if (!mine.length && !(hasBase && base.yes && !googleHours(t.google_regular_hours)?.periods.length && !p.open_now && p.when !== 'now')) continue;
     const distances = mine.map(s => inPlace(s).dist).filter((d): d is number => d != null);
     const distance = distances.length ? Math.min(...distances) : base.dist;
     out.push({truck:t,stops:mine,open_now:open,distance_miles:distance == null ? null : Math.round(distance*10)/10,is_base_location:!mine.length,...match});

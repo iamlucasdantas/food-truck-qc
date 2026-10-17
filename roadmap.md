@@ -1,5 +1,11 @@
 # Roadmap
 
+## Stationary trucks and Google hours (not published)
+- [x] Preserve explicit truck/category classification; store raw Google categories and weekly hours snapshots. Bonbon remains true and now fixed; no fabricated hours.
+- [x] Expand Chicago hours through map/app search and API/MCP; authenticated admin refresh (10 saved Places IDs, sequential) with category/hour list. Tests include overnight, 24h/DST, closed days and open_now.
+- [x] Preview requested queries returned 200: open_now -> Toni's + MI Oaxaca; Bonbon -> one base result without hours. Public Bonbon map pin verified, no runtime errors; 280 tests passed, automatic build OK.
+- [ ] Import real Google hours and confirm stationary candidates: sandbox forbids live Google checks; requesting user has no matching Admin session. Google hours remain unimported; run Admin > Google Maps seed > Stationary trucks > Refresh selected on the authorized site after publishing. No publication requested.
+
 ## Agent truck audit and fuzzy names (not published)
 - [x] Audited all 118 records: 24 newly excluded, 44 already excluded; 30 uncertain candidates retained for Admin review. Full audit delivered in Files, records/stops preserved. Lil Stevie's has food-trailer evidence and stays.
 - [x] Shared Levenshtein name matching and best-match ranking across both chat endpoints and MCP search tools; require explicit is_food_truck=true

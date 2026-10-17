@@ -16,6 +16,7 @@ import { AdminSuggestions, FacebookSession, PastePost } from "@/components/Admin
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminOverview } from "@/components/admin/AdminOverview";
 import { AgentApiLog } from "@/components/admin/AgentApiLog";
+import { GoogleHours } from '@/components/admin/GoogleHours';
 import { EmptyState, IconAction, Initials, ListSkeleton, SectionHeader, StatusPill, btn, statusTone } from "@/components/admin/ui";
 import { sectionFromSearch } from "@/data/admin";
 import { LogoMark } from "@/components/Logo";
@@ -315,6 +316,7 @@ function ApifySeed() {
         {log.length > 0 && <pre className="rounded bg-muted p-2 text-xs">{log.join("\n")}</pre>}
       </div>
       <h3 className="font-bold">Last runs</h3>
+      <GoogleHours />
       {runs.length === 0 ? <p className="text-sm text-muted-foreground">No seeds yet.</p> : (
         <ul className="space-y-1 text-sm">
           {runs.map((r) => (

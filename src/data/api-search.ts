@@ -13,7 +13,7 @@ export type ApiTruck = {
 };
 export type ApiStop = {
   truck_id: string; venue_name: string; address: string | null; city: string | null;
-  lat: number | null; lng: number | null; starts_at: string; ends_at: string; source: string; created_at: string;
+  lat: number | null; lng: number | null; starts_at: string; ends_at: string; source: string; created_at: string; note?: string | null;
 };
 export type SearchHit<T extends ApiTruck, S extends ApiStop> = {
   truck: T; stops: (S & { merged: number; open_now: boolean | null })[];
