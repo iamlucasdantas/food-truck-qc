@@ -33,7 +33,7 @@ export const seedCity = createServerFn({ method: "POST" })
     const places = ((await res.json()) as Place[]).filter((p) => p.placeId && p.title && p.location && isFoodTruckPlace(p.categoryName, p.categories, p.title));
 
     const ids = places.map((p) => p.placeId!);
-    const { data: existing } = ids.length ? await supabase.from("trucks").select("id, google_place_id, claimed_by").in("google_place_id", ids) : { data: [] };
+    const { data: existing } = ids.length ? await supabase.from("trucks").select("id, google_place_id, claimed_by, is_food_truck").in("google_place_id", ids) : { data: [] };
     const byPlace = new Map((existing ?? []).map((t) => [t.google_place_id!, t]));
     let created = 0, updated = 0;
     const errors: string[] = [];
@@ -47,6 +47,7 @@ export const seedCity = createServerFn({ method: "POST" })
         is_food_truck: mobileEvidence(p.title ?? '', '', [p.categoryName ?? '', ...(p.categories ?? [])]),
       };
       const ex = byPlace.get(p.placeId!);
+      if (ex?.is_food_truck) fields.is_food_truck = true;
       let truckId: string;
       if (ex) {
         if (ex.claimed_by) continue; // owner manages this truck — never overwrite

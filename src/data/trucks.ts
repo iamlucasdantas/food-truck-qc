@@ -94,6 +94,10 @@ export function fmtTime(iso: string | Date) {
 }
 
 export function fmtRange(s: Stop) {
+  if (s.note === 'Google opening hours') {
+    const time = (iso: string) => new Date(iso).toLocaleTimeString('en-US', { timeZone: 'America/Chicago', hour: 'numeric', minute: '2-digit' });
+    return `${time(s.starts_at)}–${time(s.ends_at)}`;
+  }
   return `${fmtTime(s.starts_at)}–${fmtTime(s.ends_at)}`;
 }
 
