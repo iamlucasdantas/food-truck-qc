@@ -1,5 +1,9 @@
 # Roadmap
 
+## Public profile schedule (not published)
+- [ ] Hide public import source badges/counts; default to five upcoming stops with list/calendar and show more.
+- [ ] Test upcoming limit/time rules and verify both views on desktop and phone.
+
 ## Location confirmation (not published)
 - [x] Store explicit Google verification / owner confirmation; public base and Google-hours cards show verified vs awaiting confirmation independently of opening hours.
 - [x] Admin Trucks has a locations queue and drawer control; active claimed owner has a profile confirmation control. RPC enforces admin/active claimed owner permissions; direct writes cannot fake confirmation; changed address/coordinates reset evidence.
