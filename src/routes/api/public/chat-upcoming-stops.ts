@@ -23,7 +23,7 @@ export const Route = createFileRoute("/api/public/chat-upcoming-stops")({
         const sb = h.publicClient();
 
         let q = sb.from("stops")
-          .select("truck_id, venue_name, address, city, starts_at, ends_at, created_at, trucks!inner(name, category, status, deleted_at)")
+          .select("truck_id, venue_name, source, address, city, starts_at, ends_at, created_at, trucks!inner(name, category, status, deleted_at)")
           .eq("cancelled", false).eq("trucks.status", "active").is("trucks.deleted_at", null)
           .gte("ends_at", now.toISOString()).lte("starts_at", until.toISOString())
           .order("starts_at").limit(100);
@@ -38,10 +38,10 @@ export const Route = createFileRoute("/api/public/chat-upcoming-stops")({
           cuisine: s.trucks.category || null,
           city: s.city || h.cityFromAddress(s.address),
           address: s.address || null,
-          is_base_location: false,
-          starts_at: h.chicago(s.starts_at),
-          ends_at: h.chicago(s.ends_at),
-          open_now: new Date(s.starts_at) <= now && new Date(s.ends_at) > now,
+          is_base_location: s.source === "apify_maps",
+          starts_at: s.source === "apify_maps" ? null : h.chicago(s.starts_at),
+          ends_at: s.source === "apify_maps" ? null : h.chicago(s.ends_at),
+          open_now: s.source === "apify_maps" ? null : new Date(s.starts_at) <= now && new Date(s.ends_at) > now,
         }));
 
         // Fixed trucks without a scheduled stop in range: report their base location (hours unknown).
