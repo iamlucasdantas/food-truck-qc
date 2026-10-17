@@ -173,10 +173,10 @@ const NON_FOOD = /repair|dealer|rental|auto|parking|storage|wash|towing|moving|s
 
 /** Keep Google Maps results that are food trucks / food businesses; drop dealers, repair shops, etc. */
 export function isFoodTruckPlace(categoryName?: string, categories?: string[], title?: string): boolean {
-  if (/\b(?:truck|trailer|cart)s?\b/i.test(title ?? '') || [categoryName ?? '', ...(categories ?? [])].some(c => /^(food[ _]truck|food[ _]stand|mobile[ _]caterer)$/i.test(c.trim()))) return true;
   const cats = [categoryName ?? "", ...(categories ?? [])].join(" | ");
-  if (/food truck/i.test(cats) || /food truck/i.test(title ?? "")) return true;
+  if ([categoryName ?? '', ...(categories ?? [])].some(c => /^(food[ _]truck|food[ _]stand|mobile[ _]caterer)$/i.test(c.trim()))) return true;
   if (NON_FOOD.test(cats)) return false;
+  if (/\b(?:truck|trailer|cart)s?\b/i.test(title ?? '')) return true;
   return FOOD_WORDS.test(cats);
 }
 

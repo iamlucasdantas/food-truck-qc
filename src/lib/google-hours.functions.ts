@@ -37,7 +37,7 @@ export const refreshGoogleHours = createServerFn({ method: 'POST' })
       const included = t.is_food_truck || mobileEvidence(t.name, t.description, types);
       const hours = googleHours(p.regularOpeningHours);
       const snapshot = p.regularOpeningHours && typeof p.regularOpeningHours === 'object' ? p.regularOpeningHours as Json : null;
-      const { error: saveError } = await context.supabase.from('trucks').update({ google_types: types, google_regular_hours: hours ? snapshot : null, google_hours_updated_at: new Date().toISOString(), is_food_truck: included }).eq('id', t.id);
+      const { error: saveError } = await context.supabase.from('trucks').update({ google_types: types, google_regular_hours: hours ? snapshot : null, google_hours_updated_at: new Date().toISOString(), is_food_truck: included, ...(included ? { truck_type: 'fixed' } : {}) }).eq('id', t.id);
       if (saveError) throw Error(saveError.message);
       const descriptions = p.regularOpeningHours && typeof p.regularOpeningHours === 'object' && 'weekdayDescriptions' in p.regularOpeningHours && Array.isArray(p.regularOpeningHours.weekdayDescriptions) ? p.regularOpeningHours.weekdayDescriptions.filter((s): s is string => typeof s === 'string') : [];
       results.push({ id: t.id, name: t.name, included, hours: descriptions });

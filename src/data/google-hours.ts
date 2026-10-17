@@ -15,7 +15,9 @@ export function googleHours(value: unknown): GoogleHours | null {
 }
 export function mobileEvidence(name: string, description = '', types: string[] = []): boolean {
   const categories = types.map(x => x.toLowerCase().replace(/_/g, ' ').trim());
-  return categories.some(x => ['food truck', 'food stand', 'mobile caterer'].includes(x)) || /\b(?:truck|trailer|cart)s?\b/i.test(`${name} ${description}`);
+  if (categories.some(x => ['food truck', 'food stand', 'mobile caterer'].includes(x))) return true;
+  if (/dealer|repair|rental|towing/.test(categories.join(' '))) return false;
+  return /\b(?:truck|trailer|cart)s?\b/i.test(`${name} ${description}`);
 }
 const add = (d: string, n: number) => new Date(Date.parse(`${d}T12:00:00Z`) + n * 864e5).toISOString().slice(0, 10);
 const clock = (p: GooglePoint) => `${String(p.hour ?? 0).padStart(2, '0')}:${String(p.minute ?? 0).padStart(2, '0')}`;
