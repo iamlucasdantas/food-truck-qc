@@ -16,4 +16,12 @@ describe("cleanAgentParams", () => {
   it("ignores unknown params", () => {
     expect(cleanAgentParams({ call_id: "x", contact_id: "y", location: "Moline" })).toEqual({ location: "Moline" });
   });
+  it("accepts every snake_case parameter in camelCase", () => {
+    expect(cleanAgentParams({ openNow: "TRUE", radiusMiles: " 7.5 ", truckId: "real-truck", menuItem: "birria tacos" }))
+      .toEqual({ open_now: "true", radius_miles: "7.5", truck_id: "real-truck", menu_item: "birria tacos" });
+  });
+  it("applies the same blank cleanup to camelCase aliases", () => {
+    expect(cleanAgentParams({ openNow: "true", location: "", radiusMiles: "", limit: "5", truckId: null, menuItem: "{{contact.menuItem}}" }))
+      .toEqual({ open_now: "true", limit: "5" });
+  });
 });
