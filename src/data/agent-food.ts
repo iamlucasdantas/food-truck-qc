@@ -15,7 +15,7 @@ export function publishedItems(sections: unknown, legacy: unknown): { name:strin
   if (!rows.length && Array.isArray(legacy)) legacy.forEach(add);
   return rows;
 }
-export function matchFood(t: {name:string; category:string; description?:string | null; menu_sections?:unknown; menu?:unknown; menu_search?:string | null}, p: {query?:string; cuisine?:string; dish?:string}) {
+export function matchFood(t: {name:string; category:string; description?:string | null; menu_sections?:unknown; menu?:unknown; menu_search?:string | null}, p: {query?:string | undefined; cuisine?:string | undefined; dish?:string | undefined}) {
   const items = publishedItems(t.menu_sections,t.menu);
   const menu = items.map(i => `${i.name} ${i.description}`).join(' ');
   const matched = new Set<'name'|'cuisine'|'menu'|'description'>(); const selected = new Set<string>();

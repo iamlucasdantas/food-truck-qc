@@ -11,9 +11,9 @@
 
 ## Rules
 - Managed social scans use the stable facebook-daily callback with a validated versioned body and Chicago-local timing rules in src/data/social-schedule.ts; preserve the old body until deployment and schedule replacement so live callbacks remain compatible.
-- Read src/lib/AGENTS.md before edits; link readers require its shared provider allowlists to block arbitrary destinations.
+- Read src/lib/AGENTS.md before edits; its link/security and agent-search rules apply.
 - Truck/stop data lives in Lovable Cloud tables; pure status/time rules live in `src/data/trucks.ts` (unit-tested) so UI and tests share them.
-- Stops are concrete dated rows (not weekly patterns) so owner edits, cancellations and live check-ins are single-row changes.
+- Public discovery filters is_food_truck; Admin retains classification edits so restaurants stay reviewable.
 - Auth is a modal opened via `useAuth().openAuth()`; pages stay public and RLS protects data — no route-level gate.
 - Roles only come from `user_roles` + `has_role()`; never from profile/user metadata.
 - Truck logos are stored as small data URLs on the truck row because the workspace blocks public storage buckets.

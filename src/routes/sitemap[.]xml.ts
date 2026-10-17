@@ -26,7 +26,7 @@ export const Route = createFileRoute("/sitemap.xml")({
           });
           const pageSize = 1000;
           for (let offset = 0; ; ) {
-            const { data, error } = await supabase.from("trucks").select("id").eq("status", "active").order("id").range(offset, offset + pageSize - 1);
+            const { data, error } = await supabase.from("trucks").select("id").eq("status", "active").eq("is_food_truck", true).order("id").range(offset, offset + pageSize - 1);
             if (error) throw error;
             if (data.length === 0) break;
             for (const row of data) {

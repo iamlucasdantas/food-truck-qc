@@ -3,14 +3,14 @@ import { knownLocation, normalizeLocation, type ResolvedLocation } from './agent
 import { matchFood } from './agent-food';
 import type { ApiStop, ApiTruck } from './api-search';
 export type AgentTruck = ApiTruck & { description?:string | null; menu_sections?:unknown; menu?:unknown; is_food_truck?:boolean };
-export type AgentParams = { query?:string; cuisine?:string; dish?:string; open_now?:boolean; when?:string; limit:number };
+export type AgentParams = { query?:string | undefined; cuisine?:string | undefined; dish?:string | undefined; open_now?:boolean | undefined; when?:string | undefined; limit:number };
 export function agentSearch<T extends AgentTruck>(trucks:T[], allStops:ApiStop[], p:AgentParams, location:ResolvedLocation, from:Date, to:Date, now:Date) {
   const stops = groupStops(allStops.filter(s => s.source !== 'apify_maps' && new Date(s.ends_at) > from && new Date(s.starts_at) < to));
   const out = [];
   for (const t of trucks) {
     if (t.is_food_truck === false) continue;
     const match = matchFood(t,p); if (!match) continue;
-    const inPlace = (s: {lat:number|null; lng:number|null; city?:string|null}) => {
+    const inPlace = (s: {lat:number|null; lng:number|null; city?:string|null|undefined}) => {
       const dist = s.lat != null && s.lng != null ? milesBetween(location,{lat:s.lat,lng:s.lng}) : null;
       const city = location.type === 'city' && s.city && (knownLocation(s.city)?.name === location.name || normalizeLocation(s.city) === normalizeLocation(location.name));
       return {yes:dist != null && dist <= location.radius_miles || !!city, dist};
