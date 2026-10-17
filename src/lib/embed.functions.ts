@@ -51,10 +51,15 @@ async function findExistingBusiness(email: string): Promise<ExistingBusiness | n
   };
 }
 
-/** Public: says only whether this email already has a business (no account details are returned). */
+/** Signed-in only: says whether the caller's OWN verified email already has a business. Other emails always return false. */
 export const checkBusinessEmail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ email: z.string().trim().email().max(255) }).parse(input))
-  .handler(async ({ data }) => ({ known: !!(await findExistingBusiness(data.email)) }));
+  .handler(async ({ data, context }) => {
+    const own = String((context.claims as { email?: string }).email ?? "").trim().toLowerCase();
+    if (!own || own !== data.email.trim().toLowerCase()) return { known: false };
+    return { known: !!(await findExistingBusiness(own)) };
+  });
 
 /** Public endpoint for the embeddable owner signup form: creates a pending truck for admin review and notifies HighLevel. */
 export const submitTruckSignup = createServerFn({ method: "POST" })
