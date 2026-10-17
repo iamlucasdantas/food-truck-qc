@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { splitVenues, resolvePostDate, mergeHints, type ExtractedStop } from "@/data/posts";
 import { resolveVenue } from "@/lib/venues.server";
-import { authorIsTruck, ownerHandles, centralToUtc, chicagoDate, keepExtraction, matchTruckByName, slugify } from "@/data/trucks";
+import { authorIsTruck, ownerHandles, centralToUtc, chicagoDate, keepExtraction, matchTruckByName, slugify, groupStops } from "@/data/trucks";
 
 type DB = SupabaseClient<Database>;
 type Kind = "page" | "group" | "reddit" | "instagram";
