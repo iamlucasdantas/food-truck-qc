@@ -3,7 +3,7 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/integrations/supabase/types';
 import { knownLocation, type ResolvedLocation } from '@/data/agent-location';
 import { agentSearch } from '@/data/agent-search';
-import { timeWindow, expandCentralSeries, addDays } from '@/data/agent-time';
+import { timeWindow, expandCentralSeries } from '@/data/agent-time';
 import { chicagoDate } from '@/data/trucks';
 import { chicago } from './chat-agent.server';
 const bool = z.enum(['true','false','1','0','yes','no']).transform(v => ['true','1','yes'].includes(v));
@@ -29,7 +29,7 @@ export async function runSearch(input:SearchInput, defaults:{days:number;limit:n
   if (!resolved) return {error:'location not found' as const,hint:'try a city like Davenport or a nearby street'};
   const sb = client ?? createClient<Database>(process.env['SUPABASE_URL'] ?? '',process.env['SUPABASE_PUBLISHABLE_KEY'] ?? '',{auth:{persistSession:false,autoRefreshToken:false},global:{fetch:async(url,init) => {const headers = new Headers(init?.headers); if (headers.get('Authorization')?.includes('sb_publishable_')) headers.delete('Authorization'); return fetch(url,{...init,headers});}}});
   const now = new Date(); const window = timeWindow(input.when,input.days ?? defaults.days,!!defaults.upcoming,now);
-  const from = new Date(Math.min(window.from.getTime(),now.getTime())); const future = timeWindow(addDays(chicagoDate(now),7),1,false,now).to; const to = new Date(Math.max(window.to.getTime(),future.getTime()));
+  const from = new Date(Math.min(window.from.getTime(),now.getTime())); const future = new Date(now.getTime()+7*864e5); const to = new Date(Math.max(window.to.getTime(),future.getTime()));
   let tq = sb.from('trucks').select('id,name,business_name,category,description,truck_type,website,menu_search,menu_sections,menu,base_address,base_lat,base_lng,is_food_truck').eq('status','active').eq('is_food_truck',true).is('deleted_at',null).limit(1000);
   let sq = sb.from('stops').select('truck_id,venue_name,address,city,lat,lng,starts_at,ends_at,source,created_at').eq('cancelled',false).gt('ends_at',from.toISOString()).lt('starts_at',to.toISOString()).order('starts_at').limit(5000);
   let rq = sb.from('stop_series').select('*').lte('start_date',chicagoDate(to)).or(`end_date.is.null,end_date.gte.${chicagoDate(from)}`).limit(2000);

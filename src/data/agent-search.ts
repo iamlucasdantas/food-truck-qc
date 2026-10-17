@@ -19,7 +19,7 @@ export function agentSearch<T extends AgentTruck>(trucks:T[], allStops:ApiStop[]
     const open = mine.some(s => s.open_now);
     if ((p.open_now || p.when === 'now') && !open) continue;
     if (p.open_now || p.when === 'now') mine = mine.filter(s => s.open_now);
-    mine.sort((a,b) => Number(b.open_now)-Number(a.open_now) || a.starts_at.localeCompare(b.starts_at));
+    mine.sort((a,b) => Number(b.open_now)-Number(a.open_now) || Date.parse(a.starts_at)-Date.parse(b.starts_at));
     const base = inPlace({lat:t.base_lat,lng:t.base_lng,city:t.base_address?.split(',').slice(-2,-1)[0]});
     const hasBase = t.truck_type === 'fixed' || allStops.some(s => s.truck_id === t.id && s.source === 'apify_maps');
     if (!mine.length && !(hasBase && base.yes && !p.open_now && p.when !== 'now')) continue;
@@ -27,5 +27,5 @@ export function agentSearch<T extends AgentTruck>(trucks:T[], allStops:ApiStop[]
     const distance = distances.length ? Math.min(...distances) : base.dist;
     out.push({truck:t,stops:mine,open_now:open,distance_miles:distance == null ? null : Math.round(distance*10)/10,is_base_location:!mine.length,...match});
   }
-  return out.sort((a,b) => Number(b.exact_name)-Number(a.exact_name) || Number(b.open_now)-Number(a.open_now) || (a.stops[0]?.starts_at ?? '9').localeCompare(b.stops[0]?.starts_at ?? '9') || (a.distance_miles ?? Infinity)-(b.distance_miles ?? Infinity) || a.truck.name.localeCompare(b.truck.name)).slice(0,p.limit);
+  return out.sort((a,b) => Number(b.exact_name)-Number(a.exact_name) || Number(b.open_now)-Number(a.open_now) || Date.parse(a.stops[0]?.starts_at ?? '9999-01-01')-Date.parse(b.stops[0]?.starts_at ?? '9999-01-01') || (a.distance_miles ?? Infinity)-(b.distance_miles ?? Infinity) || a.truck.name.localeCompare(b.truck.name)).slice(0,p.limit);
 }
