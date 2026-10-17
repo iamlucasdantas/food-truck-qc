@@ -7,8 +7,8 @@ describe("cleanAgentParams", () => {
     expect(isBlankParam("{{custom_values.ftqc_chat_api_key}}")).toBe(true);
   });
   it("accepts open_now variants", () => {
-    for (const v of ["true", "True", "TRUE", "yes", "1"]) expect(cleanAgentParams({ open_now: v }).open_now).toBe("true");
-    expect(cleanAgentParams({ open_now: true }).open_now).toBe("true");
+    for (const v of ["true", "True", "TRUE", "yes", "1"]) expect(cleanAgentParams({ open_now: v })["open_now"]).toBe("true");
+    expect(cleanAgentParams({ open_now: true })["open_now"]).toBe("true");
   });
   it("parses numbers with spaces or decimals", () => {
     expect(cleanAgentParams({ radius_miles: " 7.5 ", days: " 3.0" })).toEqual({ radius_miles: "7.5", days: "3" });

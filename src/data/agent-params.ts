@@ -46,7 +46,7 @@ export function cleanAgentParams(raw: Record<string, unknown>): Record<string, s
     }
     out[k] = v;
   }
-  if ((out.lat == null) !== (out.lng == null)) { delete out.lat; delete out.lng; }
+  if ((out["lat"] == null) !== (out["lng"] == null)) { delete out["lat"]; delete out["lng"]; }
   return out;
 }
 
