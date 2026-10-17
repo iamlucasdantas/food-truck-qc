@@ -79,3 +79,8 @@
 - [x] Welcome screen, icon stepper, completeness ring + nudges, live truck-page preview, celebrate moments, autosave indicator, save-and-finish-later
 - [x] Social-link prefill (OG tags), Google address autocomplete, cuisine picker, status tracker, share kit (copy/QR/social), dashboard tour + gentle nudges
 - [ ] Verify signed-in wizard flow on screen; social prefill depends on sites allowing fetches
+
+## Smart agent search upgrade (not published)
+- [ ] Shared smart location, fuzzy food matching, Central time windows and recurring schedules for chat API + MCP
+- [ ] Classify non-trucks, filter public search, retain Admin classification control
+- [ ] Update docs with six real examples; test all six authenticated requests and regression rules
