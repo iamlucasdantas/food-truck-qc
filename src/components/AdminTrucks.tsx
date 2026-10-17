@@ -15,7 +15,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CUISINES, adminDefaultVisible, adminStatus, cityOf, filtersToSearch, matchesFilters, parseFilters, restoreDaysLeft, type AdminStatus, type Filters } from "@/data/filters";
+import { CUISINES, adminDefaultVisible, adminStatus, cityOf, filtersToSearch, parseFilters, restoreDaysLeft, type AdminStatus, type Filters } from "@/data/filters";
 import { EmptyState, IconAction, Initials, SectionHeader, StatusPill, btn, statusTone } from "@/components/admin/ui";
 import { TruckDrawer } from "@/components/admin/TruckDrawer";
 import { cn } from "@/lib/utils";
