@@ -1,8 +1,8 @@
 # Roadmap
 
 ## Agent API camelCase compatibility (not published)
-- [ ] Normalize all known camelCase aliases with the existing sanitizing rules for GET and POST on both endpoints
-- [ ] Run focused regression tests and authenticated POST checks with real truck data; confirm automatic build
+- [x] Normalize all known camelCase aliases with the existing sanitizing rules for GET and POST on both endpoints
+- [x] All 52 focused tests passed; authenticated GET/POST search returned 200 with open_now applied (2 results), and upcoming stops returned only Toni's Smokin' Grill (2 stops). Automatic build OK; URLs, auth and CORS unchanged.
 
 ## Dependency security updates (not published)
 - [x] Updated @lovable.dev/mcp-js to 3.1.1; refreshed only source-map-js to 1.2.2 and js-yaml to 4.3.2 in the text lockfile, without transitive overrides or unrelated version changes
