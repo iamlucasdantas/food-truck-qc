@@ -6,6 +6,14 @@ const base = process.env["AGENT_API_TEST_ORIGIN"] ?? "http://localhost:8080";
 const headers = { "content-type": "application/json", "x-api-key": key ?? "" };
 
 describe.skipIf(!key)("chat-agent camelCase HTTP requests", () => {
+  it("finds Bonbon's stationary truck without inventing hours", async () => {
+    const response = await fetch(`${base}/api/public/chat-search-trucks?query=${encodeURIComponent("Bonbon's Tacos")}`, { headers });
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.results[0]?.truck_id).toBe('bonbon-s-tacos-yp_1i');
+    expect(body.results[0]?.is_base_location).toBe(true);
+    expect(body.results[0]?.stop).toBeNull();
+  }, 30000);
   it.each(["chat-search-trucks", "chat-upcoming-stops"])("%s excludes the Bragg BBQ restaurant listing", async endpoint => {
     const response = await fetch(`${base}/api/public/${endpoint}?query=Bragg%20BBQ&days=7`, { headers });
     expect(response.status).toBe(200);
