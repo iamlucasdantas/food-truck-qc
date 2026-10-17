@@ -8,7 +8,7 @@ export function agentSearch<T extends AgentTruck>(trucks:T[], allStops:ApiStop[]
   const stops = groupStops(allStops.filter(s => s.source !== 'apify_maps' && new Date(s.ends_at) > from && new Date(s.starts_at) < to));
   const out = [];
   for (const t of trucks) {
-    if (t.is_food_truck === false) continue;
+    if (t.is_food_truck !== true) continue;
     const match = matchFood(t,p); if (!match) continue;
     const inPlace = (s: {lat:number|null; lng:number|null; city?:string|null|undefined}) => {
       const dist = s.lat != null && s.lng != null ? milesBetween(location,{lat:s.lat,lng:s.lng}) : null;
@@ -27,5 +27,5 @@ export function agentSearch<T extends AgentTruck>(trucks:T[], allStops:ApiStop[]
     const distance = distances.length ? Math.min(...distances) : base.dist;
     out.push({truck:t,stops:mine,open_now:open,distance_miles:distance == null ? null : Math.round(distance*10)/10,is_base_location:!mine.length,...match});
   }
-  return out.sort((a,b) => Number(b.exact_name)-Number(a.exact_name) || Number(b.open_now)-Number(a.open_now) || Date.parse(a.stops[0]?.starts_at ?? '9999-01-01')-Date.parse(b.stops[0]?.starts_at ?? '9999-01-01') || (a.distance_miles ?? Infinity)-(b.distance_miles ?? Infinity) || a.truck.name.localeCompare(b.truck.name)).slice(0,p.limit);
+  return out.sort((a,b) => Number(b.exact_name)-Number(a.exact_name) || b.name_score-a.name_score || Number(b.open_now)-Number(a.open_now) || Date.parse(a.stops[0]?.starts_at ?? '9999-01-01')-Date.parse(b.stops[0]?.starts_at ?? '9999-01-01') || (a.distance_miles ?? Infinity)-(b.distance_miles ?? Infinity) || a.truck.name.localeCompare(b.truck.name)).slice(0,p.limit);
 }

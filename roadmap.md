@@ -1,5 +1,10 @@
 # Roadmap
 
+## Agent truck audit and fuzzy names (not published)
+- [ ] Audit every listing; exclude clear non-trucks and report excluded/uncertain records for Admin review
+- [ ] Share fuzzy-name matching and best-match ranking across both chat endpoints and MCP; require explicit is_food_truck=true
+- [ ] Run focused tests and authenticated API checks, report results and remaining uncertainty
+
 ## Agent API camelCase compatibility (not published)
 - [x] Normalize all known camelCase aliases with the existing sanitizing rules for GET and POST on both endpoints
 - [x] All 52 focused tests passed; authenticated GET/POST search returned 200 with open_now applied (2 results), and upcoming stops returned only Toni's Smokin' Grill (2 stops). Automatic build OK; URLs, auth and CORS unchanged.

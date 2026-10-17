@@ -5,9 +5,14 @@ import { timeWindow, expandCentralSeries } from './agent-time';
 import { agentSearch } from './agent-search';
 import type { Series } from './schedule';
 const now = new Date('2026-10-17T17:00:00Z');
-const truck = {id:'taco',name:'Tacos Al Vapor',category:'Mexican',description:'Fresh tacos',menu_search:'',truck_type:'mobile',base_address:null,base_lat:null,base_lng:null,menu_sections:[{items:[{name:'Birria Tacos',description:'Slow smoked beef',price:4}]}]};
+const truck = {id:'taco',is_food_truck:true,name:'Tacos Al Vapor',category:'Mexican',description:'Fresh tacos',menu_search:'',truck_type:'mobile',base_address:null,base_lat:null,base_lng:null,menu_sections:[{items:[{name:'Birria Tacos',description:'Slow smoked beef',price:4}]}]};
 const stop = {truck_id:'taco',venue_name:'V',address:'Moline',city:'Moline',lat:41.5067,lng:-90.5151,starts_at:'2026-10-17T16:00:00Z',ends_at:'2026-10-17T20:00:00Z',source:'owner',created_at:'2026-10-01T00:00:00Z'};
 describe('Smart agent search',()=>{
+ it.each(["Tony's Smoking Grill", 'TONIS SMOKIN GRILL', 'Toni’s Smokin’ Grill'])('matches fuzzy truck name %s',query=>expect(matchFood({...truck,name:"Toni's Smokin' Grill"},{query})?.matched_on).toContain('name'));
+ it('matches Taco/Tacos name variants',()=>expect(matchFood(truck,{query:'Taco Al Vapor'})?.matched_on).toContain('name'));
+ it('ranks the best fuzzy name before a longer name',()=>{const l=knownLocation('QC');if(!l)throw Error('missing');const w=timeWindow('today',3,false,now);const best={...truck,id:'best',name:"Toni's Smokin' Grill"};const other={...truck,id:'other',name:"Toni's Smokin' Grill Catering Truck"};expect(agentSearch([other,best],[{...stop,truck_id:'best'},{...stop,truck_id:'other'}],{query:"Tony's Smoking Grill",limit:10},l,w.from,w.to,now).map(h=>h.truck.id)).toEqual(['best','other']);});
+ it('does not fuzzy-match unrelated names',()=>expect(matchFood({...truck,name:'Bragg BBQ'},{query:"Tony's Smoking Grill"})).toBeNull());
+ it('requires explicit food truck classification',()=>{const l=knownLocation('QC');if(!l)throw Error('missing');const w=timeWindow('today',3,false,now);expect(agentSearch([{...truck,is_food_truck:undefined}],[stop],{limit:10},l,w.from,w.to,now)).toEqual([]);});
  it('defaults to 15 miles around Davenport',()=>expect(knownLocation('')).toEqual({input:'',type:'default',name:'Quad Cities',lat:41.5236,lng:-90.5776,radius_miles:15}));
  it.each(['qc','the qc','quad cities','quad city','quadcities','qca','quad cities area','qc area','the quad','around here','anywhere'])('resolves region %s',s=>expect(knownLocation(s)?.radius_miles).toBe(15));
  it.each(['Berendorf IA','Betendorf Iowa','bettendorff','bettendof'])('resolves Bettendorf typo %s',s=>expect(knownLocation(s)?.name).toBe('Bettendorf'));
