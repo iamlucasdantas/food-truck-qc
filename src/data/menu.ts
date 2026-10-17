@@ -64,3 +64,15 @@ export function matchesSearch(query: string, haystack: string): boolean {
   const words = query.toLowerCase().split(/\s+/).filter(Boolean);
   return words.every((w) => h.includes(w) || (w.length > 3 && w.endsWith("s") && h.includes(w.slice(0, -1))));
 }
+
+export type PostMenu = { section: string; items: { name: string; price: number | null; description: string }[] }[];
+/** Menu read from a social post → published sections. null = the post had no menu, so the current menu stays untouched. */
+export function postMenuToSections(menu: PostMenu | null | undefined): MenuSection[] | null {
+  const sections = (menu ?? []).map((s) => ({
+    name: s.section?.trim() || "Menu",
+    items: (s.items ?? []).filter((i) => i?.name?.trim()).map((i) => ({
+      name: i.name.trim(), description: i.description?.trim() ?? "", price: typeof i.price === "number" && i.price > 0 ? i.price : null, tags: [], lowConfidence: false,
+    })),
+  })).filter((s) => s.items.length);
+  return sections.length ? sections : null;
+}
