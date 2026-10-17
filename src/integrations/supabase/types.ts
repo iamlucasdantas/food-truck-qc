@@ -803,7 +803,10 @@ export type Database = {
           description: string
           emoji: string
           facebook: string | null
+          google_hours_updated_at: string | null
           google_place_id: string | null
+          google_regular_hours: Json | null
+          google_types: string[]
           id: string
           instagram: string | null
           is_food_truck: boolean
@@ -840,7 +843,10 @@ export type Database = {
           description?: string
           emoji?: string
           facebook?: string | null
+          google_hours_updated_at?: string | null
           google_place_id?: string | null
+          google_regular_hours?: Json | null
+          google_types?: string[]
           id: string
           instagram?: string | null
           is_food_truck?: boolean
@@ -877,7 +883,10 @@ export type Database = {
           description?: string
           emoji?: string
           facebook?: string | null
+          google_hours_updated_at?: string | null
           google_place_id?: string | null
+          google_regular_hours?: Json | null
+          google_types?: string[]
           id?: string
           instagram?: string | null
           is_food_truck?: boolean

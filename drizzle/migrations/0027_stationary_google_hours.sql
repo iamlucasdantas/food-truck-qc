@@ -1,0 +1,2 @@
+ALTER TABLE public.trucks ADD COLUMN google_types text[] NOT NULL DEFAULT '{}', ADD COLUMN google_regular_hours jsonb, ADD COLUMN google_hours_updated_at timestamptz;
+COMMENT ON COLUMN public.trucks.google_regular_hours IS 'Google Places regularOpeningHours snapshot; expanded as America/Chicago stationary-truck stops on read, not stored as individual stops.';
