@@ -230,6 +230,7 @@ export async function ingestPost(ctx: IngestCtx, kind: Kind | "paste", p: Post, 
     let truck = sibling ?? owner ?? (named ? matchTruckByName(e.truck_name, trucks) : null)
       ?? (p.author ? trucks.find((t) => authorIsTruck(p.author, handlesOf(t))) ?? matchTruckByName(p.author, trucks) : null);
     const own = !!truck && (authorIsTruck(p.author, handlesOf(truck)) || (owner != null && sameBusiness(truck, owner) && kind !== "group" && kind !== "reddit" && kind !== "paste"));
+    if (own && truck) menuTruck = truck;
     const geo = await resolveVenue(db, e.venue, e.city, e.address);
     const r = { ...base, truckName: truck?.name ?? e.truck_name, truckId: truck?.id ?? null, own, venue: geo?.name ?? e.venue, address: geo?.address ?? base.address, city: geo?.city || e.city, checkAddress: geo?.check ?? true };
     if (/^\d{4}-\d{2}-\d{2}$/.test(e.date) && e.date < today) { out.push({ ...r, status: "history" }); continue; }
@@ -286,6 +287,12 @@ export async function ingestPost(ctx: IngestCtx, kind: Kind | "paste", p: Post, 
       });
       out.push({ ...r, status: error ? "duplicate" : "suggested" });
     }
+  }
+  // Menu in the truck's own post replaces the published menu; no menu in the post leaves it untouched.
+  const sections = postMenuToSections(menu);
+  if (!menuTruck && owner && (authorIsTruck(p.author, handlesOf(owner)) || (kind !== "group" && kind !== "reddit" && kind !== "paste"))) menuTruck = owner;
+  if (sections && menuTruck && !ctx.dryRun) {
+    await db.from("trucks").update({ menu_sections: sections, menu_search: menuSearchText(sections), menu_updated_at: new Date().toISOString() }).eq("id", menuTruck.id);
   }
   return out;
 }
