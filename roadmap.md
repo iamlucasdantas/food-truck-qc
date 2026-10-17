@@ -1,8 +1,8 @@
 # Roadmap
 
 ## Public profile schedule (not published)
-- [ ] Hide public import source badges/counts; default to five upcoming stops with list/calendar and show more.
-- [ ] Test upcoming limit/time rules and verify both views on desktop and phone.
+- [x] Removed public import badges and post counts. Default next five upcoming/ongoing stops, list/calendar switching at any count, view all within the 30-day schedule. Untimed usual spots stay on map rather than becoming upcoming events.
+- [x] 34 focused tests passed; Toni's (2 stops) and Bonbon (5 initial / 21 expanded) verified in browser; calendar/day selection works, 390px no horizontal overflow or runtime errors; Chicago times consistent, automatic build OK. Not published.
 
 ## Location confirmation (not published)
 - [x] Store explicit Google verification / owner confirmation; public base and Google-hours cards show verified vs awaiting confirmation independently of opening hours.
