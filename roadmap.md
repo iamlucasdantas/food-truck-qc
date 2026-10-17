@@ -1,5 +1,11 @@
 # Roadmap
 
+## Dependency security updates (not published)
+- [x] Updated @lovable.dev/mcp-js to 3.1.1; refreshed only source-map-js to 1.2.2 and js-yaml to 4.3.2 in the text lockfile, without transitive overrides or unrelated version changes
+- [x] All 209 regression tests passed; automatic build OK; fresh dependency scan confirms @tailwindcss/vite and @tanstack/react-start advisories cleared
+- [ ] @lovable.dev/mcp-js SDK advisory: latest 3.1.1 still pins @modelcontextprotocol/sdk to 1.28.0; requires an upstream release allowing >=1.31.0 (no forced transitive versions)
+- [ ] Remaining esbuild advisory reported under @lovable.dev/mcp-js: its own esbuild is fixed at 0.27.7, but the lockfile still contains 0.18.20 pinned by @esbuild-kit/core-utils via drizzle-kit; latest drizzle-kit retains this chain, requiring an upstream fix (no forced transitive versions)
+
 ## Unsafe link-fetching fixes (not published)
 - [x] Add DNS preflight for both address families on every hop, manual redirects (max 5), 8-second total deadline and streaming byte limits (calendar 3 MB; page 300 KB)
 - [x] 47 focused security tests and 31 existing onboarding/calendar tests passed; real public HTML and iCal downloads passed; build OK; unrelated findings unchanged
