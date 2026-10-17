@@ -3,7 +3,8 @@
 ## Unsafe link-fetching fixes (not published)
 - [x] Add DNS preflight for both address families on every hop, manual redirects (max 5), 8-second total deadline and streaming byte limits (calendar 3 MB; page 300 KB)
 - [x] 47 focused security tests and 31 existing onboarding/calendar tests passed; real public HTML and iCal downloads passed; build OK; unrelated findings unchanged
-- [ ] Complete actual-IP pinning for both readers and close the two SSRF findings — blocked on provisioning an authenticated external HTTPS egress service that connects to the validated IP while preserving TLS hostname verification. Hosted resolveOverride is zone-restricted and cannot pin arbitrary calendar/business domains; raw sockets cannot preserve all supported public destinations. Reran 47 security + 31 calendar/onboarding tests successfully; existing readers unchanged, findings open, not published.
+- [x] User chose free provider restrictions instead of external pinning: calendar providers and Facebook/Instagram only, checked at entry and every redirect; custom calendars and website prefill rejected.
+- [x] All 91 focused security/calendar/onboarding tests passed; build OK. Marked only the two selected findings fixed using provider restrictions, not IP pinning. Signed-in provider import flows not verified; not published.
 
 ## Automated Facebook scans
 - [x] Prepare six daily scan times, every two hours 10:00–20:00 Chicago, DST-safe; retain old daily callback contract

@@ -5,8 +5,8 @@ import { parseIcs, rruleToSeries } from "@/data/schedule";
 async function safeUrl(raw: string) {
   const u = new URL(raw.trim().replace(/^webcals?:\/\//i, "https://"));
   if (u.protocol !== "https:") throw new Error("Use an https:// or webcal:// calendar link");
-  const { validateLinkUrl } = await import("@/lib/safe-link-fetch.server");
-  return validateLinkUrl(u.toString(), true).toString();
+  const { validateProviderLink } = await import("@/lib/safe-link-fetch.server");
+  return validateProviderLink(u.toString(), "calendar").toString();
 }
 
 /** Upcoming events from the owner's connected calendar feed. Read-only; nothing is saved here. */
