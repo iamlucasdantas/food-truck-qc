@@ -20,6 +20,28 @@ function mockNetwork(target: (url: URL, init?: RequestInit) => Response | Promis
 afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
 
 describe("public link reader security", () => {
+  it.each(["https://calendar.google.com/calendar/ical/feed/basic.ics", "https://p123-caldav.icloud.com/published/2/feed", "https://outlook.live.com/owa/calendar/feed/calendar.ics"])("accepts trusted calendar provider %s", (url) => {
+    expect(validateProviderLink(url, "calendar").protocol).toBe("https:");
+  });
+  it.each(["https://facebook.com/truck", "https://www.instagram.com/truck/"])("accepts social provider %s", (url) => {
+    expect(validateProviderLink(url, "social").protocol).toBe("https:");
+  });
+  it.each(["https://facebook.com.attacker.net/", "https://attacker.facebook.com/", "https://93.184.216.34/", "http://facebook.com/", "https://business.example.com/"])("rejects untrusted social destination %s before DNS", async (url) => {
+    const fetcher = mockNetwork(() => new Response("no"));
+    await expect(readPublicLink(url, PAGE_FETCH_LIMITS, {})).rejects.toThrow();
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+  it("rejects custom calendar hosts", () => {
+    expect(() => validateProviderLink("https://custom.example.com/feed.ics", "calendar")).toThrow();
+    expect(() => validateProviderLink("https://p12-caldav.icloud.com.attacker.net/feed", "calendar")).toThrow();
+  });
+  it.each([CALENDAR_FETCH_LIMITS, PAGE_FETCH_LIMITS])("blocks provider redirects to arbitrary public hosts before lookup %j", async (limits) => {
+    const target = vi.fn(() => new Response(null, { status: 302, headers: { location: "https://attacker.net/" } }));
+    const fetcher = mockNetwork(target);
+    await expect(readPublicLink(limits.provider === "calendar" ? calendar : page, limits, {})).rejects.toThrow();
+    expect(target).toHaveBeenCalledTimes(1);
+    expect(fetcher.mock.calls.some(([url]) => String(url).includes("attacker.net"))).toBe(false);
+  });
   it.each(["127.0.0.1", "10.1.2.3", "172.16.0.1", "192.168.1.1", "169.254.169.254", "100.64.0.1", "0.0.0.0", "224.0.0.1", "192.0.2.1", "198.18.0.1", "::1", "fc00::1", "fe80::1", "ff02::1", "::ffff:127.0.0.1", "64:ff9b::a00:1", "2002:7f00:1::", "2001:db8::1"])("rejects nonpublic address %s", (ip) => {
     expect(isPublicAddress(ip)).toBe(false);
   });
