@@ -135,6 +135,45 @@ export type Database = {
           },
         ]
       }
+      chat_api_logs: {
+        Row: {
+          auth_detail: string | null
+          auth_ok: boolean
+          created_at: string
+          endpoint: string
+          error: string | null
+          id: string
+          method: string
+          params: Json
+          status: number
+          user_agent: string | null
+        }
+        Insert: {
+          auth_detail?: string | null
+          auth_ok: boolean
+          created_at?: string
+          endpoint: string
+          error?: string | null
+          id?: string
+          method: string
+          params?: Json
+          status: number
+          user_agent?: string | null
+        }
+        Update: {
+          auth_detail?: string | null
+          auth_ok?: boolean
+          created_at?: string
+          endpoint?: string
+          error?: string | null
+          id?: string
+          method?: string
+          params?: Json
+          status?: number
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       claims: {
         Row: {
           created_at: string
