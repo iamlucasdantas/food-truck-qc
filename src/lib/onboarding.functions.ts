@@ -27,13 +27,12 @@ export const prefillFromSocialLink = createServerFn({ method: "POST" })
     if (!parsed) return { ok: false, platform: null, handle: "", name: "", description: "", logoUrl: null, website: null, error: "That doesn't look like a Facebook, Instagram or website link." };
     const base = { ok: true, platform: parsed.platform, handle: parsed.handle, name: "", description: "", logoUrl: null as string | null, website: parsed.platform === "website" ? parsed.url : null };
     try {
-      const res = await fetch(parsed.url, {
-        headers: { "User-Agent": "Mozilla/5.0 (compatible; FoodTruckQC/1.0; +https://app.foodtruckqc.com)", Accept: "text/html" },
-        redirect: "follow",
-        signal: AbortSignal.timeout(8000),
+      const { readPublicLink, PAGE_FETCH_LIMITS } = await import("@/lib/safe-link-fetch.server");
+      const res = await readPublicLink(parsed.url, PAGE_FETCH_LIMITS, {
+        "User-Agent": "Mozilla/5.0 (compatible; FoodTruckQC/1.0; +https://app.foodtruckqc.com)", Accept: "text/html",
       });
       if (!res.ok) return { ...base, error: "Couldn't read that page — fill in the fields yourself." };
-      const html = (await res.text()).slice(0, 300_000);
+      const html = res.text;
       const og = (prop: string) =>
         html.match(new RegExp(`<meta[^>]+property=["']og:${prop}["'][^>]+content=["']([^"']+)["']`, "i"))?.[1]
         ?? html.match(new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:${prop}["']`, "i"))?.[1]
