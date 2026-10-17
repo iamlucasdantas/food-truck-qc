@@ -53,7 +53,7 @@ const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
 /** Best stop for one truck on a date/time window, with status relative to now. */
 /** Google Maps base-location stops are low-confidence: shown gray ("none"), only when no real stop matches. */
 export function pickStop(stops: Stop[], date: Date, win: Window, now: Date): { stop: Stop | null; status: Status } {
-  const real = pickReal(stops.filter((s) => s.source !== "apify_maps"), date, win, now);
+  const real = pickReal(stops.filter((s) => s.source !== "apify_maps" || s.note === "Google opening hours"), date, win, now);
   if (real.stop) return real;
   const base = stops.find((s) => !s.cancelled && s.source === "apify_maps" && sameDay(new Date(s.starts_at), date));
   return base ? { stop: base, status: "none" } : real;
@@ -173,6 +173,7 @@ const NON_FOOD = /repair|dealer|rental|auto|parking|storage|wash|towing|moving|s
 
 /** Keep Google Maps results that are food trucks / food businesses; drop dealers, repair shops, etc. */
 export function isFoodTruckPlace(categoryName?: string, categories?: string[], title?: string): boolean {
+  if (/\b(?:truck|trailer|cart)s?\b/i.test(title ?? '') || [categoryName ?? '', ...(categories ?? [])].some(c => /^(food[ _]truck|food[ _]stand|mobile[ _]caterer)$/i.test(c.trim()))) return true;
   const cats = [categoryName ?? "", ...(categories ?? [])].join(" | ");
   if (/food truck/i.test(cats) || /food truck/i.test(title ?? "")) return true;
   if (NON_FOOD.test(cats)) return false;

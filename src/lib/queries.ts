@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Stop, Truck } from "@/data/trucks";
 import { expandSeries, type Series } from "@/data/schedule";
+import { expandGoogleHours, googleHours } from '@/data/google-hours';
 
 export function useTrucks() {
   return useQuery({
@@ -21,16 +22,21 @@ export function useStops(from: Date | null, to: Date | null, truckIds?: string[]
     queryKey: ["stops", from?.toISOString(), to?.toISOString(), truckIds?.join(",")],
     enabled: !!from && !!to && (!truckIds || truckIds.length > 0),
     queryFn: async (): Promise<Stop[]> => {
+      if (!from || !to) return [];
       let q = supabase.from("stops").select("*").eq("cancelled", false)
-        .lt("starts_at", to!.toISOString()).gt("ends_at", from!.toISOString())
+        .lt("starts_at", to.toISOString()).gt("ends_at", from.toISOString())
         .order("starts_at").limit(1000);
       if (truckIds) q = q.in("truck_id", truckIds);
-      let sq = supabase.from("stop_series").select("*").lt("start_date", to!.toISOString().slice(0, 10))
-        .or(`end_date.is.null,end_date.gte.${new Date(from!.getTime() - 864e5).toISOString().slice(0, 10)}`);
+      let sq = supabase.from("stop_series").select("*").lt("start_date", to.toISOString().slice(0, 10))
+        .or(`end_date.is.null,end_date.gte.${new Date(from.getTime() - 864e5).toISOString().slice(0, 10)}`);
       if (truckIds) sq = sq.in("truck_id", truckIds);
-      const [{ data, error }, { data: series }] = await Promise.all([q, sq]);
+      let tq = supabase.from('trucks').select('id,name,is_food_truck,base_address,base_lat,base_lng,google_regular_hours,google_place_id,google_hours_updated_at').eq('status', 'active').eq('is_food_truck', true).is('deleted_at', null);
+      if (truckIds) tq = tq.in('id', truckIds);
+      const [{ data, error }, { data: series }, { data: hoursTrucks, error: hoursError }] = await Promise.all([q, sq, tq]);
       if (error) throw error;
-      return [...data, ...expandSeries((series ?? []) as Series[], from!, to!)].sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+      if (hoursError) throw hoursError;
+      const timed = new Set((hoursTrucks ?? []).filter(t => googleHours(t.google_regular_hours)?.periods.length).map(t => t.id));
+      return [...data.filter(s => s.source !== 'apify_maps' || !timed.has(s.truck_id)), ...expandSeries((series ?? []) as Series[], from, to), ...expandGoogleHours(hoursTrucks ?? [], from, to)].sort((a, b) => a.starts_at.localeCompare(b.starts_at));
     },
   });
 }

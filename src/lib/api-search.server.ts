@@ -5,6 +5,7 @@ import { knownLocation, type ResolvedLocation } from '@/data/agent-location';
 import { agentSearch } from '@/data/agent-search';
 import { timeWindow, expandCentralSeries } from '@/data/agent-time';
 import { chicagoDate } from '@/data/trucks';
+import { expandGoogleHours } from '@/data/google-hours';
 import { chicago } from './chat-agent.server';
 const bool = z.enum(['true','false','1','0','yes','no']).transform(v => ['true','1','yes'].includes(v));
 export const AgentInputShape = {
@@ -30,12 +31,12 @@ export async function runSearch(input:SearchInput, defaults:{days:number;limit:n
   const sb = client ?? createClient<Database>(process.env['SUPABASE_URL'] ?? '',process.env['SUPABASE_PUBLISHABLE_KEY'] ?? '',{auth:{persistSession:false,autoRefreshToken:false},global:{fetch:async(url,init) => {const headers = new Headers(init?.headers); if (headers.get('Authorization')?.includes('sb_publishable_')) headers.delete('Authorization'); return fetch(url,{...init,headers});}}});
   const now = new Date(); const window = timeWindow(input.when,input.days ?? defaults.days,!!defaults.upcoming,now);
   const from = new Date(Math.min(window.from.getTime(),now.getTime())); const future = new Date(now.getTime()+7*864e5); const to = new Date(Math.max(window.to.getTime(),future.getTime()));
-  let tq = sb.from('trucks').select('id,name,business_name,category,description,truck_type,website,menu_search,menu_sections,menu,base_address,base_lat,base_lng,is_food_truck').eq('status','active').eq('is_food_truck',true).is('deleted_at',null).limit(1000);
+  let tq = sb.from('trucks').select('id,name,business_name,category,description,truck_type,website,menu_search,menu_sections,menu,base_address,base_lat,base_lng,is_food_truck,google_regular_hours,google_place_id,google_hours_updated_at').eq('status','active').eq('is_food_truck',true).is('deleted_at',null).limit(1000);
   let sq = sb.from('stops').select('truck_id,venue_name,address,city,lat,lng,starts_at,ends_at,source,created_at').eq('cancelled',false).gt('ends_at',from.toISOString()).lt('starts_at',to.toISOString()).order('starts_at').limit(5000);
   let rq = sb.from('stop_series').select('*').lte('start_date',chicagoDate(to)).or(`end_date.is.null,end_date.gte.${chicagoDate(from)}`).limit(2000);
   if (input.truck_id) { tq=tq.eq('id',input.truck_id); sq=sq.eq('truck_id',input.truck_id); rq=rq.eq('truck_id',input.truck_id); }
   const [tr,sr,rr] = await Promise.all([tq,sq,rq]); if (tr.error || sr.error || rr.error) return {error:'lookup failed' as const};
-  const stops = [...(sr.data ?? []),...expandCentralSeries(rr.data ?? [],from,to)];
+  const stops = [...(sr.data ?? []),...expandCentralSeries(rr.data ?? [],from,to),...expandGoogleHours(tr.data ?? [],from,to)];
   const p = {query:input.query,cuisine:input.cuisine,dish:input.dish ?? input.menu_item,open_now:input.open_now,when:input.when,limit:input.limit ?? defaults.limit};
   const hits = agentSearch(tr.data ?? [],stops,p,resolved,window.from,window.to,now);
   const next = hits.length ? null : agentSearch(tr.data ?? [],stops,{...p,open_now:false,when:undefined,limit:50},resolved,now,future,now).filter(h => h.stops.some(s => new Date(s.starts_at) > now)).sort((a,b) => (a.stops.find(s => new Date(s.starts_at)>now)?.starts_at ?? '9').localeCompare(b.stops.find(s => new Date(s.starts_at)>now)?.starts_at ?? '9'))[0];
