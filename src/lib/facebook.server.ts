@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { splitVenues, resolvePostDate, mergeHints, type ExtractedStop } from "@/data/posts";
 import { resolveVenue } from "@/lib/venues.server";
-import { authorIsTruck, ownerHandles, centralToUtc, chicagoDate, keepExtraction, matchTruckByName, slugify } from "@/data/trucks";
+import { authorIsTruck, ownerHandles, centralToUtc, chicagoDate, keepExtraction, matchTruckByName, slugify, groupStops } from "@/data/trucks";
 
 type DB = SupabaseClient<Database>;
 type Kind = "page" | "group" | "reddit" | "instagram";
@@ -252,6 +252,11 @@ export async function ingestPost(ctx: IngestCtx, kind: Kind | "paste", p: Post, 
       // The truck posted it itself and the address is trusted: auto-approved, straight onto the public calendar.
       const { data: dupe } = await db.from("stops").select("id").eq("truck_id", truck.id).eq("source_url", p.url).eq("starts_at", starts.toISOString()).limit(1);
       if (dupe?.length) { out.push({ ...r, status: "duplicate" }); continue; }
+      // Same outing announced in another post (same venue, overlapping time): don't add a second row.
+      const { data: near } = await db.from("stops").select("truck_id, venue_name, starts_at, ends_at, created_at").eq("truck_id", truck.id)
+        .eq("cancelled", false).lt("starts_at", ends.toISOString()).gt("ends_at", starts.toISOString());
+      const probe = { truck_id: truck.id, venue_name: venueName, starts_at: starts.toISOString(), ends_at: ends.toISOString(), created_at: "" };
+      if ((near ?? []).some((n) => groupStops([n, probe]).length === 1)) { out.push({ ...r, status: "duplicate" }); continue; }
       const { error } = await db.from("stops").insert({
         truck_id: truck.id, venue_name: venueName, address: geo.address, city: geo.city || e.city || "",
         lat: geo.lat, lng: geo.lng, starts_at: starts.toISOString(), ends_at: ends.toISOString(), source: "own_post", confidence: e.confidence, source_url: p.url || null,

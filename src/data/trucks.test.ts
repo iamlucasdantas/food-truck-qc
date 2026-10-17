@@ -174,3 +174,28 @@ describe("I'm here duration", () => {
     expect(r.ok && r.end.toISOString()).toBe("2026-10-17T06:00:00.000Z");
   });
 });
+
+import { groupStops as _group } from "./trucks";
+describe("groupStops", () => {
+  const row = (venue: string, s: string, e: string, created: string, truck = "t1") =>
+    ({ truck_id: truck, venue_name: venue, starts_at: s, ends_at: e, created_at: created });
+  it("merges repeated posts for the same venue with overlapping times, keeping the newest", () => {
+    const g = _group([
+      row("Bent River Brewing Company", "2026-10-17T16:00:00Z", "2026-10-17T19:00:00Z", "2026-10-16T10:00:00Z"),
+      row("Bent River Brewing Company", "2026-10-17T17:00:00Z", "2026-10-17T20:00:00Z", "2026-10-17T10:00:00Z"),
+      row("Bent River Brewing", "2026-10-17T17:00:00Z", "2026-10-17T20:00:00Z", "2026-10-16T12:00:00Z"),
+    ]);
+    expect(g).toHaveLength(1);
+    expect(g[0]!.merged).toBe(3);
+    expect(g[0]!.starts_at).toBe("2026-10-17T17:00:00Z");
+  });
+  it("keeps different days, venues and trucks apart", () => {
+    const g = _group([
+      row("Bent River", "2026-10-17T16:00:00Z", "2026-10-17T19:00:00Z", "a"),
+      row("Bent River", "2026-10-18T16:00:00Z", "2026-10-18T19:00:00Z", "a"),
+      row("Other Place", "2026-10-17T16:00:00Z", "2026-10-17T19:00:00Z", "a"),
+      row("Bent River", "2026-10-17T16:00:00Z", "2026-10-17T19:00:00Z", "a", "t2"),
+    ]);
+    expect(g).toHaveLength(4);
+  });
+});

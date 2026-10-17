@@ -8,6 +8,7 @@ export const CORS = {
   "Access-Control-Allow-Headers": "x-api-key, content-type",
 };
 
+export { groupStops } from "@/data/trucks";
 export const json = (body: unknown, status = 200) => Response.json(body, { status, headers: CORS });
 export const preflight = () => new Response(null, { status: 204, headers: CORS });
 

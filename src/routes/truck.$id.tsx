@@ -8,7 +8,7 @@ const TruckMap = lazy(() => import("@/components/TruckMap"));
 import { supabase } from "@/integrations/supabase/client";
 import type { MenuSection } from "@/data/menu";
 import { TruckGallery } from "@/components/TruckGallery";
-import { effectivePayments, fmtCentral, fmtRange, ownerHandles, publicDescription, SOURCE_LABEL, stopBadge } from "@/data/trucks";
+import { effectivePayments, fmtCentral, fmtRange, ownerHandles, publicDescription, SOURCE_LABEL, stopBadge, groupStops } from "@/data/trucks";
 import { useStops, dayBounds, useStopsRealtime } from "@/lib/queries";
 import { ClaimButton } from "@/components/ClaimButton";
 import { useProfileLibrary } from "@/hooks/use-profile-library";
@@ -50,7 +50,7 @@ function TruckPage() {
     queryFn: async () => (await supabase.from("businesses").select("*").eq("owner_id", t!.claimed_by!).maybeSingle()).data,
   });
   const { data: allStops = [] } = useStops(from, to, [id]);
-  const stops = allStops.filter((s) => s.source !== "apify_maps" || allStops.every((x) => x.source === "apify_maps")).slice(0, 20);
+  const stops = groupStops(allStops.filter((s) => s.source !== "apify_maps" || allStops.every((x) => x.source === "apify_maps"))).slice(0, 20);
   useStopsRealtime();
   const [mapFailed, setMapFailed] = useState(false);
   const [tick, setTick] = useState<number | null>(null);
@@ -123,7 +123,7 @@ function TruckPage() {
               <span className="w-24 shrink-0 font-semibold sm:w-28">{new Date(s.starts_at).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</span>
               <span className="min-w-0 flex-1 text-right">
                 {s.venue_name}, {s.city} · {fmtRange(s)}
-                <span className="mt-1 inline-block rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">{stopBadge(s)} · {SOURCE_LABEL[s.source]}</span>
+                <span className="mt-1 inline-block rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">{stopBadge(s)} · {SOURCE_LABEL[s.source]}{s.merged > 1 ? ` · ${s.merged} posts` : ""}</span>
               </span>
             </li>
           ))}
