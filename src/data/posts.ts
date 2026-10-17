@@ -108,3 +108,16 @@ export function mergeHints(ai: ExtractedStop[], hints: VenueHint[], date: string
   }
   return out;
 }
+
+/** Placeholder names the AI returns when a post doesn't say who the truck is. Never create or match a truck by these. */
+export function isUnknownTruckName(name: string | null | undefined): boolean {
+  const n = (name ?? "").toLowerCase().replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
+  if (n.length < 3) return true;
+  return /^(unknown|unnamed|n a|na|none|null|undefined|tbd|not specified|not mentioned|no name|food truck|a food truck|the food truck|truck|unknown (food )?truck|unnamed (food )?truck)$/.test(n);
+}
+
+/** Name for a pending review truck when the post didn't name it: the post author, else a clear review label. */
+export function reviewTruckName(author: string | null | undefined): string {
+  const a = (author ?? "").trim();
+  return a && !isUnknownTruckName(a) ? a : "Unnamed truck (needs review)";
+}

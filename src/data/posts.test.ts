@@ -66,3 +66,18 @@ describe("address matching", () => {
     expect(needsAddressCheck("Adventurous Brewing", { name: "Adventurous Brewing", lat: 39.7, lng: -104.9 })).toBe(true);
   });
 });
+
+import { isUnknownTruckName, reviewTruckName } from "./posts";
+describe("unknown truck names", () => {
+  it("treats placeholder names as unknown", () => {
+    for (const n of ["Unknown", "unknown truck", "N/A", "", "  ", "Food Truck", "TBD", "Unnamed"]) expect(isUnknownTruckName(n)).toBe(true);
+  });
+  it("keeps real names", () => {
+    for (const n of ["Skinny's Fiya Truck", "Toni's Smokin' Grill", "Tacos"]) expect(isUnknownTruckName(n)).toBe(false);
+  });
+  it("names review trucks after the post author, never Unknown", () => {
+    expect(reviewTruckName("Jane Doe")).toBe("Jane Doe");
+    expect(reviewTruckName("")).toBe("Unnamed truck (needs review)");
+    expect(reviewTruckName("Unknown")).toBe("Unnamed truck (needs review)");
+  });
+});
