@@ -1,5 +1,10 @@
 # Roadmap
 
+## Location confirmation (not published)
+- [ ] Store verified-location evidence; show verified vs awaiting confirmation without implying opening hours.
+- [ ] Add Admin and approved-claim owner confirmation controls with protected permissions and address-change reset.
+- [ ] Test permissions and status rules; verify public label and available confirmation controls.
+
 ## Stationary trucks and Google hours (not published)
 - [x] Preserve explicit truck/category classification; store raw Google categories and weekly hours snapshots. Bonbon remains true and now fixed; no fabricated hours.
 - [x] Expand Chicago hours through map/app search and API/MCP; authenticated admin refresh (10 saved Places IDs, sequential) with category/hour list. Tests include overnight, 24h/DST, closed days and open_now.
