@@ -30,6 +30,8 @@ import { Route as OwnerOnboardingRouteImport } from './routes/owner.onboarding'
 import { Route as TruckIdRouteImport } from './routes/truck.$id'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as ApiPublicApifyWebhookRouteImport } from './routes/api/public/apify-webhook'
+import { Route as ApiPublicChatSearchTrucksRouteImport } from './routes/api/public/chat-search-trucks'
+import { Route as ApiPublicChatUpcomingStopsRouteImport } from './routes/api/public/chat-upcoming-stops'
 import { Route as ApiPublicCalendarIdRouteImport } from './routes/api/public/calendar.$id'
 import { Route as ApiPublicJobsFacebookDailyRouteImport } from './routes/api/public/jobs/facebook-daily'
 import { Route as ApiPublicV1FavoritesRouteImport } from './routes/api/public/v1/favorites'
@@ -141,6 +143,18 @@ const ApiPublicApifyWebhookRoute = ApiPublicApifyWebhookRouteImport.update({
   path: '/api/public/apify-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicChatSearchTrucksRoute =
+  ApiPublicChatSearchTrucksRouteImport.update({
+    id: '/api/public/chat-search-trucks',
+    path: '/api/public/chat-search-trucks',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicChatUpcomingStopsRoute =
+  ApiPublicChatUpcomingStopsRouteImport.update({
+    id: '/api/public/chat-upcoming-stops',
+    path: '/api/public/chat-upcoming-stops',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCalendarIdRoute = ApiPublicCalendarIdRouteImport.update({
   id: '/api/public/calendar/$id',
   path: '/api/public/calendar/$id',
@@ -189,6 +203,8 @@ export interface FileRoutesByFullPath {
   '/truck/$id': typeof TruckIdRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/api/public/apify-webhook': typeof ApiPublicApifyWebhookRoute
+  '/api/public/chat-search-trucks': typeof ApiPublicChatSearchTrucksRoute
+  '/api/public/chat-upcoming-stops': typeof ApiPublicChatUpcomingStopsRoute
   '/api/public/calendar/$id': typeof ApiPublicCalendarIdRoute
   '/api/public/jobs/facebook-daily': typeof ApiPublicJobsFacebookDailyRoute
   '/api/public/v1/favorites': typeof ApiPublicV1FavoritesRoute
@@ -216,6 +232,8 @@ export interface FileRoutesByTo {
   '/truck/$id': typeof TruckIdRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/api/public/apify-webhook': typeof ApiPublicApifyWebhookRoute
+  '/api/public/chat-search-trucks': typeof ApiPublicChatSearchTrucksRoute
+  '/api/public/chat-upcoming-stops': typeof ApiPublicChatUpcomingStopsRoute
   '/api/public/calendar/$id': typeof ApiPublicCalendarIdRoute
   '/api/public/jobs/facebook-daily': typeof ApiPublicJobsFacebookDailyRoute
   '/api/public/v1/favorites': typeof ApiPublicV1FavoritesRoute
@@ -245,6 +263,8 @@ export interface FileRoutesById {
   '/truck/$id': typeof TruckIdRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/api/public/apify-webhook': typeof ApiPublicApifyWebhookRoute
+  '/api/public/chat-search-trucks': typeof ApiPublicChatSearchTrucksRoute
+  '/api/public/chat-upcoming-stops': typeof ApiPublicChatUpcomingStopsRoute
   '/api/public/calendar/$id': typeof ApiPublicCalendarIdRoute
   '/api/public/jobs/facebook-daily': typeof ApiPublicJobsFacebookDailyRoute
   '/api/public/v1/favorites': typeof ApiPublicV1FavoritesRoute
@@ -274,6 +294,8 @@ export interface FileRouteTypes {
     | '/truck/$id'
     | '/.lovable/oauth/consent'
     | '/api/public/apify-webhook'
+    | '/api/public/chat-search-trucks'
+    | '/api/public/chat-upcoming-stops'
     | '/api/public/calendar/$id'
     | '/api/public/jobs/facebook-daily'
     | '/api/public/v1/favorites'
@@ -301,6 +323,8 @@ export interface FileRouteTypes {
     | '/truck/$id'
     | '/.lovable/oauth/consent'
     | '/api/public/apify-webhook'
+    | '/api/public/chat-search-trucks'
+    | '/api/public/chat-upcoming-stops'
     | '/api/public/calendar/$id'
     | '/api/public/jobs/facebook-daily'
     | '/api/public/v1/favorites'
@@ -329,6 +353,8 @@ export interface FileRouteTypes {
     | '/truck/$id'
     | '/.lovable/oauth/consent'
     | '/api/public/apify-webhook'
+    | '/api/public/chat-search-trucks'
+    | '/api/public/chat-upcoming-stops'
     | '/api/public/calendar/$id'
     | '/api/public/jobs/facebook-daily'
     | '/api/public/v1/favorites'
@@ -354,6 +380,8 @@ export interface RootRouteChildren {
   TruckIdRoute: typeof TruckIdRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   ApiPublicApifyWebhookRoute: typeof ApiPublicApifyWebhookRoute
+  ApiPublicChatSearchTrucksRoute: typeof ApiPublicChatSearchTrucksRoute
+  ApiPublicChatUpcomingStopsRoute: typeof ApiPublicChatUpcomingStopsRoute
   ApiPublicCalendarIdRoute: typeof ApiPublicCalendarIdRoute
   ApiPublicJobsFacebookDailyRoute: typeof ApiPublicJobsFacebookDailyRoute
   ApiPublicV1FavoritesRoute: typeof ApiPublicV1FavoritesRoute
@@ -510,6 +538,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicApifyWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/chat-search-trucks': {
+      id: '/api/public/chat-search-trucks'
+      path: '/api/public/chat-search-trucks'
+      fullPath: '/api/public/chat-search-trucks'
+      preLoaderRoute: typeof ApiPublicChatSearchTrucksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/chat-upcoming-stops': {
+      id: '/api/public/chat-upcoming-stops'
+      path: '/api/public/chat-upcoming-stops'
+      fullPath: '/api/public/chat-upcoming-stops'
+      preLoaderRoute: typeof ApiPublicChatUpcomingStopsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/calendar/$id': {
       id: '/api/public/calendar/$id'
       path: '/api/public/calendar/$id'
@@ -592,6 +634,8 @@ const rootRouteChildren: RootRouteChildren = {
   TruckIdRoute: TruckIdRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   ApiPublicApifyWebhookRoute: ApiPublicApifyWebhookRoute,
+  ApiPublicChatSearchTrucksRoute: ApiPublicChatSearchTrucksRoute,
+  ApiPublicChatUpcomingStopsRoute: ApiPublicChatUpcomingStopsRoute,
   ApiPublicCalendarIdRoute: ApiPublicCalendarIdRoute,
   ApiPublicJobsFacebookDailyRoute: ApiPublicJobsFacebookDailyRoute,
   ApiPublicV1FavoritesRoute: ApiPublicV1FavoritesRoute,
