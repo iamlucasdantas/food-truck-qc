@@ -1,5 +1,9 @@
 # Roadmap
 
+## Unsafe link-fetching fixes (not published)
+- [ ] Protect calendar and onboarding page readers with DNS destination validation, redirect checks and bounded downloads
+- [ ] Run focused security and existing onboarding/calendar tests; leave unrelated findings and behavior unchanged
+
 ## Automated Facebook scans
 - [x] Prepare six daily scan times, every two hours 10:00–20:00 Chicago, DST-safe; retain old daily callback contract
 - [x] Five timing tests passed including DST changes; callback rejects unauthenticated requests (401), build OK
