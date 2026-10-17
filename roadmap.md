@@ -1,5 +1,10 @@
 # Roadmap
 
+## Stationary trucks and Google hours (not published)
+- [ ] Preserve stationary truck/category classification and store Google weekly hours.
+- [ ] Expand Chicago hours through map/app search and API/MCP; add authenticated bounded refresh.
+- [ ] Report stationary candidates/hours and verify open_now and Bonbon queries; disclose Google verification limits.
+
 ## Agent truck audit and fuzzy names (not published)
 - [x] Audited all 118 records: 24 newly excluded, 44 already excluded; 30 uncertain candidates retained for Admin review. Full audit delivered in Files, records/stops preserved. Lil Stevie's has food-trailer evidence and stays.
 - [x] Shared Levenshtein name matching and best-match ranking across both chat endpoints and MCP search tools; require explicit is_food_truck=true
