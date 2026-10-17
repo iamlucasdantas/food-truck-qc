@@ -6,6 +6,13 @@ const base = process.env["AGENT_API_TEST_ORIGIN"] ?? "http://localhost:8080";
 const headers = { "content-type": "application/json", "x-api-key": key ?? "" };
 
 describe.skipIf(!key)("chat-agent camelCase HTTP requests", () => {
+  it.each(["chat-search-trucks", "chat-upcoming-stops"])("%s ranks Tony's Smoking Grill as Toni's Smokin' Grill", async endpoint => {
+    const response = await fetch(`${base}/api/public/${endpoint}?query=${encodeURIComponent("Tony's Smoking Grill")}&days=7`, { headers });
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.results[0]?.truck_id).toBe("toni-s-smokin-grill-e8mrk");
+    expect(body.results[0]?.matched_on).toContain("name");
+  }, 30000);
   it("POST blank optional aliases returns 200 with open_now applied", async () => {
     const response = await fetch(`${base}/api/public/chat-search-trucks`, {
       method: "POST", headers,

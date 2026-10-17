@@ -12,7 +12,7 @@
 ## Rules
 - Managed social scans use the stable facebook-daily callback with a validated versioned body and Chicago-local timing rules in src/data/social-schedule.ts; preserve the old body until deployment and schedule replacement so live callbacks remain compatible.
 - Read src/lib/AGENTS.md before edits; its link/security and agent-search rules apply.
-- Agent aliases share the pure agent-params cleaner so GET/POST sanitizing stays consistent.
+- Shared agent-params/food/search normalize aliases, rank names and require truck classification for API/MCP.
 - Truck/stop data lives in Lovable Cloud tables; pure status/time rules live in `src/data/trucks.ts` (unit-tested) so UI and tests share them.
 - Public discovery filters is_food_truck; Admin retains classification edits so restaurants stay reviewable.
 - Auth is a modal opened via `useAuth().openAuth()`; pages stay public and RLS protects data — no route-level gate.

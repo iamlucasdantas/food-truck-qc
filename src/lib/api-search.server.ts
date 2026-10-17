@@ -45,7 +45,8 @@ type SearchSuccess = Exclude<Awaited<ReturnType<typeof runSearch>>, {error:strin
 export function agentResponse(r:SearchSuccess, upcoming=false) {
   const result = (h:SearchSuccess['hits'][number], s = h.stops[0]) => ({truck_id:h.truck.id,name:h.truck.name,cuisine:h.truck.category || null,open_now:s?.open_now ?? false,is_base_location:!s,distance_miles:h.distance_miles,stop:s ? {venue:s.venue_name,address:s.address,city:s.city,starts_at:chicago(s.starts_at),ends_at:chicago(s.ends_at)} : null,base_address:!s ? h.truck.base_address : null,matched_on:h.matched_on,matched_items:h.matched_items,menu_highlights:h.menu_highlights,app_url:`https://app.foodtruckqc.com/truck/${h.truck.id}`});
   const results = upcoming ? r.hits.flatMap(h => h.stops.length ? h.stops.map(s => result(h,s)) : [result(h)]) : r.hits.map(h => result(h));
-  if (upcoming) results.sort((a,b) => Number(b.open_now)-Number(a.open_now) || Date.parse(a.stop?.starts_at ?? '9999-01-01')-Date.parse(b.stop?.starts_at ?? '9999-01-01') || (a.distance_miles ?? Infinity)-(b.distance_miles ?? Infinity));
+  const nameScores = new Map(r.hits.map(h => [h.truck.id, h.name_score]));
+  if (upcoming) results.sort((a,b) => (nameScores.get(b.truck_id) ?? 0)-(nameScores.get(a.truck_id) ?? 0) || Number(b.open_now)-Number(a.open_now) || Date.parse(a.stop?.starts_at ?? '9999-01-01')-Date.parse(b.stop?.starts_at ?? '9999-01-01') || (a.distance_miles ?? Infinity)-(b.distance_miles ?? Infinity));
   const display = results.slice(0,r.limit);
   const next = r.next ? result(r.next,r.next.stops.find(s => new Date(s.starts_at)>r.now)) : null;
   const where = r.resolved.type === 'city' ? `in ${r.resolved.name}` : `within ${r.radius} mi of ${r.resolved.name}`;
