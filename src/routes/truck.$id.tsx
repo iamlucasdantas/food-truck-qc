@@ -8,7 +8,9 @@ const TruckMap = lazy(() => import("@/components/TruckMap"));
 import { supabase } from "@/integrations/supabase/client";
 import type { MenuSection } from "@/data/menu";
 import { TruckGallery } from "@/components/TruckGallery";
-import { effectivePayments, fmtCentral, fmtRange, ownerHandles, publicDescription, SOURCE_LABEL, stopBadge, groupStops } from "@/data/trucks";
+import { effectivePayments, fmtCentral, ownerHandles, publicDescription, groupStops } from "@/data/trucks";
+import { upcomingStops } from '@/data/public-schedule';
+import { PublicTruckSchedule } from '@/components/PublicTruckSchedule';
 import { useStops, dayBounds, useStopsRealtime } from "@/lib/queries";
 import { ClaimButton } from "@/components/ClaimButton";
 import { useProfileLibrary } from "@/hooks/use-profile-library";
@@ -50,12 +52,12 @@ function TruckPage() {
     queryFn: async () => (await supabase.from("businesses").select("*").eq("owner_id", t!.claimed_by!).maybeSingle()).data,
   });
   const { data: allStops = [] } = useStops(from, to, [id]);
-  const stops = groupStops(allStops.filter((s) => s.source !== "apify_maps" || s.note === 'Google opening hours' || allStops.every((x) => x.source === "apify_maps"))).slice(0, 20);
   useStopsRealtime();
   const [mapFailed, setMapFailed] = useState(false);
   const [tick, setTick] = useState<number | null>(null);
   useEffect(() => { setTick(Date.now()); const i = setInterval(() => setTick(Date.now()), 60_000); return () => clearInterval(i); }, []);
   const live = tick ? allStops.find((s) => s.is_live && !s.cancelled && Date.parse(s.starts_at) <= tick && Date.parse(s.ends_at) > tick) : undefined;
+  const stops = tick ? upcomingStops(groupStops(allStops.filter(s => s.source !== 'apify_maps' || s.note === 'Google opening hours')), tick) : [];
 
   if (isLoading) return <main className="p-10 text-center text-muted-foreground">Loading…</main>;
   if (!t) return <div className="p-10 text-center"><p>Truck not found.</p><Link to="/" className="chip mt-4">Back to map</Link></div>;
@@ -114,21 +116,7 @@ function TruckPage() {
         );
       })()}
 
-      <section className="panel p-5">
-        <h2 className="mb-3 text-xl font-bold">Upcoming stops for {t.name}</h2>
-        {stops.length === 0 && <p className="text-sm text-muted-foreground">No stops scheduled.</p>}
-        <ul className="divide-y-2 divide-muted">
-          {stops.map((s) => (
-            <li key={s.id} className="flex justify-between gap-3 py-2 text-sm">
-              <span className="w-24 shrink-0 font-semibold sm:w-28">{new Date(s.starts_at).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</span>
-              <span className="min-w-0 flex-1 text-right">
-                {s.venue_name}, {s.city} · {fmtRange(s)}
-                <span className="mt-1 inline-block rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground">{stopBadge(s)} · {SOURCE_LABEL[s.source]}{s.merged > 1 ? ` · ${s.merged} posts` : ""}</span>
-              </span>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <PublicTruckSchedule stops={stops} name={t.name} />
 
       {sections?.length ? (
         <section id="menu" className="panel scroll-mt-4 p-5" aria-labelledby="menu-h">

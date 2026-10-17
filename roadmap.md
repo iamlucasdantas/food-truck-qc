@@ -1,5 +1,9 @@
 # Roadmap
 
+## Public profile schedule (not published)
+- [x] Removed public import badges and post counts. Default next five upcoming/ongoing stops, list/calendar switching at any count, view all within the 30-day schedule. Untimed usual spots stay on map rather than becoming upcoming events.
+- [x] 34 focused tests passed; Toni's (2 stops) and Bonbon (5 initial / 21 expanded) verified in browser; calendar/day selection works, 390px no horizontal overflow or runtime errors; Chicago times consistent, automatic build OK. Not published.
+
 ## Location confirmation (not published)
 - [x] Store explicit Google verification / owner confirmation; public base and Google-hours cards show verified vs awaiting confirmation independently of opening hours.
 - [x] Admin Trucks has a locations queue and drawer control; active claimed owner has a profile confirmation control. RPC enforces admin/active claimed owner permissions; direct writes cannot fake confirmation; changed address/coordinates reset evidence.
