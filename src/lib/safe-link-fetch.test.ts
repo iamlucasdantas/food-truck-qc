@@ -32,7 +32,7 @@ describe("public link reader security", () => {
     expect(validateLinkUrl("http://business.example.com/", false).protocol).toBe("http:");
     expect(() => validateLinkUrl("http://business.example.com/", true)).toThrow();
   });
-  it.each([["10.0.0.1"], ["93.184.216.34", "fc00::1"], []])("rejects DNS results %j before contacting target", async (addresses) => {
+  it.each([{ addresses: ["10.0.0.1"] }, { addresses: ["93.184.216.34", "fc00::1"] }, { addresses: [] }])("rejects DNS results $addresses before contacting target", async ({ addresses }) => {
     const target = vi.fn(() => new Response("private"));
     mockNetwork(target, { "business.example.com": addresses });
     await expect(readPublicLink(page, PAGE_FETCH_LIMITS, {})).rejects.toThrow();
