@@ -1,12 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { inQuadCities, matchVenue, needsAddressCheck, normVenue } from "@/data/posts";
+import { DAVENPORT_CENTER } from '@/data/coverage';
 
 type DB = SupabaseClient<Database>;
 export type ResolvedVenue = { name: string; address: string | null; city: string; lat: number; lng: number; check: boolean };
 
 const GATEWAY = "https://connector-gateway.lovable.dev/google_maps";
-const QC = { latitude: 41.52, longitude: -90.55 };
+const QC = { latitude: DAVENPORT_CENTER.lat, longitude: DAVENPORT_CENTER.lng };
 
 function cityFromAddress(a: string): string {
   const parts = a.split(",").map((s) => s.trim());
@@ -23,12 +24,12 @@ async function placesLookup(name: string, cityHint: string) {
       Authorization: `Bearer ${lovable}`, "X-Connection-Api-Key": maps, "Content-Type": "application/json",
       "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.location",
     },
-    body: JSON.stringify({ textQuery: [name, cityHint || "Quad Cities"].join(", "), pageSize: 3, locationBias: { circle: { center: QC, radius: 40000 } } }),
+    body: JSON.stringify({ textQuery: [name, cityHint || "Davenport Iowa region"].join(", "), pageSize: 3, locationBias: { circle: { center: QC, radius: 50000 } } }),
   });
   if (!res.ok) { console.error(`[venues] Places lookup failed [${res.status}]: ${(await res.text()).slice(0, 300)}`); return null; }
   const j = (await res.json()) as { places?: { displayName?: { text?: string }; formattedAddress?: string; location?: { latitude: number; longitude: number } }[] };
   const hits = (j.places ?? []).filter((p) => p.location).map((p) => ({ name: p.displayName?.text ?? "", address: p.formattedAddress ?? "", lat: p.location!.latitude, lng: p.location!.longitude }));
-  return hits.find((h) => inQuadCities(h.lat, h.lng)) ?? hits[0] ?? null;
+  return hits.find((h) => inQuadCities(h.lat, h.lng)) ?? null;
 }
 
 /**

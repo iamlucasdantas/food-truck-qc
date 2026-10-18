@@ -1,4 +1,5 @@
 // Pure helpers that turn a social post into stops: time ranges, several venues per post, the post's date, venue matching.
+import { inServiceRegion } from './coverage';
 
 const pad = (n: number) => String(n).padStart(2, "0");
 const RANGE = /\b(\d{1,2})(?::(\d{2}))?\s*(am|pm|a|p)?\s*(?:-|–|—|to|til|till|until)\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm|a|p)?\b/gi;
@@ -86,8 +87,7 @@ export function matchVenue<T extends { name: string }>(name: string, venues: T[]
 }
 
 export const QC_BOUNDS = { south: 41.38, north: 41.72, west: -90.80, east: -90.20 };
-export const inQuadCities = (lat: number, lng: number) =>
-  lat >= QC_BOUNDS.south && lat <= QC_BOUNDS.north && lng >= QC_BOUNDS.west && lng <= QC_BOUNDS.east;
+export const inQuadCities = inServiceRegion;
 
 /** A looked-up place is trusted only when it is in the Quad Cities and its name matches the venue; otherwise "Check address". */
 export function needsAddressCheck(query: string, found: { name: string; lat: number; lng: number }): boolean {
