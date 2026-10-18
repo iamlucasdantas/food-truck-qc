@@ -1,6 +1,7 @@
 import { CUISINES, cityOf, matchesFilters, parseFilters, filtersToSearch, type CuisineKey, type Filters } from "@/data/filters";
 import { truckByline } from "@/data/onboarding";
 import { locationVerified } from '@/data/location-confirmation';
+import { DAVENPORT_CENTER, REGION_RADIUS_MILES, mapRadius } from '@/data/coverage';
 import { Logo } from "@/components/Logo";
 import { SiteFooter } from "@/components/SiteFooter";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -47,7 +48,7 @@ const PILL: Record<Status, string> = {
   open: "bg-pin-open-soft text-foreground", today: "bg-pin-today-soft text-foreground", none: "bg-muted text-muted-foreground",
 };
 const DOT: Record<Status, string> = { open: "bg-pin-open", today: "bg-pin-today", none: "bg-pin-none" };
-const RADIUS_DEFAULT = 10;
+const RADIUS_DEFAULT = REGION_RADIUS_MILES;
 
 function dayOptions() {
   const out: Date[] = [];
@@ -64,7 +65,7 @@ function Index() {
   const [now, setNow] = useState<Date | null>(null);
   const [dayIdx, setDayIdx] = useState(0);
   const [win, setWin] = useState<Window>("now");
-  const [center, setCenter] = useState(QC_CENTER);
+  const [center, setCenter] = useState(DAVENPORT_CENTER);
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const f = parseFilters(search);
@@ -81,7 +82,7 @@ function Index() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
-  const radius = urlRadius >= 1 && urlRadius <= 25 ? Math.round(urlRadius) : RADIUS_DEFAULT;
+  const radius = mapRadius(urlRadius);
   const setRadius = (r: number) => setF({}, { radius: r === RADIUS_DEFAULT ? undefined : String(r) });
   const [mapFailed, setMapFailed] = useState(false);
   const [sheetH, setSheetH] = useState<number | null>(null);
@@ -289,8 +290,8 @@ function Index() {
         )}
       </Section>
       <Section title="Distance" aside={<span className="text-sm font-semibold text-primary">{radius} mi</span>}>
-        <Slider min={1} max={25} step={1} value={[radius]} onValueChange={(v) => setRadius(v[0] ?? RADIUS_DEFAULT)} aria-label="Distance in miles" className="py-3" />
-        <div className="flex justify-between text-xs text-muted-foreground"><span>1 mi</span><span>25 mi</span></div>
+        <Slider min={1} max={REGION_RADIUS_MILES} step={1} value={[radius]} onValueChange={(v) => setRadius(v[0] ?? RADIUS_DEFAULT)} aria-label="Distance in miles" className="py-3" />
+        <div className="flex justify-between text-xs text-muted-foreground"><span>1 mi</span><span>75 mi</span></div>
       </Section>
       <Section title="Food">
         <div className="grid gap-2 sm:grid-cols-2">
