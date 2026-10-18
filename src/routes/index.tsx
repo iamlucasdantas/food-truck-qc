@@ -1,6 +1,5 @@
 import { CUISINES, cityOf, matchesFilters, parseFilters, filtersToSearch, type CuisineKey, type Filters } from "@/data/filters";
 import { truckByline } from "@/data/onboarding";
-import { locationVerified } from '@/data/location-confirmation';
 import { DAVENPORT_CENTER, DEFAULT_RADIUS_MILES, REGION_RADIUS_MILES, mapRadius } from '@/data/coverage';
 import { Logo } from "@/components/Logo";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -222,7 +221,7 @@ function Index() {
   );
 
   const statusText = (r: (typeof results)[number]) =>
-    !r.stop || r.status === "none" ? (locationVerified(r.t) ? "Location verified" : "Location awaiting confirmation")
+    !r.stop || r.status === "none" ? "Closed now"
       : r.status === "open" ? (r.stop.is_live ? `Here until ${fmtCentral(r.stop.ends_at)}` : `Open now · until ${fmtTime(r.stop.ends_at)}`)
         : `${dayIdx === 0 ? "Today" : dayIdx === 1 ? "Tomorrow" : "Scheduled"} ${fmtRange(r.stop)}`;
 
@@ -252,7 +251,6 @@ function Index() {
               <span className="block truncate text-sm">{r.t.category} · {r.dist.toFixed(1)} mi</span>
               <span className="block truncate text-xs text-muted-foreground">{r.stop && r.status !== "none" ? `${r.stop.venue_name}, ${r.stop.city}` : (r.t.base_address ?? "Base location")}</span>
               {r.stop?.note === 'Google opening hours' && <span className="block text-xs text-muted-foreground">Google hours · {fmtRange(r.stop)} Central</span>}
-              {r.stop?.note === 'Google opening hours' && <span className="block text-xs text-muted-foreground">{locationVerified(r.t) ? 'Location verified' : 'Location awaiting confirmation'}</span>}
               <span className={`mt-1 inline-flex max-w-full items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold ${PILL[r.status]}`}>
                 <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${DOT[r.status]}`} /><span className="truncate">{statusText(r)}</span>
               </span>
@@ -402,7 +400,6 @@ function Index() {
                 <span className={`mt-1 inline-flex max-w-full items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-semibold ${PILL[sel.status]}`}>
                   <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${DOT[sel.status]}`} /><span className="truncate">{statusText(sel)}</span>
                 </span>
-                {sel.t.truck_type === 'fixed' && sel.t.base_address && <p className="mt-1 text-xs text-muted-foreground">{locationVerified(sel.t) ? 'Location verified' : 'Location awaiting confirmation'}</p>}
                 {sel.stop && sel.status !== "none" && <p className="mt-1 text-xs text-muted-foreground">{SOURCE_LABEL[sel.stop.source]}</p>}
               </div>
               <button onClick={() => toggle(sel.t.id)} aria-label={isFav(sel.t.id) ? "Remove from favorites" : "Save to favorites"} className={`grid h-11 w-11 shrink-0 place-items-center rounded-full hover:bg-muted ${focus}`}><Heart className={`h-5 w-5 ${isFav(sel.t.id) ? "fill-primary text-primary" : "text-muted-foreground"}`} /></button>
