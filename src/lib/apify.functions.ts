@@ -42,6 +42,7 @@ export const seedCity = createServerFn({ method: "POST" })
     const errors: string[] = [];
 
     for (const p of places) {
+      if (!p.placeId || !p.title || !p.location) continue;
       const profileStatus = p.permanentlyClosed === true ? 'CLOSED_PERMANENTLY' : p.temporarilyClosed === true ? 'CLOSED_TEMPORARILY' : p.permanentlyClosed === false && p.temporarilyClosed === false ? 'OPERATIONAL' : null;
       const fields = {
         name: p.title!, category: mapApifyCategory(p.categoryName), phone: p.phone ?? null, website: p.website ?? null,
@@ -53,11 +54,16 @@ export const seedCity = createServerFn({ method: "POST" })
       };
       const ex = byPlace.get(p.placeId!);
       if (ex?.is_food_truck) fields.is_food_truck = true;
+      if (!fields.is_food_truck) continue; // unrelated restaurants/stores never become new listings
       let truckId: string;
       if (ex) {
         if (ex.claimed_by) {
           const {error} = await supabase.from('trucks').update(googleStatusPatch(profileStatus)).eq('id',ex.id);
           if(error) errors.push(`${p.title}: ${error.message}`);
+          if (ex.truck_type === 'fixed' && p.address?.trim()) {
+            const {error: confirmError} = await supabase.rpc('confirm_truck_location',{_truck_id:ex.id,_google_verified:false});
+            if(confirmError) errors.push(`${p.title} address: ${confirmError.message}`);
+          }
           continue; // keep owner business fields unchanged
         }
         const { error } = await supabase.from("trucks").update(fields).eq("id", ex.id);
