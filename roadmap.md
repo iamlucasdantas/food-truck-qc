@@ -1,9 +1,11 @@
 # Roadmap
 
 ## Unified scraper approval and complete listings
-- [ ] Share truck approval across pending and scraper review; validate address/category and publish only complete suggestions.
-- [ ] Fill new scraped listings from evidenced locations and Google/Facebook category; block Other and incomplete creations, deduplicate records.
-- [ ] Run focused tests and verify available Admin flows; do not publish.
+- [x] Shared DB truck-status validation and transactional Admin suggestion decision synchronize pending trucks and complete, trusted future suggestions; stop-only rejection remains distinct.
+- [x] New Google/social scraped listings require evidenced address/coordinates and Google category or own Facebook food evidence; incomplete discoveries stay in import errors with original post, never invent Other. Stable IDs and existing name matching deduplicate repeated detections. Admin can correct address/category.
+- [x] Corrected legacy Google categories where saved evidence exists; filled 10 mobile truck addresses from saved public stops without changing type/status. No fabricated categories for remaining evidence-free listings.
+- [x] 76 focused tests passed, automatic build OK; no publication.
+- [ ] Authenticated Admin approval/readback and new live scraper run: no account matches requesting user's email; needs sign-in in preview. Existing records without source category evidence need profile/manual review.
 
 ## Corrected radius and visible address confirmation
 - [x] Maximum coverage 100 miles; public map and regional search default 10 miles around the center pin.
