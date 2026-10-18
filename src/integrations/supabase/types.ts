@@ -983,6 +983,10 @@ export type Database = {
     Functions: {
       admin_delete_trucks: { Args: { _ids: string[] }; Returns: number }
       admin_restore_truck: { Args: { _id: string }; Returns: undefined }
+      admin_review_suggested_stop: {
+        Args: { _approve: boolean; _id: string }
+        Returns: undefined
+      }
       confirm_truck_location: {
         Args: { _google_verified?: boolean; _truck_id: string }
         Returns: undefined
