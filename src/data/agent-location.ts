@@ -1,4 +1,4 @@
-import { DAVENPORT_CENTER, REGION_RADIUS_MILES } from './coverage';
+import { DAVENPORT_CENTER, DEFAULT_RADIUS_MILES } from './coverage';
 export const normalizeLocation = (s: string) => s.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\b(city of|downtown|iowa|ia|illinois|il|usa|united states)\b/g, ' ').replace(/\s+/g, ' ').trim();
 export function editDistance(a: string, b: string): number {
   let row = Array.from({ length: b.length + 1 }, (_, i) => i);
@@ -17,7 +17,7 @@ export type ResolvedLocation = { input: string; type: 'region' | 'city' | 'addre
 const REGIONS = new Set(['qc','the qc','quad cities','quad city','quadcities','qca','quad cities area','qc area','the quad','around here','anywhere']);
 export function knownLocation(input = '', radius?: number): ResolvedLocation | null {
   const n = normalizeLocation(input);
-  if (!n || REGIONS.has(n)) return { input, type: n ? 'region' : 'default', name: 'Quad Cities', ...DAVENPORT_CENTER, radius_miles: radius ?? REGION_RADIUS_MILES };
+  if (!n || REGIONS.has(n)) return { input, type: n ? 'region' : 'default', name: 'Quad Cities', ...DAVENPORT_CENTER, radius_miles: radius ?? DEFAULT_RADIUS_MILES };
   const exact = CITIES.find(([name,,,aliases]) => [normalizeLocation(name), ...aliases].includes(n));
   const fuzzy = exact ?? CITIES.map(c => ({ c, d: editDistance(n, normalizeLocation(c[0])) })).filter(x => x.d <= 2 && n.length >= 4).sort((a,b) => a.d - b.d)[0]?.c;
   return fuzzy ? { input, type:'city', name:fuzzy[0], lat:fuzzy[1], lng:fuzzy[2], radius_miles:radius ?? 5 } : null;
