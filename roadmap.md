@@ -1,5 +1,11 @@
 # Roadmap
 
+## Davenport 75-mile coverage and fixed-truck review (not published)
+- [ ] Expand regional discovery and source coverage to 75 miles from Davenport.
+- [ ] Confirm matched Google fixed addresses automatically; archive explicitly closed businesses without deletion, independently of daily opening hours.
+- [ ] Recheck existing fixed trucks and discover real food-truck social profiles/groups; report actual results and any provider/access blockers.
+- [ ] Run focused rules tests and verify supported end-to-end flows.
+
 ## Public profile schedule (not published)
 - [x] Removed public import badges and post counts. Default next five upcoming/ongoing stops, list/calendar switching at any count, view all within the 30-day schedule. Untimed usual spots stay on map rather than becoming upcoming events.
 - [x] 34 focused tests passed; Toni's (2 stops) and Bonbon (5 initial / 21 expanded) verified in browser; calendar/day selection works, 390px no horizontal overflow or runtime errors; Chicago times consistent, automatic build OK. Not published.
