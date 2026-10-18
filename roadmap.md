@@ -1,5 +1,10 @@
 # Roadmap
 
+## Corrected radius and visible address confirmation
+- [ ] Maximum coverage 100 miles; public map and regional search default 10 miles around the center pin.
+- [ ] Show existing confirmation consistently on public profile and selected map preview; verify Bonbon's real saved evidence.
+- [ ] Run focused tests and public browser checks; do not publish.
+
 ## Davenport 75-mile coverage and fixed-truck review (not published)
 - [x] Shared 75-mile Davenport circle for map/API/social venue checks; 24 bounded city seed searches; Google/Apify gateway integration and source capture.
 - [x] Matched fixed Google addresses auto-confirm through existing RPC; explicit temporary/permanent closure archives without deletion, daily closing hours do not. Merchant verification is not inferred.
