@@ -1,5 +1,10 @@
 # Roadmap
 
+## Unified scraper approval and complete listings
+- [ ] Share truck approval across pending and scraper review; validate address/category and publish only complete suggestions.
+- [ ] Fill new scraped listings from evidenced locations and Google/Facebook category; block Other and incomplete creations, deduplicate records.
+- [ ] Run focused tests and verify available Admin flows; do not publish.
+
 ## Corrected radius and visible address confirmation
 - [x] Maximum coverage 100 miles; public map and regional search default 10 miles around the center pin.
 - [x] Show saved address confirmation on public profile and selected fixed-truck map preview. Bonbon's matched address was already confirmed in shared data; missing profile/preview labels hid that evidence.
