@@ -211,6 +211,13 @@
       "when": 1792260713874,
       "tag": "0029_protect_location_confirmation_inserts",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1792342533783,
+      "tag": "0030_google_business_status",
+      "breakpoints": true
     }
   ]
 }

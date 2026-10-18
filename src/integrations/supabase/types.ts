@@ -804,6 +804,7 @@ export type Database = {
           description: string
           emoji: string
           facebook: string | null
+          google_business_status: string | null
           google_hours_updated_at: string | null
           google_location_verified: boolean
           google_place_id: string | null
@@ -846,6 +847,7 @@ export type Database = {
           description?: string
           emoji?: string
           facebook?: string | null
+          google_business_status?: string | null
           google_hours_updated_at?: string | null
           google_location_verified?: boolean
           google_place_id?: string | null
@@ -888,6 +890,7 @@ export type Database = {
           description?: string
           emoji?: string
           facebook?: string | null
+          google_business_status?: string | null
           google_hours_updated_at?: string | null
           google_location_verified?: boolean
           google_place_id?: string | null
