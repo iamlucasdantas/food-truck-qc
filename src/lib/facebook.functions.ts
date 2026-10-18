@@ -64,7 +64,7 @@ export const processPastedPost = createServerFn({ method: "POST" })
     try {
       const stops = await ingestPost(
         { db, trucks: trucks ?? [], bizByOwner: new Map((biz ?? []).map((b) => [b.owner_id, b])), today, runId: null, dryRun: !data.save },
-        "paste", { url, text, time: postDate ? `${postDate}T17:00:00Z` : "", author, inputUrl: "" }, null,
+        "paste", { url, text, time: postDate ? `${postDate}T17:00:00Z` : "", author, inputUrl: data.url }, null,
       );
       return { error: null, read: { text, author, postDate: postDate || today }, stops };
     } catch (e) {
