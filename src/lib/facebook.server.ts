@@ -24,10 +24,10 @@ const KINDS: Kind[] = ["page", "group", "reddit", "instagram"];
 
 const normUrl = (u: string) => u.trim().toLowerCase().replace(/^https?:\/\/(www\.|m\.|web\.)?/, "").replace(/[?#].*$/, "").replace(/\/+$/, "");
 
-function apifyToken() {
-  const t = process.env["APIFY_TOKEN"];
-  if (!t) throw new Error("APIFY_TOKEN is not configured");
-  return t;
+function apifyHeaders() {
+  const t = process.env['APIFY_API_KEY'], lovable = process.env['LOVABLE_API_KEY'];
+  if (!t || !lovable) throw new Error('Apify connection is not configured');
+  return { Authorization:`Bearer ${lovable}`, 'X-Connection-Api-Key':t };
 }
 
 /** Every truck with a social URL/handle is also a source of that kind. */
@@ -81,8 +81,8 @@ async function startActor(kind: Kind, all: Source[]): Promise<string> {
   const cookies = (kind === "group" || kind === "page") ? facebookCookies() : null;
   if (cookies) Object.assign(input, { cookies });
   const hooks = btoa(JSON.stringify([{ eventTypes: ["ACTOR.RUN.SUCCEEDED", "ACTOR.RUN.FAILED", "ACTOR.RUN.TIMED_OUT", "ACTOR.RUN.ABORTED"], requestUrl: `${PUBLIC_ORIGIN}/api/public/apify-webhook` }]));
-  const res = await fetch(`https://api.apify.com/v2/acts/${ACTORS[kind]}/runs?webhooks=${hooks}`, {
-    method: "POST", headers: { Authorization: `Bearer ${apifyToken()}`, "Content-Type": "application/json" }, body: JSON.stringify(input),
+  const res = await fetch(`https://connector-gateway.lovable.dev/apify/acts/${ACTORS[kind]}/runs?webhooks=${hooks}`, {
+    method: "POST", headers: { ...apifyHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(input),
   });
   if (!res.ok) throw new Error(`Apify ${kind} start failed [${res.status}]: ${(await res.text()).slice(0, 200)}`);
   return ((await res.json()) as { data: { id: string } }).data.id;
@@ -154,7 +154,7 @@ const SCHEMA = {
 
 class AiStop extends Error {}
 
-const SYSTEM = `Extract food truck stops from a Quad Cities (Iowa/Illinois) social media post.
+const SYSTEM = `Extract food truck stops from a social media post within 75 miles of Davenport, Iowa (Iowa/Illinois).
 Return ONE entry per venue + time range: "Jumpin Joey's 11-2 & Adventurous Brewing LLC 4-8pm" is two stops (11:00-14:00 and 16:00-20:00).
 Venue names are often Facebook place tags (a business name with no address): put that name in venue and leave address empty unless a street address is written.
 Dates: use the post date unless the post says tomorrow, today/tonight or a weekday name (next one on/after the post date). Times are local Central time, 24h HH:MM.
@@ -237,7 +237,7 @@ export async function ingestPost(ctx: IngestCtx, kind: Kind | "paste", p: Post, 
     if (!keepExtraction(e, today)) { out.push({ ...r, status: "low-confidence" }); continue; }
     if (!geo) { out.push({ ...r, status: "no-address" }); continue; }
     if (ctx.dryRun) { out.push({ ...r, newTruck: !truck, status: "preview" }); continue; }
-    if (!truck && (kind === "group" || kind === "reddit" || kind === "paste") && e.is_food_truck) {
+    if (!truck && e.is_food_truck) {
       // Unnamed in the post: still goes to admin approval, named after the post author, with the original post attached.
       const newName = named ? e.truck_name.trim() : reviewTruckName(p.author);
       const id = `${slugify(newName)}-${Math.random().toString(36).slice(2, 7)}`;
@@ -298,8 +298,8 @@ export async function ingestPost(ctx: IngestCtx, kind: Kind | "paste", p: Post, 
 }
 
 async function fetchRun(id: string) {
-  const res = await fetch(`https://api.apify.com/v2/actor-runs/${id}`, { headers: { Authorization: `Bearer ${apifyToken()}` } });
-  if (!res.ok) return null;
+  const res = await fetch(`https://connector-gateway.lovable.dev/apify/actor-runs/${id}`, { headers: apifyHeaders() });
+  if (!res.ok) throw Error(`Apify run read failed [${res.status}]: ${await res.text()}`);
   return ((await res.json()) as { data: { id: string; status: string; defaultDatasetId: string } }).data;
 }
 
@@ -335,8 +335,9 @@ export async function processFacebookRun(db: DB, runId: string, budgetMs = 20_00
     }
     if (ar.status !== "SUCCEEDED") { pending = true; continue; }
 
-    const itemsRes = await fetch(`https://api.apify.com/v2/datasets/${ar.defaultDatasetId}/items?clean=true&limit=2000`, { headers: { Authorization: `Bearer ${apifyToken()}` } });
-    const items = itemsRes.ok ? ((await itemsRes.json()) as Item[]) : [];
+    const itemsRes = await fetch(`https://connector-gateway.lovable.dev/apify/datasets/${ar.defaultDatasetId}/items?clean=true&limit=2000`, { headers: apifyHeaders() });
+    if (!itemsRes.ok) throw Error(`Apify dataset read failed [${itemsRes.status}]: ${await itemsRes.text()}`);
+    const items = (await itemsRes.json()) as Item[];
     const bySource = new Map<string, Post[]>();
     const allPosts: { src: Source; post: Post }[] = [];
     for (const it of items) {

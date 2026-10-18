@@ -10,4 +10,5 @@
 
 - Chat search and MCP share api-search.server.ts and pure agent-*.ts rules for smart locations, food matching and Chicago recurrence; caller-scoped MCP clients preserve OAuth/RLS.
 - Google weekly hours snapshots on trucks expand through data/google-hours.ts into marked apify_maps stops shared by public useStops and API/MCP; admin-only refresh batches at most 10 saved Places IDs so public reads never trigger billable lookups.
-- Base location confirmation uses confirm_truck_location RPC (admin or active claimed owner), explicit Google evidence and address-change reset; shared location-confirmation rules never equate a Place ID or verified address with open now.
+- Base location confirmation uses confirm_truck_location RPC (admin or active claimed owner), explicit evidence and address-change reset; admin refresh confirms matched fixed addresses, not merchant verification. Google closures archive without deletion, never based on daily closed hours.
+- All Apify discovery/social calls use the linked gateway connection so credentials stay server-only. Regional venue matching uses the shared coverage circle; new social-page trucks enter pending review before publication.

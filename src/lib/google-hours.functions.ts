@@ -16,7 +16,7 @@ export const refreshGoogleHours = createServerFn({ method: 'POST' })
     if (!lovable || !maps) throw Error('Google Maps connection is not configured');
     const { data: trucks, error } = await context.supabase.from('trucks').select('id,name,description,is_food_truck,truck_type,google_place_id,base_address').in('id', [...new Set(data.truckIds)]).is('deleted_at', null);
     if (error) throw Error(error.message);
-    const results: { id: string; name: string; hours: string[]; included: boolean; addressConfirmed?: boolean; businessStatus?: string; error?: string }[] = [];
+    const results: { id: string; name: string; hours: string[]; included: boolean; addressConfirmed?: boolean; businessStatus?: string | undefined; error?: string }[] = [];
     for (const t of trucks ?? []) {
       if (!t.google_place_id) { results.push({ id: t.id, name: t.name, hours: [], included: t.is_food_truck, error: 'No Google Place ID saved' }); continue; }
       const response = await fetch(`https://connector-gateway.lovable.dev/google_maps/places/v1/places/${encodeURIComponent(t.google_place_id)}`, {
@@ -40,7 +40,7 @@ export const refreshGoogleHours = createServerFn({ method: 'POST' })
       const hours = googleHours(p.regularOpeningHours);
       const snapshot = p.regularOpeningHours && typeof p.regularOpeningHours === 'object' ? p.regularOpeningHours as Json : null;
       const addressConfirmed = canAutoConfirmGoogleAddress({...t,is_food_truck:included}, {id:p.id,address:p.formattedAddress,lat:p.location?.latitude,lng:p.location?.longitude});
-      const { error: saveError } = await context.supabase.from('trucks').update({ google_types: types, google_regular_hours: hours ? snapshot : null, google_hours_updated_at: new Date().toISOString(), is_food_truck: included, ...googleStatusPatch(p.businessStatus), ...(addressConfirmed ? {base_address:p.formattedAddress,base_lat:p.location?.latitude,base_lng:p.location?.longitude} : {}) }).eq('id', t.id);
+      const { error: saveError } = await context.supabase.from('trucks').update({ google_types: types, google_regular_hours: hours ? snapshot : null, google_hours_updated_at: new Date().toISOString(), is_food_truck: included, ...googleStatusPatch(p.businessStatus), ...(addressConfirmed ? {base_address:p.formattedAddress ?? null,base_lat:p.location?.latitude ?? null,base_lng:p.location?.longitude ?? null} : {}) }).eq('id', t.id);
       if (saveError) throw Error(saveError.message);
       if (addressConfirmed) {
         const {error: confirmError} = await context.supabase.rpc('confirm_truck_location',{_truck_id:t.id,_google_verified:false});

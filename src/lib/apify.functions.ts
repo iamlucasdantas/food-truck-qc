@@ -74,7 +74,7 @@ export const seedCity = createServerFn({ method: "POST" })
         if(error) errors.push(`${p.title} address: ${error.message}`);
       }
       if(fields.is_food_truck) {
-        const rows = [...(p.facebooks ?? []).map(url=>({kind:'page',url})), ...(p.instagrams ?? []).map(url=>({kind:'instagram',url}))].filter(s=>{try{const u=new URL(s.url);return ['facebook.com','www.facebook.com','instagram.com','www.instagram.com'].includes(u.hostname)&&u.pathname!=='/';}catch{return false;}}).map(s=>({...s,name:p.title,truck_id:truckId}));
+        const rows = [...(p.facebooks ?? []).map(url=>({kind:'page',url})), ...(p.instagrams ?? []).map(url=>({kind:'instagram',url}))].filter(s=>{try{const u=new URL(s.url);return ['facebook.com','www.facebook.com','instagram.com','www.instagram.com'].includes(u.hostname)&&u.pathname!=='/';}catch{return false;}}).map(s=>({...s,name:p.title ?? truckId,truck_id:truckId}));
         if(rows.length) { const {error} = await supabase.from('social_sources').upsert(rows,{onConflict:'url',ignoreDuplicates:true}); if(error) errors.push(`${p.title} sources: ${error.message}`); }
       }
       // Replace future base-location stops (only apify_maps rows; owner stops untouched).
