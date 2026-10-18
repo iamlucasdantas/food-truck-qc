@@ -5,12 +5,15 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { facebookSessionStatus, processPastedPost } from "@/lib/facebook.functions";
 import { fmtCentral } from "@/data/trucks";
+import { Link } from '@tanstack/react-router';
+import { Button } from '@/components/ui/button';
+import { approvalIssue } from '@/data/ingestion-review';
 
 type Result = Awaited<ReturnType<typeof processPastedPost>>;
 const STATUS: Record<string, string> = {
   preview: "Ready to save", published: "Published (own post)", suggested: "Waiting for approval", history: "In the past — not saved",
   duplicate: "Already saved", "no-address": "Address not found", "no-truck": "No matching truck", "owner-has-stop": "Owner already has a stop then",
-  "low-confidence": "Unclear — skipped",
+  "low-confidence": "Unclear — skipped", "no-category": "Google or Facebook category required — not saved",
 };
 
 function toDataUrl(file: File): Promise<string> {
@@ -97,19 +100,13 @@ export function AdminSuggestions() {
   const qc = useQueryClient();
   const { data = [] } = useQuery({
     queryKey: ["admin", "suggested"],
-    queryFn: async () => (await supabase.from("suggested_stops").select("*, trucks(name, claimed_by)").eq("status", "pending").order("starts_at").limit(100)).data ?? [],
+    queryFn: async () => (await supabase.from("suggested_stops").select("*, trucks(name, claimed_by, status, category, base_address, base_lat, base_lng)").eq("status", "pending").order("starts_at").limit(100)).data ?? [],
   });
   const items = data.filter((s) => !s.trucks?.claimed_by || s.needs_address_check);
   if (!items.length) return null;
   async function decide(s: (typeof items)[number], approve: boolean) {
-    if (approve) {
-      const { error } = await supabase.from("stops").insert({
-        truck_id: s.truck_id, venue_name: s.venue_name || "Suggested stop", address: s.address, city: s.city, lat: s.lat ?? 41.52, lng: s.lng ?? -90.55,
-        starts_at: s.starts_at, ends_at: s.ends_at, source: "apify_post", confidence: 0.9, source_url: s.source_url,
-      });
-      if (error) return void toast.error(error.message);
-    }
-    await supabase.from("suggested_stops").update({ status: approve ? "approved" : "rejected", reviewed_at: new Date().toISOString() }).eq("id", s.id);
+    const { error } = await supabase.rpc('admin_review_suggested_stop', { _id: s.id, _approve: approve });
+    if (error) return void toast.error(error.message);
     toast.success(approve ? "Published" : "Rejected");
     void qc.invalidateQueries();
   }
@@ -121,14 +118,15 @@ export function AdminSuggestions() {
         {items.map((s) => (
           <li key={s.id} className="rounded-xl border-2 border-border p-3">
             <div className="flex flex-wrap items-center gap-2">
-              <b>{s.trucks?.name ?? s.truck_id}</b>
+              <b>{s.trucks?.name ?? s.truck_id}</b><span>{s.trucks?.status === 'pending' ? 'Truck pending' : 'Truck approved'}</span>
               {s.needs_address_check && <span className="chip border-destructive text-destructive">Check address</span>}
               <span>{new Date(s.starts_at).toLocaleDateString("en-US", { timeZone: "America/Chicago", weekday: "short", month: "short", day: "numeric" })} {fmtCentral(s.starts_at)}–{fmtCentral(s.ends_at)}</span>
             </div>
             <p>{s.venue_name} · {s.address ?? s.city}</p>
             <div className="mt-2 flex flex-wrap gap-2">
-              <button className="chip" onClick={() => void decide(s, true)}>Approve</button>
-              <button className="chip" onClick={() => void decide(s, false)}>Reject</button>
+              <Button variant="outline" disabled={s.needs_address_check || !s.address || s.lat == null || s.lng == null || (s.trucks?.status === 'pending' && !!approvalIssue(s.trucks))} onClick={() => void decide(s, true)}>{s.trucks?.status === 'pending' ? 'Approve truck & stop' : 'Approve stop'}</Button>
+              <Button variant="outline" onClick={() => void decide(s, false)}>Reject stop</Button>
+              <Button variant="outline" asChild><Link to="/admin" search={{tab:'trucks',truck:s.truck_id}}>Truck details</Link></Button>
               {s.lat != null && <a className="chip" target="_blank" rel="noreferrer" href={`https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lng}`}>See on map</a>}
               {s.source_url && !s.source_url.startsWith("paste:") && <a className="chip" target="_blank" rel="noreferrer" href={s.source_url}>View post</a>}
             </div>

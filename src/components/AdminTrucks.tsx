@@ -20,6 +20,7 @@ import { EmptyState, IconAction, Initials, SectionHeader, StatusPill, btn, statu
 import { TruckDrawer } from "@/components/admin/TruckDrawer";
 import { cn } from "@/lib/utils";
 import { LocationQueue } from '@/components/admin/LocationQueue';
+import { geocode } from '@/lib/geocode';
 
 const PAGE = 50;
 const STATUS_LABEL: Record<AdminStatus, string> = { approved: "Approved", pending: "Pending", rejected: "Rejected", deleted: "Deleted" };
@@ -110,7 +111,15 @@ export function AdminTrucks({ search }: { search: S }) {
   async function save(id: string, fd: FormData) {
     const g = (k: string) => String(fd.get(k) ?? "").trim() || null;
     const tt = g("truck_type");
-    const { error } = await supabase.from("trucks").update({ is_food_truck: fd.get("is_food_truck") === "on", name: g("name") ?? "Untitled", category: g("category") ?? "Other", phone: g("phone"), website: g("website"), instagram: g("instagram"), facebook: g("facebook"), ...(tt === "fixed" || tt === "mobile" ? { truck_type: tt } : {}) }).eq("id", id);
+    const category = g('category'), address = g('base_address');
+    if (!category || /^(other|unknown|uncategorized)$/i.test(category)) return void toast.error('Use the category from the Google or Facebook profile.');
+    let location = {};
+    if (address && address !== byId(id)?.base_address) {
+      const hit = await geocode(address);
+      if (!hit) return void toast.error('Address not found. Check the street and city.');
+      location = {base_address:address,base_lat:hit.lat,base_lng:hit.lng};
+    }
+    const { error } = await supabase.from("trucks").update({ ...location, is_food_truck: fd.get("is_food_truck") === "on", name: g("name") ?? "Untitled", category, phone: g("phone"), website: g("website"), instagram: g("instagram"), facebook: g("facebook"), ...(tt === "fixed" || tt === "mobile" ? { truck_type: tt } : {}) }).eq("id", id);
     if (error) return void toast.error(error.message);
     toast.success("Saved"); setEdit(null); inv();
   }
@@ -273,7 +282,7 @@ export function AdminTrucks({ search }: { search: S }) {
                       <div className="min-w-0"><p className="truncate font-medium">{t.name}</p>{!compact && t.business_name && t.business_name !== t.name && <p className="truncate text-xs text-muted-foreground">by {t.business_name}</p>}</div>
                     </div>
                   </td>
-                  <td className={pad}>{t.category}</td>
+                  <td className={pad}>{/^other$/i.test(t.category) ? "Category needs review" : t.category}</td>
                   <td className={pad}>{t.city || "—"}</td>
                   <td className={pad}>{t.truck_type === "fixed" ? "Fixed" : "Mobile"}</td>
                   <td className={pad}>{pill(t)}</td>
@@ -336,7 +345,7 @@ export function AdminTrucks({ search }: { search: S }) {
           <DialogHeader><DialogTitle>Edit {editing?.name}</DialogTitle><DialogDescription>Changes appear on the public page right away.</DialogDescription></DialogHeader>
           {editing && (
             <form className="grid gap-3 sm:grid-cols-2" onSubmit={(e) => { e.preventDefault(); void save(editing.id, new FormData(e.currentTarget)); }}>
-              {(["name", "category", "phone", "website", "instagram", "facebook"] as const).map((k) => (
+              {(["name", "category", "base_address", "phone", "website", "instagram", "facebook"] as const).map((k) => (
                 <label key={k} className="space-y-1 text-sm"><span className="capitalize text-muted-foreground">{k}</span>
                   <input name={k} className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring" defaultValue={editing[k] ?? ""} />
                 </label>

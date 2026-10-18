@@ -20,6 +20,7 @@ import { GoogleHours } from '@/components/admin/GoogleHours';
 import { EmptyState, IconAction, Initials, ListSkeleton, SectionHeader, StatusPill, btn, statusTone } from "@/components/admin/ui";
 import { sectionFromSearch } from "@/data/admin";
 import { LogoMark } from "@/components/Logo";
+import { approvalIssue } from "@/data/ingestion-review";
 
 export const Route = createFileRoute("/admin")({
   staticData: { sitemap: false },
@@ -136,7 +137,7 @@ function PendingTrucks() {
   const navigate = Route.useNavigate();
   const { data = [], isLoading } = useQuery({
     queryKey: ["admin", "pending"],
-    queryFn: async () => (await supabase.from("trucks").select("*").eq("status", "pending").order("created_at")).data ?? [],
+    queryFn: async () => (await supabase.from("trucks").select("*").eq("status", "pending").is("deleted_at", null).order("created_at")).data ?? [],
   });
   const [rejecting, setRejecting] = useState<string | null>(null);
   const [reason, setReason] = useState("");
@@ -166,11 +167,11 @@ function PendingTrucks() {
                     <p className="truncate font-medium">{t.name}</p>
                     <StatusPill tone="neutral">{t.truck_type === "fixed" ? <><Home className="h-3 w-3" />Fixed</> : <><TruckIcon className="h-3 w-3" />Mobile</>}</StatusPill>
                   </div>
-                  <p className="flex min-w-0 items-center gap-1 truncate text-sm text-muted-foreground">{t.category} · <MapPin className="h-3 w-3 shrink-0" />{t.base_address ?? "no address"}</p>
+                  <p className="flex min-w-0 items-center gap-1 truncate text-sm text-muted-foreground">{/^other$/i.test(t.category) ? "Category needs review" : t.category} · <MapPin className="h-3 w-3 shrink-0" />{t.base_address ?? "Address needs review"}</p>
                 </div>
                 <div className="flex gap-1">
                   <IconAction label="Open details" icon={PanelRightOpen} onClick={() => void navigate({ search: { tab: "trucks", truck: t.id } })} />
-                  <IconAction label="Approve" icon={Check} tone="primary" onClick={() => void decide(t.id, "approved")} />
+                  <IconAction label="Approve" icon={Check} tone="primary" disabled={!!approvalIssue(t)} onClick={() => void decide(t.id, "approved")} />
                   <IconAction label="Reject" icon={X} tone="danger" onClick={() => { setRejecting(rejecting === t.id ? null : t.id); setReason(""); }} />
                 </div>
               </div>

@@ -3,6 +3,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { splitVenues, resolvePostDate, mergeHints, isUnknownTruckName, reviewTruckName, type ExtractedStop } from "@/data/posts";
 import { postMenuToSections, menuSearchText, type PostMenu } from "@/data/menu";
 import { resolveVenue } from "@/lib/venues.server";
+import { completeAddress, discoveredTruckId, profileCategory } from "@/data/ingestion-review";
 import { authorIsTruck, ownerHandles, centralToUtc, chicagoDate, keepExtraction, matchTruckByName, slugify, groupStops } from "@/data/trucks";
 
 type DB = SupabaseClient<Database>;
@@ -201,7 +202,7 @@ export type IngestCtx = { db: DB; trucks: TruckLite[]; bizByOwner: Map<string, B
 export type StopResult = {
   truckName: string; truckId: string | null; newTruck: boolean; venue: string; address: string | null; city: string;
   date: string; start: string; end: string; own: boolean; checkAddress: boolean;
-  status: "published" | "suggested" | "history" | "duplicate" | "no-address" | "no-truck" | "owner-has-stop" | "low-confidence" | "preview";
+  status: "published" | "suggested" | "history" | "duplicate" | "no-address" | "no-category" | "no-truck" | "owner-has-stop" | "low-confidence" | "preview";
 };
 
 /** Why a source produced no posts — shown in Admin → Facebook. */
@@ -235,21 +236,26 @@ export async function ingestPost(ctx: IngestCtx, kind: Kind | "paste", p: Post, 
     const r = { ...base, truckName: truck?.name ?? e.truck_name, truckId: truck?.id ?? null, own, venue: geo?.name ?? e.venue, address: geo?.address ?? base.address, city: geo?.city || e.city, checkAddress: geo?.check ?? true };
     if (/^\d{4}-\d{2}-\d{2}$/.test(e.date) && e.date < today) { out.push({ ...r, status: "history" }); continue; }
     if (!keepExtraction(e, today)) { out.push({ ...r, status: "low-confidence" }); continue; }
-    if (!geo) { out.push({ ...r, status: "no-address" }); continue; }
+    if (!geo || !completeAddress(geo.address, geo.lat, geo.lng)) { out.push({ ...r, status: "no-address" }); continue; }
+    // A dated venue is evidence of a stop location, not a stationary base.
+    const facebookProfile = (() => { try { const u = new URL(p.inputUrl); return /^(www\.|m\.|web\.)?facebook\.com$/.test(u.hostname) && !u.pathname.startsWith('/groups/') ? u.toString() : null; } catch { return null; } })();
+    const category = kind === 'page' || (kind === 'paste' && facebookProfile) ? profileCategory([], p.text) : null;
+    if (!truck && e.is_food_truck && !category) { out.push({ ...r, status: 'no-category' }); continue; }
     if (ctx.dryRun) { out.push({ ...r, newTruck: !truck, status: "preview" }); continue; }
     if (!truck && e.is_food_truck) {
       // Unnamed in the post: still goes to admin approval, named after the post author, with the original post attached.
       const newName = named ? e.truck_name.trim() : reviewTruckName(p.author);
-      const id = `${slugify(newName)}-${Math.random().toString(36).slice(2, 7)}`;
-      const { error } = await db.from("trucks").insert({ id, name: newName, status: "pending", source: kind === "paste" ? "admin_paste" : `apify_${kind}`,
-        description: named ? "" : `Truck name not stated in the original post — please confirm before approving.\nOriginal post: ${p.url}` });
+      const id = discoveredTruckId(newName);
+      const { data: saved, error } = await db.from("trucks").upsert({ id, name: newName, status: "pending", source: kind === "paste" ? "admin_paste" : `apify_${kind}`,
+        category: category ?? '', base_address: geo.address, base_lat: geo.lat, base_lng: geo.lng, truck_type: 'mobile', facebook: facebookProfile,
+        description: `${named ? '' : 'Truck name not stated — please confirm before approving.\n'}Location from scheduled stop, not a permanent base.\nOriginal post: ${p.url}` }, { onConflict: 'id', ignoreDuplicates: true }).select('id');
       if (!error) {
         const { postOwnerWebhook } = await import("@/lib/owner-webhook.server");
-        await postOwnerWebhook({ source: "scraper", isNewBusiness: true, contact: { name: "", email: "", phone: "" }, businessName: "",
-          truckId: id, truckName: newName, truckType: "mobile", cuisine: "", city: e.city || "", description: p.url });
-        truck = { id, name: newName, claimed_by: null, phone: null, instagram: null, facebook: null, reddit: null };
+        if (saved?.length) await postOwnerWebhook({ source: "scraper", isNewBusiness: true, contact: { name: "", email: "", phone: "" }, businessName: "",
+          truckId: id, truckName: newName, truckType: "mobile", cuisine: category ?? "", city: geo.city || e.city || "", description: p.url });
+        truck = { id, name: newName, claimed_by: null, phone: null, instagram: null, facebook: facebookProfile, reddit: null };
         trucks.push(truck);
-        r.newTruck = true; r.truckId = id; r.truckName = truck.name;
+        r.newTruck = !!saved?.length; r.truckId = id; r.truckName = truck.name;
       }
     }
     if (!truck) { out.push({ ...r, status: "no-truck" }); continue; }
@@ -386,6 +392,7 @@ export async function processFacebookRun(db: DB, runId: string, budgetMs = 20_00
         let stopsMade = 0;
         try {
           const res = await ingestPost(ctx, kind, p, owner);
+          for (const r of res.filter(r => r.status === 'no-address' || r.status === 'no-category')) errors.push(`${r.truckName}: ${r.status === 'no-address' ? 'Address missing' : 'Google/Facebook category missing'} — original post: ${p.url}`);
           stopsMade = res.filter((r) => r.status === "published" || r.status === "suggested").length;
           created += stopsMade;
           srcPosts++; srcStops += stopsMade;

@@ -34,4 +34,4 @@
 - Admin truck delete is a soft delete (deleted_at/deleted_by via admin_delete_trucks/admin_restore_truck RPCs, logged in truck_deletions) with a 30-day restore window; a daily pg_cron job purges the truck and its stops/photos/menu after that — so mistakes are reversible.
 - Search/filter rules (text, dish, cuisine, city, type, status, open) live in src/data/filters.ts and are shared by the map and Admin; filter state lives in URL params so views can be shared.
 - "I'm here" end times come from liveEnd() in src/data/trucks.ts (15 min–12 h, Central time); the DB trigger caps live stops at 12 h.
-- Admin uses src/components/admin and data/admin.ts rules; ?tab/?truck shares navigation with the palette. Google profile rules live in data/google-profile.ts to separate address evidence, closure and opening hours.
+- Admin uses components/admin and data/admin.ts. Shared scraper approval uses a DB status trigger and admin_review_suggested_stop; data/ingestion-review.ts validates source categories and locations. Google profile rules separate address, closure and hours.

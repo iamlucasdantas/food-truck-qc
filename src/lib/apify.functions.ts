@@ -4,6 +4,7 @@ import { mapApifyCategory, isFoodTruckPlace, slugify } from "@/data/trucks";
 import { mobileEvidence } from '@/data/google-hours';
 import { DISCOVERY_CITIES, inServiceRegion } from '@/data/coverage';
 import { googleStatusPatch } from '@/data/google-profile';
+import { completeAddress, profileCategory } from '@/data/ingestion-review';
 
 export const SEED_CITIES = DISCOVERY_CITIES;
 
@@ -43,9 +44,11 @@ export const seedCity = createServerFn({ method: "POST" })
 
     for (const p of places) {
       if (!p.placeId || !p.title || !p.location) continue;
+      const categoryEvidence = profileCategory([p.categoryName ?? '', ...(p.categories ?? [])]);
+      if (!completeAddress(p.address, p.location.lat, p.location.lng) || !categoryEvidence) { errors.push(`${p.title}: address or Google category missing — not imported`); continue; }
       const profileStatus = p.permanentlyClosed === true ? 'CLOSED_PERMANENTLY' : p.temporarilyClosed === true ? 'CLOSED_TEMPORARILY' : p.permanentlyClosed === false && p.temporarilyClosed === false ? 'OPERATIONAL' : null;
       const fields = {
-        name: p.title!, category: mapApifyCategory(p.categoryName), phone: p.phone ?? null, website: p.website ?? null,
+        name: p.title!, category: mapApifyCategory(categoryEvidence), phone: p.phone ?? null, website: p.website ?? null,
         base_address: p.address ?? null, base_lat: p.location!.lat, base_lng: p.location!.lng, logo_url: p.imageUrl ?? null,
         instagram: p.instagrams?.[0] ?? null, facebook: p.facebooks?.[0] ?? null, source: "apify", google_place_id: p.placeId!,
         google_types: [...new Set([p.categoryName ?? '', ...(p.categories ?? [])].filter(Boolean))],

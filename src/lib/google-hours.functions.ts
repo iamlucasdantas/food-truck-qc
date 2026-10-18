@@ -4,6 +4,7 @@ import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware';
 import { googleHours, mobileEvidence } from '@/data/google-hours';
 import type { Json } from '@/integrations/supabase/types';
 import { canAutoConfirmGoogleAddress, googleStatusPatch } from '@/data/google-profile';
+import { profileCategory } from '@/data/ingestion-review';
 
 /** Explicit admin refresh only. Public searches read saved hours without calling Google. */
 export const refreshGoogleHours = createServerFn({ method: 'POST' })
@@ -40,7 +41,8 @@ export const refreshGoogleHours = createServerFn({ method: 'POST' })
       const hours = googleHours(p.regularOpeningHours);
       const snapshot = p.regularOpeningHours && typeof p.regularOpeningHours === 'object' ? p.regularOpeningHours as Json : null;
       const addressConfirmed = canAutoConfirmGoogleAddress({...t,is_food_truck:included}, {id:p.id,address:p.formattedAddress,lat:p.location?.latitude,lng:p.location?.longitude});
-      const { error: saveError } = await context.supabase.from('trucks').update({ google_types: types, google_regular_hours: hours ? snapshot : null, google_hours_updated_at: new Date().toISOString(), is_food_truck: included, ...googleStatusPatch(p.businessStatus), ...(addressConfirmed ? {base_address:p.formattedAddress ?? null,base_lat:p.location?.latitude ?? null,base_lng:p.location?.longitude ?? null} : {}) }).eq('id', t.id);
+      const category = profileCategory([p.primaryType ?? '', ...types]);
+      const { error: saveError } = await context.supabase.from('trucks').update({ ...(category ? {category} : {}), google_types: types, google_regular_hours: hours ? snapshot : null, google_hours_updated_at: new Date().toISOString(), is_food_truck: included, ...googleStatusPatch(p.businessStatus), ...(addressConfirmed ? {base_address:p.formattedAddress ?? null,base_lat:p.location?.latitude ?? null,base_lng:p.location?.longitude ?? null} : {}) }).eq('id', t.id);
       if (saveError) throw Error(saveError.message);
       if (addressConfirmed) {
         const {error: confirmError} = await context.supabase.rpc('confirm_truck_location',{_truck_id:t.id,_google_verified:false});
