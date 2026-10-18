@@ -1,3 +1,4 @@
+import { locationVerified } from "@/data/location-confirmation";
 import { Heart } from "lucide-react";
 import { truckByline } from "@/data/onboarding";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -109,7 +110,10 @@ function TruckPage() {
               </ClientOnly>
             </div>
             <div className="flex flex-wrap items-center justify-between gap-2 p-3 text-sm">
-              <span className="min-w-0">{s0 ? `${s0.venue_name}, ${s0.city}` : (t.base_address ?? "Base location (not confirmed)")}</span>
+              <div className="min-w-0">
+                <p>{s0 ? `${s0.venue_name}, ${s0.city}` : (t.base_address ?? "Base location")}</p>
+                {t.base_address && <p className="text-xs text-muted-foreground">{locationVerified(t) ? "Location verified" : "Location awaiting confirmation"}</p>}
+              </div>
               <a target="_blank" rel="noreferrer" className="chip" href={`https://www.google.com/maps/dir/?api=1&destination=${pt.lat},${pt.lng}`}>Directions</a>
             </div>
           </section>

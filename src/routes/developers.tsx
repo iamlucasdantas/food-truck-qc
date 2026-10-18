@@ -21,9 +21,9 @@ export const Route = createFileRoute("/developers")({
 });
 
 const PARAMS: [string, string][] = [
-  ["location", "Smart city, typo, QC alias, address or landmark. Empty defaults to Quad Cities: 75 miles around Davenport (41.5236, -90.5776). Cities use 5 miles plus saved-city matches; addresses use 5 miles. Berendorf IA resolves to Bettendorf. State suffixes and downtown are ignored."],
+  ["location", "Smart city, typo, QC alias, address or landmark. Empty defaults to Quad Cities: 10 miles around Davenport (41.5236, -90.5776). Cities use 5 miles plus saved-city matches; addresses use 5 miles. Berendorf IA resolves to Bettendorf. State suffixes and downtown are ignored."],
   ["city / near / address / lat + lng", "Backwards-compatible aliases for location. Precedence: location, city, near, address, then coordinate pair. QC, QCA, quad cities, around here and anywhere mean the whole region."],
-  ["radius_miles", "Override radius: 1–100 miles. Defaults: region 75; city/address 5."],
+  ["radius_miles", "Override radius: 1–100 miles. Defaults: region 10; city/address 5."],
   ["cuisine", "Cuisine plus synonyms: tacos/taqueria/Mexican, BBQ/barbecue/smoked, burgers, Asian, dessert and more."],
   ["dish / menu_item", "Fuzzy, plural-insensitive published item names/descriptions; quesabirria matches Birria Tacos. Description fallback only without a menu."],
   ["query", "Fuzzy truck name, cuisine, description and published menu; exact truck names first."],

@@ -13,8 +13,8 @@ describe('Smart agent search',()=>{
  it('ranks the best fuzzy name before a longer name',()=>{const l=knownLocation('QC');if(!l)throw Error('missing');const w=timeWindow('today',3,false,now);const best={...truck,id:'best',name:"Toni's Smokin' Grill"};const other={...truck,id:'other',name:"Toni's Smokin' Grill Catering Truck"};expect(agentSearch([other,best],[{...stop,truck_id:'best'},{...stop,truck_id:'other'}],{query:"Tony's Smoking Grill",limit:10},l,w.from,w.to,now).map(h=>h.truck.id)).toEqual(['best','other']);});
  it('does not fuzzy-match unrelated names',()=>expect(matchFood({...truck,name:'Bragg BBQ'},{query:"Tony's Smoking Grill"})).toBeNull());
  it('requires explicit food truck classification',()=>{const l=knownLocation('QC');if(!l)throw Error('missing');const w=timeWindow('today',3,false,now);const {is_food_truck,...unclassified}=truck;expect(agentSearch([unclassified],[stop],{limit:10},l,w.from,w.to,now)).toEqual([]);});
- it('defaults to 75 miles around Davenport',()=>expect(knownLocation('')).toEqual({input:'',type:'default',name:'Quad Cities',lat:41.5236,lng:-90.5776,radius_miles:75}));
- it.each(['qc','the qc','quad cities','quad city','quadcities','qca','quad cities area','qc area','the quad','around here','anywhere'])('resolves region %s',s=>expect(knownLocation(s)?.radius_miles).toBe(75));
+ it('defaults to 10 miles around Davenport',()=>expect(knownLocation('')).toEqual({input:'',type:'default',name:'Quad Cities',lat:41.5236,lng:-90.5776,radius_miles:10}));
+ it.each(['qc','the qc','quad cities','quad city','quadcities','qca','quad cities area','qc area','the quad','around here','anywhere'])('resolves region %s',s=>expect(knownLocation(s)?.radius_miles).toBe(10));
  it.each(['Berendorf IA','Betendorf Iowa','bettendorff','bettendof'])('resolves Bettendorf typo %s',s=>expect(knownLocation(s)?.name).toBe('Bettendorf'));
  it('normalizes state and downtown',()=>expect(normalizeLocation('City of Downtown Moline, IL USA')).toBe('moline'));
  it('does not treat an address as a city typo',()=>expect(knownLocation('2nd St Davenport')).toBeNull());
