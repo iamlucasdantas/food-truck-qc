@@ -16,18 +16,18 @@ describe('scraper listing creation', () => {
     const db = { from: (table: string) => {
       const q: Record<string, any> = {};
       for (const method of ['select', 'eq', 'neq', 'lt', 'gt', 'limit']) q[method] = () => q;
-      q.upsert = (row: Record<string, unknown>) => { inserted.push({table, ...row}); return q; };
-      q.insert = (row: Record<string, unknown>) => { inserted.push({table, ...row}); return q; };
-      q.then = (resolve: (v: unknown) => unknown) => Promise.resolve({data:table === 'trucks' ? [{id:'social-mexiesfoodtruck'}] : [],count:0,error:null}).then(resolve);
+      q['upsert'] = (row: Record<string, unknown>) => { inserted.push({table, ...row}); return q; };
+      q['insert'] = (row: Record<string, unknown>) => { inserted.push({table, ...row}); return q; };
+      q['then'] = (resolve: (v: unknown) => unknown) => Promise.resolve({data:table === 'trucks' ? [{id:'social-mexiesfoodtruck'}] : [],count:0,error:null}).then(resolve);
       return q;
     } };
     ctx = { db: db as unknown as IngestCtx['db'], trucks: [], bizByOwner: new Map(), today: '2026-10-18', runId: null };
   });
   it('stores the evidenced address and Facebook category on the shared truck', async () => {
     const result = await ingestPost(ctx, 'page', post, null);
-    expect(inserted.find(r => r.table === 'trucks')).toMatchObject({id:'social-mexiesfoodtruck',base_address:'911 11th St, DeWitt IA',category:'Mexican',truck_type:'mobile',status:'pending'});
+    expect(inserted.find(r => r['table'] === 'trucks')).toMatchObject({id:'social-mexiesfoodtruck',base_address:'911 11th St, DeWitt IA',category:'Mexican',truck_type:'mobile',status:'pending'});
     expect(result[0]?.truckId).toBe('social-mexiesfoodtruck');
-    expect(inserted.find(r => r.table === 'suggested_stops')?.truck_id).toBe('social-mexiesfoodtruck');
+    expect(inserted.find(r => r['table'] === 'suggested_stops')?.['truck_id']).toBe('social-mexiesfoodtruck');
   });
   it('does not create a truck without an address', async () => {
     venue.mockResolvedValue(null);
@@ -41,6 +41,6 @@ describe('scraper listing creation', () => {
   it('reuses the existing pending truck across posts', async () => {
     ctx.trucks.push({id:'existing-mexies',name:'Mexies Food Truck',claimed_by:null,phone:null,facebook:null,instagram:null,reddit:null});
     expect((await ingestPost(ctx, 'page', post, null))[0]?.truckId).toBe('existing-mexies');
-    expect(inserted.some(r => r.table === 'trucks')).toBe(false);
+    expect(inserted.some(r => r['table'] === 'trucks')).toBe(false);
   });
 });
