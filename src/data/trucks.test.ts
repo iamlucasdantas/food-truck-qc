@@ -57,7 +57,7 @@ t2("Apify filter keeps food trucks and drops dealers", () => {
   e2(isFoodTruckPlace("Food truck")).toBe(true);
   e2(isFoodTruckPlace("Truck dealer", ["Truck repair shop"], "QC Trucks")).toBe(false);
   e2(mapApifyCategory("Mexican restaurant")).toBe("Mexican");
-  e2(mapApifyCategory("Food truck")).toBe("Other");
+  e2(mapApifyCategory("Food truck")).toBe("Food truck");
 });
 
 import { placeTruck, byStatusThenDistance, chooseCenter, QC_CENTER as QC } from "./trucks";
