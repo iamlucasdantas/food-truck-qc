@@ -5,7 +5,7 @@
 - [x] Matched fixed Google addresses auto-confirm through existing RPC; explicit temporary/permanent closure archives without deletion, daily closing hours do not. Merchant verification is not inferred.
 - [x] Apify reviewed Bonbon's Tacos and A Guy and a Grill: both operational, matched addresses confirmed/read back; ssa and Tacos have no Google profile and remain unconfirmed. Six real Facebook pages added (Alliance, Island Vybz, Maquoketa Brewing host, Enigma, Harvest, Tri-M). No new group URL verified; existing QC group retained.
 - [x] First bounded regional scrape completed (30 places, not exhaustive); genuine new candidates Dinger's D'Lites, Bad Ash BBQ Mobile Food Truck and Tri-M BBQ; unrelated stores/restaurants not imported. Pending social discoveries require approval.
-- [x] 149 focused/regression tests passed including authenticated chat HTTP checks; public map 75-mile count and confirmed labels, Bonbon profile/docs verified; automatic build OK. No publication.
+- [x] 150 focused/regression tests passed including authenticated chat HTTP checks; public map 75-mile count and confirmed labels, Bonbon profile/docs verified; automatic build OK. No publication.
 - [ ] Signed-in Admin Google refresh and full 24-city expansion: no matching requesting-user auth session; direct Google API sandbox validation unsupported. Publish/authorized owner validation required for new runtime behavior; current data changes already shared with live.
 
 ## Public profile schedule (not published)
