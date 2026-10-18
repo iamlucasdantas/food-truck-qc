@@ -1,6 +1,5 @@
 import { CUISINES, cityOf, matchesFilters, parseFilters, filtersToSearch, type CuisineKey, type Filters } from "@/data/filters";
 import { truckByline } from "@/data/onboarding";
-import { locationVerified } from '@/data/location-confirmation';
 import { DAVENPORT_CENTER, DEFAULT_RADIUS_MILES, REGION_RADIUS_MILES, mapRadius } from '@/data/coverage';
 import { Logo } from "@/components/Logo";
 import { SiteFooter } from "@/components/SiteFooter";

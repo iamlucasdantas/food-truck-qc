@@ -1,4 +1,3 @@
-import { locationVerified } from "@/data/location-confirmation";
 import { Heart } from "lucide-react";
 import { truckByline } from "@/data/onboarding";
 import { SiteFooter } from "@/components/SiteFooter";
