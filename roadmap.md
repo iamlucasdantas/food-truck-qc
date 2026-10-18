@@ -1,10 +1,12 @@
 # Roadmap
 
 ## Davenport 75-mile coverage and fixed-truck review (not published)
-- [ ] Expand regional discovery and source coverage to 75 miles from Davenport.
-- [ ] Confirm matched Google fixed addresses automatically; archive explicitly closed businesses without deletion, independently of daily opening hours.
-- [ ] Recheck existing fixed trucks and discover real food-truck social profiles/groups; report actual results and any provider/access blockers.
-- [ ] Run focused rules tests and verify supported end-to-end flows.
+- [x] Shared 75-mile Davenport circle for map/API/social venue checks; 24 bounded city seed searches; Google/Apify gateway integration and source capture.
+- [x] Matched fixed Google addresses auto-confirm through existing RPC; explicit temporary/permanent closure archives without deletion, daily closing hours do not. Merchant verification is not inferred.
+- [x] Apify reviewed Bonbon's Tacos and A Guy and a Grill: both operational, matched addresses confirmed/read back; ssa and Tacos have no Google profile and remain unconfirmed. Six real Facebook pages added (Alliance, Island Vybz, Maquoketa Brewing host, Enigma, Harvest, Tri-M). No new group URL verified; existing QC group retained.
+- [x] First bounded regional scrape completed (30 places, not exhaustive); genuine new candidates Dinger's D'Lites, Bad Ash BBQ Mobile Food Truck and Tri-M BBQ; unrelated stores/restaurants not imported. Pending social discoveries require approval.
+- [x] 150 focused/regression tests passed including authenticated chat HTTP checks; public map 75-mile count and confirmed labels, Bonbon profile/docs verified; automatic build OK. No publication.
+- [ ] Signed-in Admin Google refresh and full 24-city expansion: no matching requesting-user auth session; direct Google API sandbox validation unsupported. Publish/authorized owner validation required for new runtime behavior; current data changes already shared with live.
 
 ## Public profile schedule (not published)
 - [x] Removed public import badges and post counts. Default next five upcoming/ongoing stops, list/calendar switching at any count, view all within the 30-day schedule. Untimed usual spots stay on map rather than becoming upcoming events.

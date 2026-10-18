@@ -307,7 +307,7 @@ function ApifySeed() {
       <div className="panel space-y-3 p-5">
         <p className="text-2xl font-extrabold">{count} <span className="text-base font-normal text-muted-foreground">/ 50 active trucks</span></p>
         <div className="h-2 overflow-hidden rounded bg-muted"><div className="h-full bg-primary" style={{ width: `${Math.min(100, (count / 50) * 100)}%` }} /></div>
-        <p className="text-sm text-muted-foreground">Searches Google Maps for food trucks in {SEED_CITIES.length} Quad Cities-area towns. Each town is saved as soon as it finishes, so if the page reloads you can continue where it stopped. Uses Apify credits. Trucks claimed by owners are never overwritten.</p>
+        <p className="text-sm text-muted-foreground">Food truck discovery · {SEED_CITIES.length} towns within 75 miles of Davenport. Uses Apify credits. Owner business details are preserved; closed Google profiles are archived, not deleted.</p>
         {latest && <p className="text-sm font-semibold">Cities done {(latest.cities_done ?? []).length}/{latest.cities_total?.length || SEED_CITIES.length}{missing.length > 0 && ` · missing: ${missing.join(", ")}`}</p>}
         <div className="flex flex-wrap gap-2">
           {missing.length > 0 && <button disabled={busy} onClick={() => void run(true)} className="chip bg-primary text-primary-foreground">{busy ? "Running…" : `Continue (${missing.length} left)`}</button>}

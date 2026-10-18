@@ -54,6 +54,11 @@ describe("post date", () => {
 });
 
 describe("address matching", () => {
+  it('trusts matching food-truck venues in the expanded Davenport region', () => {
+    expect(needsAddressCheck('Iowa City Market',{name:'Iowa City Market',lat:41.6611,lng:-91.5302})).toBe(false);
+    expect(needsAddressCheck('Burlington Market',{name:'Burlington Market',lat:40.8075,lng:-91.1129})).toBe(false);
+    expect(needsAddressCheck('Outside Market',{name:'Outside Market',lat:41.5236,lng:-92.1})).toBe(true);
+  });
   const venues = [{ name: "Adventurous Brewing" }, { name: "Jumpin Joey's" }];
   it("matches saved venues ignoring LLC and apostrophes", () => {
     expect(matchVenue("Adventurous Brewing LLC", venues)?.name).toBe("Adventurous Brewing");

@@ -58,7 +58,8 @@ export default function TruckMap({ pins, center, radiusMi, onSelect, onCenterCha
     const { center: c, radiusMi: r } = latest.current;
     ring?.setLatLng(c); ring?.setRadius(r * 1609.34);
     ref?.setLatLng(c);
-    map.panTo(c);
+    if (ring && r > 0) map.fitBounds(ring.getBounds(), { padding: [24,24], maxZoom: 13 });
+    else map.panTo(c);
     setMoved(false);
   };
 
@@ -77,6 +78,7 @@ export default function TruckMap({ pins, center, radiusMi, onSelect, onCenterCha
           maxZoom: 19, subdomains: "abc", attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
         }).on("tileload", () => { tileOk = true; }).on("tileerror", () => { if (!tileOk && ++tileErrors > 6) cbs.current.onFail?.(); }).addTo(map);
         const ring = showRadius ? L.circle(latest.current.center, { radius: latest.current.radiusMi * 1609.34, color: getComputedStyle(document.documentElement).getPropertyValue("--primary").trim() || "#e85d2a", weight: 1.5, fillOpacity: 0.05, interactive: false }).addTo(map) : null;
+        if (ring && latest.current.radiusMi > 0) map.fitBounds(ring.getBounds(), { padding:[24,24], maxZoom:13 });
         const ref = draggable ? L.marker(latest.current.center, {
           draggable: true, title: "Search from here", zIndexOffset: 1000,
           icon: L.divIcon({ className: "", iconSize: [28, 44], iconAnchor: [14, 14], html: `<div style="position:relative;width:28px;height:28px"><div style="width:28px;height:28px;border-radius:9999px;background:var(--primary);border:4px solid #fff;box-shadow:0 2px 8px rgb(0 0 0 / .3)"></div><span style="position:absolute;top:30px;left:50%;transform:translateX(-50%);background:var(--primary);color:#fff;font:600 11px Inter,sans-serif;padding:1px 6px;border-radius:9999px">You</span></div>` }),
