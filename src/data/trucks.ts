@@ -191,7 +191,7 @@ const CAT_MAP: [RegExp, string][] = [
   [/chicken|wings/i, "Chicken"], [/sandwich|deli/i, "Sandwiches"], [/seafood|fish/i, "Seafood"], [/asian|chinese/i, "Asian Fusion"],
 ];
 export function mapApifyCategory(categoryName?: string): string {
-  return CAT_MAP.find(([re]) => re.test(categoryName ?? ""))?.[1] ?? "Other";
+  return CAT_MAP.find(([re]) => re.test(categoryName ?? ""))?.[1] ?? (categoryName?.trim().replace(/_/g, " ") || "");
 }
 
 /** Where to place a truck for a window: its matching stop, else its base location (gray). Mobile trucks only show where a stop says they are. */
