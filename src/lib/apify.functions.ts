@@ -2,12 +2,15 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { mapApifyCategory, isFoodTruckPlace, slugify } from "@/data/trucks";
 import { mobileEvidence } from '@/data/google-hours';
+import { DISCOVERY_CITIES, inServiceRegion } from '@/data/coverage';
+import { googleStatusPatch } from '@/data/google-profile';
 
-export const SEED_CITIES = ["Davenport, IA", "Bettendorf, IA", "Rock Island, IL", "Moline, IL", "East Moline, IL", "Muscatine, IA", "Clinton, IA"];
+export const SEED_CITIES = DISCOVERY_CITIES;
 
 type Place = {
   title?: string; categoryName?: string; categories?: string[]; phone?: string; website?: string; address?: string; city?: string;
   location?: { lat: number; lng: number }; placeId?: string; imageUrl?: string; instagrams?: string[]; facebooks?: string[];
+  temporarilyClosed?: boolean; permanentlyClosed?: boolean;
 };
 
 /** Admin-only: scrape one city from Google Maps via Apify and upsert trucks + 30 days of gray base stops. */
@@ -21,44 +24,58 @@ export const seedCity = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
     if (!isAdmin) throw new Error("Forbidden");
-    const token = process.env["APIFY_TOKEN"];
-    if (!token) throw new Error("APIFY_TOKEN is not configured");
+    const token = process.env['APIFY_API_KEY'], lovable = process.env['LOVABLE_API_KEY'];
+    if (!token || !lovable) throw new Error('Apify connection is not configured');
 
-    const res = await fetch("https://api.apify.com/v2/acts/compass~crawler-google-places/run-sync-get-dataset-items", {
+    const res = await fetch("https://connector-gateway.lovable.dev/apify/acts/compass~crawler-google-places/run-sync-get-dataset-items", {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ searchStringsArray: ["food truck"], locationQuery: `${data.city}, USA`, maxCrawledPlacesPerSearch: 25, language: "en", scrapeContacts: true, skipClosedPlaces: true }),
+      headers: { Authorization: `Bearer ${lovable}`, 'X-Connection-Api-Key':token, "Content-Type": "application/json" },
+      body: JSON.stringify({ searchStringsArray: ["food truck"], locationQuery: `${data.city}, USA`, maxCrawledPlacesPerSearch: 25, language: "en", scrapeContacts: true, skipClosedPlaces: false }),
     });
     if (!res.ok) throw new Error(`Apify request failed [${res.status}]: ${(await res.text()).slice(0, 300)}`);
-    const places = ((await res.json()) as Place[]).filter((p) => p.placeId && p.title && p.location && isFoodTruckPlace(p.categoryName, p.categories, p.title));
+    const places = ((await res.json()) as Place[]).filter((p) => p.placeId && p.title && p.location && inServiceRegion(p.location.lat,p.location.lng) && isFoodTruckPlace(p.categoryName, p.categories, p.title));
 
     const ids = places.map((p) => p.placeId!);
-    const { data: existing } = ids.length ? await supabase.from("trucks").select("id, google_place_id, claimed_by, is_food_truck").in("google_place_id", ids) : { data: [] };
+    const { data: existing } = ids.length ? await supabase.from("trucks").select("id, google_place_id, claimed_by, is_food_truck, truck_type").in("google_place_id", ids) : { data: [] };
     const byPlace = new Map((existing ?? []).map((t) => [t.google_place_id!, t]));
     let created = 0, updated = 0;
     const errors: string[] = [];
 
     for (const p of places) {
+      const profileStatus = p.permanentlyClosed === true ? 'CLOSED_PERMANENTLY' : p.temporarilyClosed === true ? 'CLOSED_TEMPORARILY' : p.permanentlyClosed === false && p.temporarilyClosed === false ? 'OPERATIONAL' : null;
       const fields = {
         name: p.title!, category: mapApifyCategory(p.categoryName), phone: p.phone ?? null, website: p.website ?? null,
         base_address: p.address ?? null, base_lat: p.location!.lat, base_lng: p.location!.lng, logo_url: p.imageUrl ?? null,
         instagram: p.instagrams?.[0] ?? null, facebook: p.facebooks?.[0] ?? null, source: "apify", google_place_id: p.placeId!,
         google_types: [...new Set([p.categoryName ?? '', ...(p.categories ?? [])].filter(Boolean))],
         is_food_truck: mobileEvidence(p.title ?? '', '', [p.categoryName ?? '', ...(p.categories ?? [])]),
+        ...googleStatusPatch(profileStatus),
       };
       const ex = byPlace.get(p.placeId!);
       if (ex?.is_food_truck) fields.is_food_truck = true;
       let truckId: string;
       if (ex) {
-        if (ex.claimed_by) continue; // owner manages this truck — never overwrite
+        if (ex.claimed_by) {
+          const {error} = await supabase.from('trucks').update(googleStatusPatch(profileStatus)).eq('id',ex.id);
+          if(error) errors.push(`${p.title}: ${error.message}`);
+          continue; // keep owner business fields unchanged
+        }
         const { error } = await supabase.from("trucks").update(fields).eq("id", ex.id);
         if (error) { errors.push(`${p.title}: ${error.message}`); continue; }
         truckId = ex.id; updated++;
       } else {
         truckId = `${slugify(p.title!)}-${p.placeId!.slice(-5).toLowerCase()}`;
-        const { error } = await supabase.from("trucks").insert({ id: truckId, ...fields, status: "active" });
+        const { error } = await supabase.from("trucks").insert({ id: truckId, status: "active", ...fields });
         if (error) { errors.push(`${p.title}: ${error.message}`); continue; }
         created++;
+      }
+      if (ex?.truck_type === 'fixed' && fields.is_food_truck && p.address?.trim()) {
+        const {error} = await supabase.rpc('confirm_truck_location',{_truck_id:truckId,_google_verified:false});
+        if(error) errors.push(`${p.title} address: ${error.message}`);
+      }
+      if(fields.is_food_truck) {
+        const rows = [...(p.facebooks ?? []).map(url=>({kind:'page',url})), ...(p.instagrams ?? []).map(url=>({kind:'instagram',url}))].filter(s=>{try{const u=new URL(s.url);return ['facebook.com','www.facebook.com','instagram.com','www.instagram.com'].includes(u.hostname)&&u.pathname!=='/';}catch{return false;}}).map(s=>({...s,name:p.title,truck_id:truckId}));
+        if(rows.length) { const {error} = await supabase.from('social_sources').upsert(rows,{onConflict:'url',ignoreDuplicates:true}); if(error) errors.push(`${p.title} sources: ${error.message}`); }
       }
       // Replace future base-location stops (only apify_maps rows; owner stops untouched).
       const now = new Date();
