@@ -46,6 +46,7 @@
         "date-fns": "^4.1.0",
         "embla-carousel-react": "^8.6.0",
         "heic2any": "^0.0.4",
+        "ical.js": "^2.2.1",
         "input-otp": "^1.4.2",
         "ipaddr.js": "^2.5.0",
         "leaflet": "^1.9.4",
@@ -1008,6 +1009,8 @@
     "https-proxy-agent": ["https-proxy-agent@5.0.1", "", { "dependencies": { "agent-base": "6", "debug": "4" } }, "sha512-dFcAjpTQFgoLMzC2VwU+C/CbS7uRL0lWmxDITmqm7C+7F0Odmj6s9l6alZc6AELXhrnggM2CeWSXHGOdX2YtwA=="],
 
     "httpxy": ["httpxy@0.5.5", "", {}, "sha512-uDjmnPyp1q4Sgzf3w+J/Fc6UqcCEj0x4Wjp7OqK5dGhNeDgpyrAmnS6ey8QWrX3SWDon2DMKf9sBa5X9+CVyMA=="],
+
+    "ical.js": ["ical.js@2.2.1", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/ical.js/-/ical.js-2.2.1.tgz", {}, "sha512-yK/UlPbEs316igb/tjRgbFA8ZV75rCsBJp/hWOatpyaPNlgw0dGDmU+FoicOcwX4xXkeXOkYiOmCqNPFpNPkQg=="],
 
     "iceberg-js": ["iceberg-js@0.8.1", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/iceberg-js/-/iceberg-js-0.8.1.tgz", {}, "sha512-1dhVQZXhcHje7798IVM+xoo/1ZdVfzOMIc8/rgVSijRK38EDqOJoGula9N/8ZI5RD8QTxNQtK/Gozpr+qUqRRA=="],
 

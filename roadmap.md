@@ -1,5 +1,10 @@
 # Roadmap
 
+## Venue calendar sources
+- [ ] Admin source form with geocoded venue, sync counts and title-link/ignore queue
+- [ ] Secure six-hour calendar sync, 30-day recurrence, source-only reconciliation and focused tests
+- [ ] Run Marketplace first sync and report imports/review; verify Admin flow without publishing
+
 ## Unified scraper approval and complete listings
 - [x] Shared DB truck-status validation and transactional Admin suggestion decision synchronize pending trucks and complete, trusted future suggestions; stop-only rejection remains distinct.
 - [x] New Google/social scraped listings require evidenced address/coordinates and Google category or own Facebook food evidence; incomplete discoveries stay in import errors with original post, never invent Other. Stable IDs and existing name matching deduplicate repeated detections. Admin can correct address/category.
