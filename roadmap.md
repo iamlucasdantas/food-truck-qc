@@ -1,9 +1,11 @@
 # Roadmap
 
 ## Venue calendar sources
-- [ ] Admin source form with geocoded venue, sync counts and title-link/ignore queue
-- [ ] Secure six-hour calendar sync, 30-day recurrence, source-only reconciliation and focused tests
-- [ ] Run Marketplace first sync and report imports/review; verify Admin flow without publishing
+- [x] Admin Calendar sources with geocoded venue, sync counts and remembered title-link/ignore queue
+- [x] Secure six-hour callback, 30-day RRULE/EXDATE/UNTIL/TZID/UTC expansion and atomic source-only reconciliation; 129 tests passed including live identity/update/deletion/isolation checks
+- [x] Marketplace first and repeated sync: 19 stops, 3 ignored events, 8 review titles; public Schaab schedule verified, unauthenticated cron rejected, automatic build OK
+- [ ] Activate managed six-hour schedule after publication approval; created but paused because published app lacks the new callback
+- [ ] Signed-in Admin form/Sync now/link/ignore UI verification: no app account matches requesting user's email; needs Admin sign-in in preview
 
 ## Unified scraper approval and complete listings
 - [x] Shared DB truck-status validation and transactional Admin suggestion decision synchronize pending trucks and complete, trusted future suggestions; stop-only rejection remains distinct.
