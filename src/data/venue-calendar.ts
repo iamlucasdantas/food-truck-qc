@@ -16,7 +16,6 @@ export const nonFoodEvent = (title: string) => /\b(trivia|bingo|market|workshop|
 
 /** ICAL owns recurrence, exclusions and exception overrides; Intl handles TZID without VTIMEZONE. */
 function timestamp(time: ICAL.Time, property: ICAL.Property | null, fallback: string) {
-  if (time.isDate) throw Error('All-day vendor events need timed hours before import');
   if (time.zone.tzid !== 'floating' && time.zone.tzid !== 'local') return new Date(time.toUnixTime() * 1000);
   const zone = String(property?.getParameter('tzid') ?? fallback);
   const wall = Date.UTC(time.year, time.month - 1, time.day, time.hour, time.minute, time.second);
@@ -52,7 +51,7 @@ export function expandVenueCalendar(text: string, timezone: string, now = new Da
       if (!occurrence) break;
       const detail = iterator ? event.getOccurrenceDetails(occurrence) : { item: event, startDate: event.startDate, endDate: event.endDate };
       const original = timestamp(occurrence, component.getFirstProperty('dtstart'), timezone);
-      if (original >= horizon) break;
+      if (original >= horizon && !event.isRecurrenceException()) break;
       const item = detail.item;
       if (String(item.component.getFirstPropertyValue('status')).toUpperCase() !== 'CANCELLED' && !detail.startDate.isDate) {
         const start = timestamp(detail.startDate, item.component.getFirstProperty('dtstart'), timezone);
