@@ -1,0 +1,1 @@
+{"appId":"com.foodtruckqc.app","appName":"FoodTruckQC","webDir":"www","server":{"url":"https://app.foodtruckqc.com","cleartext":false,"allowNavigation":["app.foodtruckqc.com","foodtruckqc.com","*.supabase.co"]},"android":{"allowMixedContent":false}}
