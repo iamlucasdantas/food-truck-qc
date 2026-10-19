@@ -21,6 +21,8 @@ import { TruckDrawer } from "@/components/admin/TruckDrawer";
 import { cn } from "@/lib/utils";
 import { LocationQueue } from '@/components/admin/LocationQueue';
 import { geocode } from '@/lib/geocode';
+import { AddTruckDialog } from '@/components/admin/AddTruckDialog';
+import { findDuplicates } from '@/data/duplicates';
 
 const PAGE = 50;
 const STATUS_LABEL: Record<AdminStatus, string> = { approved: "Approved", pending: "Pending", rejected: "Rejected", deleted: "Deleted" };
@@ -33,6 +35,7 @@ const PRESET_VIEWS: { name: string; search: S }[] = [
   { name: "Recently deleted", search: { status: "deleted" } },
   { name: "Trucks without address", search: { missing: "address", status: "approved,pending" } },
   { name: "Category needs review", search: { missing: "category", status: "approved,pending" } },
+  { name: "Possible duplicates", search: { missing: "duplicates", status: "approved,pending" } },
 ];
 const VIEWS_KEY = "ftqc-admin-truck-views";
 const DENSITY_KEY = "ftqc-admin-density";
@@ -61,6 +64,7 @@ export function AdminTrucks({ search }: { search: S }) {
   const [confirm, setConfirm] = useState<Row[] | null>(null);
   const [edit, setEdit] = useState<string | null>(null);
   const [merge, setMerge] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
   const [compact, setCompact] = useState(false);
   const [saved, setSaved] = useState<{ name: string; search: S }[]>([]);
   useEffect(() => {
@@ -89,7 +93,14 @@ export function AdminTrucks({ search }: { search: S }) {
   const rows = useMemo(() => data.map((t) => ({ ...t, city: cityOf(t.base_address), adminStatus: adminStatus(t) })), [data]);
   const cities = useMemo(() => Array.from(new Set(rows.map((r) => r.city).filter(Boolean))).sort(), [rows]);
   const missing = search["missing"];
-  const list = rows.filter((r) => adminDefaultVisible(r, f) && missingOk(r, missing));
+  // Strong duplicates (same link/phone/name) among non-deleted trucks, for the "Possible duplicates" view.
+  const dupIds = useMemo(() => {
+    if (missing !== "duplicates") return null;
+    const live = data.filter((t) => !t.deleted_at && !t.merged_into);
+    return new Set(live.filter((t) => findDuplicates(t, live.filter((o) => o.id !== t.id)).some((m) => m.strong)).map((t) => t.id));
+  }, [data, missing]);
+  const list = rows.filter((r) => adminDefaultVisible(r, f) && (dupIds ? dupIds.has(r.id) : missingOk(r, missing)))
+    .sort((a, b) => (dupIds ? a.name.localeCompare(b.name) : 0));
   const pages = Math.max(1, Math.ceil(list.length / PAGE));
   const cur = Math.min(page, pages);
   const shown = list.slice((cur - 1) * PAGE, cur * PAGE);
@@ -207,7 +218,8 @@ export function AdminTrucks({ search }: { search: S }) {
     <div className="space-y-4">
       <LocationQueue />
       <SectionHeader title="Trucks" description="Search, edit, merge, archive and restore every listing."
-        actions={
+        actions={<>
+          <button className={btn.primary} onClick={() => setAdding(true)}><Plus className="h-4 w-4" />Add truck</button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild><button className={btn.secondary}><Bookmark className="h-4 w-4" /><span className="hidden sm:inline">Views</span><ChevronDown className="h-3.5 w-3.5" /></button></DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-60">
@@ -224,7 +236,9 @@ export function AdminTrucks({ search }: { search: S }) {
               <DropdownMenuItem onSelect={saveView}><Plus className="mr-2 h-4 w-4" />Save current filters…</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        } />
+        </>} />
+      <AddTruckDialog open={adding} onOpenChange={setAdding} onOpenTruck={(id) => setRaw({ truck: id, status: "approved,pending" })}
+        categories={Array.from(new Set(rows.map((r) => r.category).filter((c) => c && !/^(other|unknown)$/i.test(c)))).sort()} />
 
       <div className="space-y-3 rounded-xl border border-border bg-card p-3 shadow-pop">
         <div className="grid gap-2 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
