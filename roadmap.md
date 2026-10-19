@@ -1,5 +1,8 @@
 # Roadmap
 
+## Food-truck category review
+- [ ] Review all non-deleted food trucks against saved Google categories and public profile evidence; correct only supported categories and list uncertain records without changing status/classification.
+
 ## Venue calendar sources
 - [x] Admin Calendar sources with geocoded venue, sync counts and remembered title-link/ignore queue
 - [x] Secure six-hour callback, 30-day RRULE/EXDATE/UNTIL/TZID/UTC expansion and atomic source-only reconciliation; 129 tests passed including live identity/update/deletion/isolation checks
