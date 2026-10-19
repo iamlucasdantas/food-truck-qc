@@ -353,7 +353,8 @@ function Index() {
           </button>
         )}
         {listHeader}
-        <div className="mt-1 flex-1 overflow-y-auto overscroll-contain">{list}<SiteFooter /></div>
+        <div className="mt-1 min-h-0 flex-1 overflow-y-auto overscroll-contain">{list}</div>
+        <SiteFooter />
       </div>
 
       {/* Tablet / desktop column */}
@@ -362,7 +363,8 @@ function Index() {
           <h1 className="px-1"><Logo /><span className="sr-only">Quad Cities food trucks open now: live map and schedules</span></h1>
           {searchRow}{quickRow}{activeRow}
         </div>
-        <div className={`flex-1 overflow-y-auto pt-2 ${mapFailed ? "mx-auto w-full max-w-[1100px]" : ""}`}>{listHeader}<div className="mt-1">{list}</div><SiteFooter /></div>
+        <div className={`min-h-0 flex-1 overflow-y-auto pt-2 ${mapFailed ? "mx-auto w-full max-w-[1100px]" : ""}`}>{listHeader}<div className="mt-1">{list}</div></div>
+        <SiteFooter />
       </aside>
 
       {/* Filters panel */}
