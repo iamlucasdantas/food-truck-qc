@@ -1,6 +1,6 @@
 /** Pure Admin shell rules (sidebar sections, badge counters, command palette). Unit-tested in admin.test.ts. */
 
-export type AdminSection = "overview" | "claims" | "pending" | "trucks" | "csv" | "apify" | "facebook" | "logs" | "api";
+export type AdminSection = "overview" | "claims" | "pending" | "trucks" | "csv" | "apify" | "facebook" | "logs" | "api" | "calendars";
 
 export const ADMIN_SECTIONS: { key: AdminSection; label: string; group: "Workspace" | "Data sources" }[] = [
   { key: "overview", label: "Overview", group: "Workspace" },
@@ -8,6 +8,7 @@ export const ADMIN_SECTIONS: { key: AdminSection; label: string; group: "Workspa
   { key: "claims", label: "Claims", group: "Workspace" },
   { key: "trucks", label: "Trucks", group: "Workspace" },
   { key: "facebook", label: "Facebook", group: "Data sources" },
+  { key: "calendars", label: "Calendar sources", group: "Data sources" },
   { key: "apify", label: "Google Maps seed", group: "Data sources" },
   { key: "csv", label: "CSV import", group: "Data sources" },
   { key: "logs", label: "Import logs", group: "Data sources" },
