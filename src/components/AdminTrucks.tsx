@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { LocationQueue } from '@/components/admin/LocationQueue';
 import { geocode } from '@/lib/geocode';
 import { AddTruckDialog } from '@/components/admin/AddTruckDialog';
+import { findDuplicates } from '@/data/duplicates';
 
 const PAGE = 50;
 const STATUS_LABEL: Record<AdminStatus, string> = { approved: "Approved", pending: "Pending", rejected: "Rejected", deleted: "Deleted" };
@@ -34,6 +35,7 @@ const PRESET_VIEWS: { name: string; search: S }[] = [
   { name: "Recently deleted", search: { status: "deleted" } },
   { name: "Trucks without address", search: { missing: "address", status: "approved,pending" } },
   { name: "Category needs review", search: { missing: "category", status: "approved,pending" } },
+  { name: "Possible duplicates", search: { missing: "duplicates", status: "approved,pending" } },
 ];
 const VIEWS_KEY = "ftqc-admin-truck-views";
 const DENSITY_KEY = "ftqc-admin-density";
@@ -91,7 +93,14 @@ export function AdminTrucks({ search }: { search: S }) {
   const rows = useMemo(() => data.map((t) => ({ ...t, city: cityOf(t.base_address), adminStatus: adminStatus(t) })), [data]);
   const cities = useMemo(() => Array.from(new Set(rows.map((r) => r.city).filter(Boolean))).sort(), [rows]);
   const missing = search["missing"];
-  const list = rows.filter((r) => adminDefaultVisible(r, f) && missingOk(r, missing));
+  // Strong duplicates (same link/phone/name) among non-deleted trucks, for the "Possible duplicates" view.
+  const dupIds = useMemo(() => {
+    if (missing !== "duplicates") return null;
+    const live = data.filter((t) => !t.deleted_at && !t.merged_into);
+    return new Set(live.filter((t) => findDuplicates(t, live.filter((o) => o.id !== t.id)).some((m) => m.strong)).map((t) => t.id));
+  }, [data, missing]);
+  const list = rows.filter((r) => adminDefaultVisible(r, f) && (dupIds ? dupIds.has(r.id) : missingOk(r, missing)))
+    .sort((a, b) => (dupIds ? a.name.localeCompare(b.name) : 0));
   const pages = Math.max(1, Math.ceil(list.length / PAGE));
   const cur = Math.min(page, pages);
   const shown = list.slice((cur - 1) * PAGE, cur * PAGE);
