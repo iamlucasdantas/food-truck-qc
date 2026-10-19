@@ -1,7 +1,7 @@
 import type { Tables } from "@/integrations/supabase/types";
 
 export type Truck = Tables<"trucks">;
-export type Stop = Tables<"stops">;
+export type Stop = Omit<Tables<"stops">, "calendar_source_id" | "calendar_uid" | "calendar_occurrence"> & Partial<Pick<Tables<"stops">, "calendar_source_id" | "calendar_uid" | "calendar_occurrence">>;
 export type Source = Stop["source"];
 export type Window = "now" | "lunch" | "dinner" | "all";
 export type Status = "open" | "today" | "none";
@@ -13,6 +13,7 @@ export const WINDOWS: Record<Exclude<Window, "now">, [number, number]> = {
 };
 
 export const SOURCE_LABEL: Record<Source, string> = {
+  calendar: "Venue calendar",
   owner: "Confirmed by owner",
   own_post: "From their own post",
   apify_event: "Imported from Facebook Events",
@@ -24,7 +25,7 @@ export const SOURCE_LABEL: Record<Source, string> = {
 export type StopBadge = "own post" | "community" | "calendar" | "manual";
 /** Short source badge for a stop. Calendar = imported from the owner's connected calendar feed. */
 export function stopBadge(stop: Pick<Stop, "source">, series?: { external_uid?: string | null } | null): StopBadge {
-  if (series?.external_uid) return "calendar";
+  if (series?.external_uid || stop.source === "calendar") return "calendar";
   if (stop.source === "own_post") return "own post";
   if (stop.source === "apify_post" || stop.source === "apify_event") return "community";
   return "manual";

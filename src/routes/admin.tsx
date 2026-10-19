@@ -16,6 +16,7 @@ import { AdminSuggestions, FacebookSession, PastePost } from "@/components/Admin
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminOverview } from "@/components/admin/AdminOverview";
 import { AgentApiLog } from "@/components/admin/AgentApiLog";
+import { CalendarSources } from "@/components/admin/CalendarSources";
 import { GoogleHours } from '@/components/admin/GoogleHours';
 import { EmptyState, IconAction, Initials, ListSkeleton, SectionHeader, StatusPill, btn, statusTone } from "@/components/admin/ui";
 import { sectionFromSearch } from "@/data/admin";
@@ -68,6 +69,7 @@ function Admin() {
       {section === "facebook" && <><SectionHeader title="Facebook" description="Scan groups and pages for upcoming stops." /><FacebookTab /></>}
       {section === "logs" && <><SectionHeader title="Import logs" description="Every CSV, Google Maps and Facebook run." /><Logs /></>}
       {section === "api" && <AgentApiLog />}
+      {section === "calendars" && <CalendarSources />}
     </AdminShell>
   );
 }

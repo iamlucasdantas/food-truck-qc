@@ -573,6 +573,9 @@ export type Database = {
       stops: {
         Row: {
           address: string | null
+          calendar_occurrence: string | null
+          calendar_source_id: string | null
+          calendar_uid: string | null
           cancelled: boolean
           city: string
           confidence: number
@@ -594,6 +597,9 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          calendar_occurrence?: string | null
+          calendar_source_id?: string | null
+          calendar_uid?: string | null
           cancelled?: boolean
           city?: string
           confidence?: number
@@ -615,6 +621,9 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          calendar_occurrence?: string | null
+          calendar_source_id?: string | null
+          calendar_uid?: string | null
           cancelled?: boolean
           city?: string
           confidence?: number
@@ -635,6 +644,13 @@ export type Database = {
           venue_name?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "stops_calendar_source_id_fkey"
+            columns: ["calendar_source_id"]
+            isOneToOne: false
+            referencedRelation: "venue_calendar_sources"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "stops_series_id_fkey"
             columns: ["series_id"]
@@ -937,6 +953,111 @@ export type Database = {
         }
         Relationships: []
       }
+      venue_calendar_sources: {
+        Row: {
+          active: boolean
+          address: string
+          city: string
+          created_at: string
+          id: string
+          ignored: number
+          imported: number
+          in_review: number
+          last_error: string | null
+          last_sync_at: string | null
+          lat: number
+          lng: number
+          name: string
+          sync_started_at: string | null
+          sync_token: string | null
+          timezone: string
+          url: string
+        }
+        Insert: {
+          active?: boolean
+          address: string
+          city: string
+          created_at?: string
+          id?: string
+          ignored?: number
+          imported?: number
+          in_review?: number
+          last_error?: string | null
+          last_sync_at?: string | null
+          lat: number
+          lng: number
+          name: string
+          sync_started_at?: string | null
+          sync_token?: string | null
+          timezone?: string
+          url: string
+        }
+        Update: {
+          active?: boolean
+          address?: string
+          city?: string
+          created_at?: string
+          id?: string
+          ignored?: number
+          imported?: number
+          in_review?: number
+          last_error?: string | null
+          last_sync_at?: string | null
+          lat?: number
+          lng?: number
+          name?: string
+          sync_started_at?: string | null
+          sync_token?: string | null
+          timezone?: string
+          url?: string
+        }
+        Relationships: []
+      }
+      venue_calendar_titles: {
+        Row: {
+          decision: string
+          last_seen_at: string
+          occurrences: Json
+          source_id: string
+          title: string
+          title_key: string
+          truck_id: string | null
+        }
+        Insert: {
+          decision?: string
+          last_seen_at?: string
+          occurrences?: Json
+          source_id: string
+          title: string
+          title_key: string
+          truck_id?: string | null
+        }
+        Update: {
+          decision?: string
+          last_seen_at?: string
+          occurrences?: Json
+          source_id?: string
+          title?: string
+          title_key?: string
+          truck_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venue_calendar_titles_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "venue_calendar_sources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "venue_calendar_titles_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "trucks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       venues: {
         Row: {
           address: string | null
@@ -1006,6 +1127,16 @@ export type Database = {
       owner_id_by_email: { Args: { _email: string }; Returns: string }
       owns_truck: { Args: { _truck_id: string }; Returns: boolean }
       purge_deleted_trucks: { Args: never; Returns: number }
+      reconcile_venue_calendar: {
+        Args: {
+          _ignored: number
+          _source_id: string
+          _stops: Json
+          _titles: Json
+          _token: string
+        }
+        Returns: undefined
+      }
       review_claim:
         | { Args: { _approve: boolean; _claim_id: string }; Returns: undefined }
         | {
@@ -1024,6 +1155,7 @@ export type Database = {
         | "apify_maps"
         | "estimated"
         | "own_post"
+        | "calendar"
       truck_status: "active" | "pending" | "archived"
     }
     CompositeTypes: {
@@ -1161,6 +1293,7 @@ export const Constants = {
         "apify_maps",
         "estimated",
         "own_post",
+        "calendar",
       ],
       truck_status: ["active", "pending", "archived"],
     },

@@ -35,6 +35,7 @@ import { Route as ApiPublicChatSearchTrucksRouteImport } from './routes/api/publ
 import { Route as ApiPublicChatUpcomingStopsRouteImport } from './routes/api/public/chat-upcoming-stops'
 import { Route as ApiPublicCalendarIdRouteImport } from './routes/api/public/calendar.$id'
 import { Route as ApiPublicJobsFacebookDailyRouteImport } from './routes/api/public/jobs/facebook-daily'
+import { Route as ApiPublicJobsVenueCalendarsRouteImport } from './routes/api/public/jobs/venue-calendars'
 import { Route as ApiPublicV1FavoritesRouteImport } from './routes/api/public/v1/favorites'
 import { Route as ApiPublicV1StopsRouteImport } from './routes/api/public/v1/stops'
 import { Route as ApiPublicV1TrucksRouteImport } from './routes/api/public/v1/trucks'
@@ -172,6 +173,12 @@ const ApiPublicJobsFacebookDailyRoute =
     path: '/api/public/jobs/facebook-daily',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicJobsVenueCalendarsRoute =
+  ApiPublicJobsVenueCalendarsRouteImport.update({
+    id: '/api/public/jobs/venue-calendars',
+    path: '/api/public/jobs/venue-calendars',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicV1FavoritesRoute = ApiPublicV1FavoritesRouteImport.update({
   id: '/api/public/v1/favorites',
   path: '/api/public/v1/favorites',
@@ -214,6 +221,7 @@ export interface FileRoutesByFullPath {
   '/api/public/chat-upcoming-stops': typeof ApiPublicChatUpcomingStopsRoute
   '/api/public/calendar/$id': typeof ApiPublicCalendarIdRoute
   '/api/public/jobs/facebook-daily': typeof ApiPublicJobsFacebookDailyRoute
+  '/api/public/jobs/venue-calendars': typeof ApiPublicJobsVenueCalendarsRoute
   '/api/public/v1/favorites': typeof ApiPublicV1FavoritesRoute
   '/api/public/v1/stops': typeof ApiPublicV1StopsRoute
   '/api/public/v1/trucks': typeof ApiPublicV1TrucksRoute
@@ -244,6 +252,7 @@ export interface FileRoutesByTo {
   '/api/public/chat-upcoming-stops': typeof ApiPublicChatUpcomingStopsRoute
   '/api/public/calendar/$id': typeof ApiPublicCalendarIdRoute
   '/api/public/jobs/facebook-daily': typeof ApiPublicJobsFacebookDailyRoute
+  '/api/public/jobs/venue-calendars': typeof ApiPublicJobsVenueCalendarsRoute
   '/api/public/v1/favorites': typeof ApiPublicV1FavoritesRoute
   '/api/public/v1/stops': typeof ApiPublicV1StopsRoute
   '/api/public/v1/trucks': typeof ApiPublicV1TrucksRoute
@@ -276,6 +285,7 @@ export interface FileRoutesById {
   '/api/public/chat-upcoming-stops': typeof ApiPublicChatUpcomingStopsRoute
   '/api/public/calendar/$id': typeof ApiPublicCalendarIdRoute
   '/api/public/jobs/facebook-daily': typeof ApiPublicJobsFacebookDailyRoute
+  '/api/public/jobs/venue-calendars': typeof ApiPublicJobsVenueCalendarsRoute
   '/api/public/v1/favorites': typeof ApiPublicV1FavoritesRoute
   '/api/public/v1/stops': typeof ApiPublicV1StopsRoute
   '/api/public/v1/trucks': typeof ApiPublicV1TrucksRoute
@@ -308,6 +318,7 @@ export interface FileRouteTypes {
     | '/api/public/chat-upcoming-stops'
     | '/api/public/calendar/$id'
     | '/api/public/jobs/facebook-daily'
+    | '/api/public/jobs/venue-calendars'
     | '/api/public/v1/favorites'
     | '/api/public/v1/stops'
     | '/api/public/v1/trucks'
@@ -338,6 +349,7 @@ export interface FileRouteTypes {
     | '/api/public/chat-upcoming-stops'
     | '/api/public/calendar/$id'
     | '/api/public/jobs/facebook-daily'
+    | '/api/public/jobs/venue-calendars'
     | '/api/public/v1/favorites'
     | '/api/public/v1/stops'
     | '/api/public/v1/trucks'
@@ -369,6 +381,7 @@ export interface FileRouteTypes {
     | '/api/public/chat-upcoming-stops'
     | '/api/public/calendar/$id'
     | '/api/public/jobs/facebook-daily'
+    | '/api/public/jobs/venue-calendars'
     | '/api/public/v1/favorites'
     | '/api/public/v1/stops'
     | '/api/public/v1/trucks'
@@ -397,6 +410,7 @@ export interface RootRouteChildren {
   ApiPublicChatUpcomingStopsRoute: typeof ApiPublicChatUpcomingStopsRoute
   ApiPublicCalendarIdRoute: typeof ApiPublicCalendarIdRoute
   ApiPublicJobsFacebookDailyRoute: typeof ApiPublicJobsFacebookDailyRoute
+  ApiPublicJobsVenueCalendarsRoute: typeof ApiPublicJobsVenueCalendarsRoute
   ApiPublicV1FavoritesRoute: typeof ApiPublicV1FavoritesRoute
   ApiPublicV1StopsRoute: typeof ApiPublicV1StopsRoute
   ApiPublicV1TrucksRoute: typeof ApiPublicV1TrucksRoute
@@ -586,6 +600,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicJobsFacebookDailyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/jobs/venue-calendars': {
+      id: '/api/public/jobs/venue-calendars'
+      path: '/api/public/jobs/venue-calendars'
+      fullPath: '/api/public/jobs/venue-calendars'
+      preLoaderRoute: typeof ApiPublicJobsVenueCalendarsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/v1/favorites': {
       id: '/api/public/v1/favorites'
       path: '/api/public/v1/favorites'
@@ -659,6 +680,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicChatUpcomingStopsRoute: ApiPublicChatUpcomingStopsRoute,
   ApiPublicCalendarIdRoute: ApiPublicCalendarIdRoute,
   ApiPublicJobsFacebookDailyRoute: ApiPublicJobsFacebookDailyRoute,
+  ApiPublicJobsVenueCalendarsRoute: ApiPublicJobsVenueCalendarsRoute,
   ApiPublicV1FavoritesRoute: ApiPublicV1FavoritesRoute,
   ApiPublicV1StopsRoute: ApiPublicV1StopsRoute,
   ApiPublicV1TrucksRoute: ApiPublicV1TrucksRoute,

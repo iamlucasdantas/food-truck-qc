@@ -1,0 +1,1 @@
+ALTER TYPE public.stop_source ADD VALUE IF NOT EXISTS 'calendar';
