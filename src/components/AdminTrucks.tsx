@@ -21,6 +21,7 @@ import { TruckDrawer } from "@/components/admin/TruckDrawer";
 import { cn } from "@/lib/utils";
 import { LocationQueue } from '@/components/admin/LocationQueue';
 import { geocode } from '@/lib/geocode';
+import { AddTruckDialog } from '@/components/admin/AddTruckDialog';
 
 const PAGE = 50;
 const STATUS_LABEL: Record<AdminStatus, string> = { approved: "Approved", pending: "Pending", rejected: "Rejected", deleted: "Deleted" };
@@ -225,7 +226,9 @@ export function AdminTrucks({ search }: { search: S }) {
               <DropdownMenuItem onSelect={saveView}><Plus className="mr-2 h-4 w-4" />Save current filters…</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        } />
+        </>} />
+      <AddTruckDialog open={adding} onOpenChange={setAdding} onOpenTruck={(id) => setRaw({ truck: id, status: "approved,pending" })}
+        categories={Array.from(new Set(rows.map((r) => r.category).filter((c) => c && !/^(other|unknown)$/i.test(c)))).sort()} />
 
       <div className="space-y-3 rounded-xl border border-border bg-card p-3 shadow-pop">
         <div className="grid gap-2 md:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
