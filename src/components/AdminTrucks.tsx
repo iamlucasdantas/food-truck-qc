@@ -62,6 +62,7 @@ export function AdminTrucks({ search }: { search: S }) {
   const [confirm, setConfirm] = useState<Row[] | null>(null);
   const [edit, setEdit] = useState<string | null>(null);
   const [merge, setMerge] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
   const [compact, setCompact] = useState(false);
   const [saved, setSaved] = useState<{ name: string; search: S }[]>([]);
   useEffect(() => {
