@@ -31,6 +31,8 @@ const PRESET_VIEWS: { name: string; search: S }[] = [
   { name: "Every status", search: { status: "approved,pending,rejected,deleted" } },
   { name: "Fixed locations", search: { type: "fixed" } },
   { name: "Recently deleted", search: { status: "deleted" } },
+  { name: "Trucks without address", search: { missing: "address", status: "approved,pending" } },
+  { name: "Category needs review", search: { missing: "category", status: "approved,pending" } },
 ];
 const VIEWS_KEY = "ftqc-admin-truck-views";
 const DENSITY_KEY = "ftqc-admin-density";
@@ -42,6 +44,12 @@ type Row = {
 };
 
 type S = Record<string, string | number | undefined>;
+/** "Without address" / "Category needs review" views. */
+function missingOk(r: { base_address: string | null; category: string }, missing: unknown) {
+  if (missing === "address") return !r.base_address?.trim();
+  if (missing === "category") return !r.category?.trim() || /^(other|unknown|uncategorized)$/i.test(r.category.trim());
+  return true;
+}
 export function AdminTrucks({ search }: { search: S }) {
   const qc = useQueryClient();
   const navigate = useNavigate({ from: "/admin" });
@@ -80,7 +88,8 @@ export function AdminTrucks({ search }: { search: S }) {
   });
   const rows = useMemo(() => data.map((t) => ({ ...t, city: cityOf(t.base_address), adminStatus: adminStatus(t) })), [data]);
   const cities = useMemo(() => Array.from(new Set(rows.map((r) => r.city).filter(Boolean))).sort(), [rows]);
-  const list = rows.filter((r) => adminDefaultVisible(r, f));
+  const missing = search["missing"];
+  const list = rows.filter((r) => adminDefaultVisible(r, f) && missingOk(r, missing));
   const pages = Math.max(1, Math.ceil(list.length / PAGE));
   const cur = Math.min(page, pages);
   const shown = list.slice((cur - 1) * PAGE, cur * PAGE);
@@ -347,7 +356,8 @@ export function AdminTrucks({ search }: { search: S }) {
             <form className="grid gap-3 sm:grid-cols-2" onSubmit={(e) => { e.preventDefault(); void save(editing.id, new FormData(e.currentTarget)); }}>
               {(["name", "category", "base_address", "phone", "website", "instagram", "facebook"] as const).map((k) => (
                 <label key={k} className="space-y-1 text-sm"><span className="capitalize text-muted-foreground">{k}</span>
-                  <input name={k} className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring" defaultValue={editing[k] ?? ""} />
+                  <input name={k} list={k === "category" ? "admin-categories" : undefined} className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring" defaultValue={editing[k] ?? ""} />
+                  {k === "category" && <datalist id="admin-categories">{Array.from(new Set(rows.map((r) => r.category).filter((c) => c && !/^(other|unknown)$/i.test(c)))).sort().map((c) => <option key={c} value={c} />)}</datalist>}
                 </label>
               ))}
               <label className="flex items-center gap-2 text-sm sm:col-span-2"><input type="checkbox" name="is_food_truck" defaultChecked={editing.is_food_truck} />Food truck, trailer or cart</label>

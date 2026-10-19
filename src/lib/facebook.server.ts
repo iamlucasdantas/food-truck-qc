@@ -54,7 +54,13 @@ async function syncTruckSources(db: DB) {
       if (/reddit\.com/i.test(url) && !have.has(normUrl(url))) rows.push({ kind: "reddit", url, name: t.name, truck_id: t.id });
     }
   }
-  if (rows.length) await db.from("social_sources").upsert(rows, { onConflict: "url", ignoreDuplicates: true });
+  // One bad row must not drop the whole batch, so insert per row and log failures.
+  for (const r of rows) {
+    const { error } = await db.from("social_sources").upsert(r, { onConflict: "url", ignoreDuplicates: true });
+    if (error) console.error(`[facebook] source ${r.url} skipped: ${error.message}`);
+  }
+  // Category check: list trucks whose category is missing/Other so Admin can fix them from Google/Facebook evidence.
+  return trucks.filter((t) => t.status === "active").length ? (await db.from("trucks").select("id").eq("status", "active").eq("is_food_truck", true).is("deleted_at", null).or("category.is.null,category.eq.,category.ilike.other,category.ilike.unknown")).data?.map((t) => t.id) ?? [] : [];
 }
 
 function cleanUrl(raw: string): string | null {
@@ -91,7 +97,7 @@ async function startActor(kind: Kind, all: Source[]): Promise<string> {
 
 /** Create a run and start one Apify job per source kind. Fast — safe for cron. */
 export async function startFacebookRun(db: DB) {
-  await syncTruckSources(db);
+  const categoryReview = await syncTruckSources(db);
   const { data: sources = [] } = await db.from("social_sources").select("*").eq("active", true);
   const list = sources ?? [];
   if (!list.length) throw new Error("No active social sources");
@@ -100,8 +106,9 @@ export async function startFacebookRun(db: DB) {
     const s = list.filter((x) => x.kind === kind);
     if (s.length) meta.runs![kind] = await startActor(kind, s);
   }
+  const catNote = categoryReview.length ? ` · ${categoryReview.length} categories need review` : "";
   const { data: run, error } = await db.from("ingestion_runs").insert({
-    source: "apify_facebook", notes: `Social update · 0/${list.length} sources`, cities_total: list.map((s) => s.id), meta,
+    source: "apify_facebook", notes: `Social update · 0/${list.length} sources${catNote}`, cities_total: list.map((s) => s.id), meta: { ...meta, categoryReview } as Meta,
   }).select().single();
   if (error) throw new Error(error.message);
   return run;
