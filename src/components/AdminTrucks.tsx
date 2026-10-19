@@ -207,7 +207,8 @@ export function AdminTrucks({ search }: { search: S }) {
     <div className="space-y-4">
       <LocationQueue />
       <SectionHeader title="Trucks" description="Search, edit, merge, archive and restore every listing."
-        actions={
+        actions={<>
+          <button className={btn.primary} onClick={() => setAdding(true)}><Plus className="h-4 w-4" />Add truck</button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild><button className={btn.secondary}><Bookmark className="h-4 w-4" /><span className="hidden sm:inline">Views</span><ChevronDown className="h-3.5 w-3.5" /></button></DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-60">
