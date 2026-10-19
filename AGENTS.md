@@ -11,7 +11,7 @@
 
 ## Rules
 - Managed social scans use the stable facebook-daily callback with a validated versioned body and Chicago-local timing rules in src/data/social-schedule.ts; preserve the old body until deployment and schedule replacement so live callbacks remain compatible.
-- Read src/lib/AGENTS.md before edits; link/security/search/location rules apply.
+- Read src/lib/AGENTS.md and src/data/AGENTS.md before edits there; subdirectories may have their own AGENTS.md.
 - Shared agent search ranks names/classification; public-schedule handles profiles. data/coverage.ts defines Davenport coverage for map/API/ingestion to agree.
 - Truck/stop data lives in Lovable Cloud; UI and tests share pure status/time rules in `src/data/trucks.ts`.
 - Public discovery filters is_food_truck; Admin keeps classification edits for review.
@@ -32,7 +32,4 @@
 - /profile is a role-aware shared shell; private settings/library use caller-owned RLS tables, shared profiles expose opt-in safe fields by RPC, and rules live in src/data/profile.ts so UI and tests agree.
 - Website-form trucks link to an account only via linkMyEmbedTrucks after the account email is confirmed; a typed email never links anything.
 - Admin truck delete is a soft delete (deleted_at/deleted_by via admin_delete_trucks/admin_restore_truck RPCs, logged in truck_deletions) with a 30-day restore window; a daily pg_cron job purges the truck and its stops/photos/menu after that — so mistakes are reversible.
-- Search/filter rules (text, dish, cuisine, city, type, status, open) live in src/data/filters.ts and are shared by the map and Admin; filter state lives in URL params so views can be shared.
-- "I'm here" end times come from liveEnd() in src/data/trucks.ts (15 min–12 h, Central time); the DB trigger caps live stops at 12 h.
 - Admin uses components/admin and data/admin.ts. Shared scraper approval uses a DB status trigger and admin_review_suggested_stop; data/ingestion-review.ts validates source categories and locations. Google profile rules separate address, closure and hours.
-- Duplicate rules (same Google place/link/phone/name = strong, similar name = possible) live in src/data/duplicates.ts and are shared by Admin "Add truck" (server re-checks before insert) and the Possible duplicates view.
