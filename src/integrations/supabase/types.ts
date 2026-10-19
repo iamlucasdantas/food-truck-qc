@@ -1024,6 +1024,7 @@ export type Database = {
         | "apify_maps"
         | "estimated"
         | "own_post"
+        | "calendar"
       truck_status: "active" | "pending" | "archived"
     }
     CompositeTypes: {
@@ -1161,6 +1162,7 @@ export const Constants = {
         "apify_maps",
         "estimated",
         "own_post",
+        "calendar",
       ],
       truck_status: ["active", "pending", "archived"],
     },
