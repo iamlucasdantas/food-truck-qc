@@ -111,8 +111,10 @@ function Index() {
   const byTruck = useMemo(() => groupBy(stops, (s) => s.truck_id), [stops]);
   const effWin: Window = dayIdx > 0 && win === "now" ? "all" : win;
 
-  const results = useMemo(() => {
-    if (!now || !date) return [];
+  const [showClosed, setShowClosed] = useState(false);
+  const { results, openDefault } = useMemo(() => {
+    const none = { results: [], openDefault: { applied: false, noneOpen: false } };
+    if (!now || !date) return none;
     const rows = trucks
       .map((t) => {
         const p = placeTruck(t, pickStop(byTruck.get(t.id) ?? [], date, effWin, now));
@@ -123,8 +125,14 @@ function Index() {
       .filter((r) => !onlyFav || isFav(r.t.id))
       .filter((r) => !onlyOpen || r.status === "open")
       .filter((r) => !card || r.t.accepts_card);
-    return sort === "open" ? rows.sort(byStatusThenDistance) : rows.sort((a, b) => a.dist - b.dist);
-  }, [now, date, effWin, search, center, radius, onlyFav, onlyOpen, card, isFav, trucks, byTruck, sort]); // eslint-disable-line react-hooks/exhaustive-deps
+    // Default "right now" view: only open trucks; if none are open in the area, show the closed ones instead.
+    const isNowView = dayIdx === 0 && effWin === "now" && !onlyOpen && !showClosed;
+    const openRows = rows.filter((r) => r.status === "open");
+    const applied = isNowView && openRows.length > 0;
+    const out = applied ? openRows : rows;
+    out.sort(sort === "open" ? byStatusThenDistance : (a, b) => a.dist - b.dist);
+    return { results: out, openDefault: { applied, noneOpen: isNowView && rows.length > 0 && openRows.length === 0 } };
+  }, [now, date, dayIdx, effWin, search, center, radius, onlyFav, onlyOpen, showClosed, card, isFav, trucks, byTruck, sort]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const cityList = useMemo(() => Array.from(new Set(trucks.map((t) => cityOf(t.base_address)).filter(Boolean))).sort(), [trucks]);
   const pins = useMemo(() => results.map((r) => ({
@@ -210,7 +218,11 @@ function Index() {
 
   const listHeader = (
     <div className="flex items-center justify-between gap-2 px-3">
-      <p className="min-w-0 truncate text-sm font-semibold">{results.length} trucks within {radius} mi</p>
+      <p className="min-w-0 truncate text-sm font-semibold">
+        {results.length} {openDefault.applied ? "open " : ""}trucks within {radius} mi
+        {openDefault.applied && <button type="button" onClick={() => setShowClosed(true)} className="ml-2 font-normal text-primary underline-offset-2 hover:underline">Show closed too</button>}
+        {openDefault.noneOpen && <span className="ml-2 font-normal text-muted-foreground">· none open right now</span>}
+      </p>
       <label className="relative inline-flex h-10 shrink-0 items-center gap-1 rounded-full px-3 text-sm text-muted-foreground hover:bg-muted">
         Sort: <span className="font-semibold text-foreground">{sort === "open" ? "Open now first" : "Nearest"}</span><ChevronDown className="h-4 w-4" />
         <select value={sort} onChange={(e) => setSort(e.target.value as "nearest" | "open")} className="absolute inset-0 cursor-pointer opacity-0" aria-label="Sort">

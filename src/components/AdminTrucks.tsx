@@ -356,7 +356,8 @@ export function AdminTrucks({ search }: { search: S }) {
             <form className="grid gap-3 sm:grid-cols-2" onSubmit={(e) => { e.preventDefault(); void save(editing.id, new FormData(e.currentTarget)); }}>
               {(["name", "category", "base_address", "phone", "website", "instagram", "facebook"] as const).map((k) => (
                 <label key={k} className="space-y-1 text-sm"><span className="capitalize text-muted-foreground">{k}</span>
-                  <input name={k} className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring" defaultValue={editing[k] ?? ""} />
+                  <input name={k} list={k === "category" ? "admin-categories" : undefined} className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring" defaultValue={editing[k] ?? ""} />
+                  {k === "category" && <datalist id="admin-categories">{Array.from(new Set(rows.map((r) => r.category).filter((c) => c && !/^(other|unknown)$/i.test(c)))).sort().map((c) => <option key={c} value={c} />)}</datalist>}
                 </label>
               ))}
               <label className="flex items-center gap-2 text-sm sm:col-span-2"><input type="checkbox" name="is_food_truck" defaultChecked={editing.is_food_truck} />Food truck, trailer or cart</label>
