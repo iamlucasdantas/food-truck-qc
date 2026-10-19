@@ -1,7 +1,8 @@
 # Roadmap
 
 ## Food-truck category review
-- [ ] Review all non-deleted food trucks against saved Google categories and public profile evidence; correct only supported categories and list uncertain records without changing status/classification.
+- [x] Reviewed all 56 non-deleted food-truck records using saved Google categories and available official/public evidence; corrected 12 categories, preserved 44, and delivered full inventory with 21 evidence/identity questions. Three corrected public profiles verified without runtime errors; no status, classification, address, hours or publication changes.
+- [ ] Resolve the 21 category/identity questions in the dated category report: needs readable official profiles/menus or owner confirmation; no categories guessed.
 
 ## Venue calendar sources
 - [x] Admin Calendar sources with geocoded venue, sync counts and remembered title-link/ignore queue
