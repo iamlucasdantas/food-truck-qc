@@ -307,7 +307,7 @@ export function AdminTrucks({ search }: { search: S }) {
                   </td>
                   <td className={pad}>{/^other$/i.test(t.category) ? "Category needs review" : t.category}</td>
                   <td className={pad}>{t.city || "—"}</td>
-                  <td className={pad}>{t.truck_type === "fixed" ? "Fixed" : "Mobile"}</td>
+                  <td className={pad}>{t.truck_type === "fixed" ? "Fixed" : t.truck_type === "hybrid" ? "Hybrid" : "Mobile"}</td>
                   <td className={pad}>{pill(t)}</td>
                   <td className={cn(pad, "text-muted-foreground")}>{t.claimed_by ? "Claimed" : "Unclaimed"}</td>
                   <td className={cn(pad, "text-muted-foreground")}>{SOURCE_LABEL[t.source] ?? t.source}</td>
@@ -333,7 +333,7 @@ export function AdminTrucks({ search }: { search: S }) {
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-1.5">
                 {pill(t)}
-                <StatusPill tone="neutral">{t.truck_type === "fixed" ? "Fixed" : "Mobile"}</StatusPill>
+                <StatusPill tone="neutral">{t.truck_type === "fixed" ? "Fixed" : t.truck_type === "hybrid" ? "Hybrid" : "Mobile"}</StatusPill>
                 <StatusPill tone={t.claimed_by ? "accent" : "neutral"}>{t.claimed_by ? "Claimed" : "Unclaimed"}</StatusPill>
                 <span className="ml-auto text-xs text-muted-foreground">{SOURCE_LABEL[t.source] ?? t.source}</span>
               </div>
