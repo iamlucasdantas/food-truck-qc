@@ -10,7 +10,7 @@ export type ActiveEnrichRun = { id: string; name: string };
 export function EnrichProgress({ runs, onRemove }: { runs: ActiveEnrichRun[]; onRemove: (id: string) => void }) {
   if (!runs.length) return null;
   return (
-    <div className="fixed inset-x-3 bottom-4 z-50 mx-auto max-w-md space-y-2">
+    <div className="fixed inset-x-3 bottom-4 z-[70] mx-auto max-w-md space-y-2">
       {runs.map((r) => <RunCard key={r.id} run={r} onRemove={onRemove} />)}
     </div>
   );

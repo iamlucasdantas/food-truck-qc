@@ -363,7 +363,7 @@ export function AdminTrucks({ search }: { search: S }) {
       )}
 
       <TruckDrawer truckId={drawerId} tab={typeof search["dtab"] === "string" ? search["dtab"] : undefined} onClose={() => setRaw({ truck: undefined, dtab: undefined })}
-        onEnrichStarted={(runId, name) => setEnrichRuns((rs) => [...rs, { id: runId, name }])}
+        onEnrichStarted={(runId, name) => { setEnrichRuns((rs) => [...rs, { id: runId, name }]); setRaw({ truck: undefined, dtab: undefined }); }}
         actions={{ edit: setEdit, merge: setMerge, toggleArchive, del: (id) => { const r = byId(id); if (r) setConfirm([r]); }, restore: (id) => void restore(id) }} />
 
       <EnrichProgress runs={enrichRuns} onRemove={(id) => setEnrichRuns((rs) => rs.filter((r) => r.id !== id))} />
