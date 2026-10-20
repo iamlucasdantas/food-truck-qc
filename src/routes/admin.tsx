@@ -1,3 +1,4 @@
+import { StopAlerts } from "@/components/admin/StopAlerts";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -158,7 +159,8 @@ function PendingTrucks() {
   };
   return (
     <>
-      <SectionHeader title="Pending trucks" description="New listings from the website form, owner dashboard and scrapers." />
+      <SectionHeader title="Pending trucks" description="New listings, and trucks with stops that still need an address." />
+      <StopAlerts open={(id) => void navigate({ search: { tab: "trucks", truck: id, dtab: "stops" } })} />
       {isLoading ? <ListSkeleton /> : !data.length ? (
         <EmptyState icon={Clock} title="No trucks waiting for approval" hint="New sign-ups and detected trucks will appear here." />
       ) : (
