@@ -221,11 +221,13 @@ function Index() {
 
   const listHeader = (
     <div className="flex items-center justify-between gap-2 px-3">
-      <p className="min-w-0 truncate text-sm font-semibold">
-        {results.length} {openOnly ? "open " : ""}trucks within {radius} mi
-        {openOnly && <button type="button" onClick={showAllTrucks} className="ml-2 font-normal text-primary underline-offset-2 hover:underline">Show closed too</button>}
-        {openDefault.noneOpen && <span className="ml-2 font-normal text-muted-foreground">· none open right now</span>}
-      </p>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold">
+          {results.length} {openOnly ? "open " : ""}trucks within {radius} mi
+          {openDefault.noneOpen && <span className="ml-2 font-normal text-muted-foreground">· none open right now</span>}
+        </p>
+        {openOnly && <button type="button" onClick={showAllTrucks} className={`-ml-1 h-6 rounded-full px-1 text-xs font-medium text-primary underline-offset-2 hover:underline ${focus}`}>Show closed too</button>}
+      </div>
       <label className="relative inline-flex h-10 shrink-0 items-center gap-1 rounded-full px-3 text-sm text-muted-foreground hover:bg-muted">
         Sort: <span className="font-semibold text-foreground">{sort === "open" ? "Open now first" : "Nearest"}</span><ChevronDown className="h-4 w-4" />
         <select value={sort} onChange={(e) => setSort(e.target.value as "nearest" | "open")} className="absolute inset-0 cursor-pointer opacity-0" aria-label="Sort">
