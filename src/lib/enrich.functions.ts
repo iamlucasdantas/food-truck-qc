@@ -10,10 +10,11 @@ const normIg = (v: string) => {
 };
 
 /**
- * Admin "Enrich": looks for this truck in every source we have — registers its Facebook/Instagram/website
- * (plus an optional custom link) as scan sources, reads websites now with context.dev, starts a Facebook/Instagram
- * scan just for this truck, and re-syncs venue calendars that list it. New stops follow the normal review rules;
- * stops without an address land in Pending trucks.
+ * Admin "Enrich": the truck's own sources come first — its Facebook, Instagram, website, calendar
+ * link, Google Maps profile and an optional custom link are the primary sources. Only when they
+ * turn up nothing do we fall back to a web search and the shared community groups. Another truck's
+ * profile is never scanned for this truck. New stops follow the normal review rules; stops without
+ * an address land in Pending trucks.
  */
 export const enrichTruck = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -27,11 +28,11 @@ export const enrichTruck = createServerFn({ method: "POST" })
       catch { throw new Error("That custom link isn't a valid web address."); }
     }
     const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
-    const { data: t } = await db.from("trucks").select("id,name,claimed_by,phone,instagram,facebook,reddit,website").eq("id", data.truckId).maybeSingle();
+    const { data: t } = await db.from("trucks").select("id,name,claimed_by,phone,instagram,facebook,reddit,website,base_address").eq("id", data.truckId).maybeSingle();
     if (!t) throw new Error("Truck not found");
     const steps: EnrichStep[] = [];
 
-    // 1. Register sources so the two-hour scans keep checking this truck.
+    // 1. Register the truck's own sources so the two-hour scans keep checking them.
     const wanted = [
       t.facebook && /facebook\.com/i.test(t.facebook) ? { kind: "page", url: t.facebook } : null,
       t.instagram ? { kind: "instagram", url: normIg(t.instagram) } : null,
@@ -42,12 +43,27 @@ export const enrichTruck = createServerFn({ method: "POST" })
       const { error } = await db.from("social_sources").upsert({ ...s, name: t.name, truck_id: t.id, active: true }, { onConflict: "url", ignoreDuplicates: true });
       if (error) console.error("[enrich] source", error.message);
     }
-    const { data: srcRows } = await db.from("social_sources").select("id,kind,url").in("url", wanted.map((w) => w.url));
-    const social = (srcRows ?? []).filter((s) => s.kind !== "website");
-    const sites = (srcRows ?? []).filter((s) => s.kind === "website");
-    steps.push({ source: "Sources", ok: true, detail: wanted.length ? `${wanted.length} link${wanted.length === 1 ? "" : "s"} saved for the two-hour scans` : "No Facebook, Instagram or website on this truck yet — add one or paste a custom link" });
+    const { data: srcRows } = await db.from("social_sources").select("id,kind,url").eq("truck_id", t.id).eq("active", true);
+    const own = srcRows ?? [];
+    const social = own.filter((s) => s.kind === "page" || s.kind === "instagram" || s.kind === "reddit");
+    const sites = own.filter((s) => s.kind === "website");
+    const calendars = own.filter((s) => s.kind === "calendar");
+    const gmaps = own.filter((s) => s.kind === "gmaps");
+    steps.push({ source: "Sources", ok: true, detail: own.length ? `${own.length} source${own.length === 1 ? "" : "s"} linked to this truck` : "No sources on this truck yet — add them in the Sources tab or paste a custom link" });
 
-    // 2. Websites now, via context.dev.
+    let found = 0;
+
+    // 2. The truck's own calendar links, right now.
+    if (calendars.length) {
+      try {
+        const { syncTruckCalendars } = await import("./truck-calendar.server");
+        const r = await syncTruckCalendars(db, calendars.map((c) => c.id));
+        found += r.stops;
+        steps.push({ source: "Calendar", ok: !r.errors.length, detail: `${r.stops} stop${r.stops === 1 ? "" : "s"} imported${r.review ? ` · ${r.review} waiting for an address in Pending trucks` : ""}${r.errors.length ? ` · ${r.errors[0]}` : ""}` });
+      } catch (e) { steps.push({ source: "Calendar", ok: false, detail: e instanceof Error ? e.message.slice(0, 160) : "error" }); }
+    }
+
+    // 3. The truck's own websites, read with context.dev.
     if (sites.length) {
       const { scrapeMarkdown } = await import("./context-dev.server");
       const { ingestPost } = await import("./facebook.server");
@@ -64,13 +80,26 @@ export const enrichTruck = createServerFn({ method: "POST" })
           const out = await ingestPost(ctx, "page", { url: s.url, text: page.markdown.slice(0, 8000), time: new Date().toISOString(), author: t.name, inputUrl: s.url }, t);
           const added = out.filter((r) => r.status === "published" || r.status === "suggested").length;
           const noAddr = out.filter((r) => r.status === "no-address" || r.checkAddress).length;
+          found += added;
           await db.from("social_sources").update({ last_run_at: new Date().toISOString(), last_status: "ok", last_reason: null, last_posts: 1, last_stops: added }).eq("id", s.id);
           steps.push({ source: `Website ${new URL(s.url).hostname}`, ok: true, detail: `${added} stop${added === 1 ? "" : "s"} found${noAddr ? ` · ${noAddr} need an address` : ""}` });
         } catch (e) { steps.push({ source: `Website ${new URL(s.url).hostname}`, ok: false, detail: e instanceof Error ? e.message.slice(0, 160) : "error" }); }
       }
     }
 
-    // 3. Facebook / Instagram: a scan just for this truck (finishes in the background, a few minutes).
+    // 4. Google Maps profile: confirm the address from the saved link.
+    if (gmaps.length) {
+      try {
+        const { mapsLocation } = await import("./screenshot-location.server");
+        const hits = await mapsLocation(`${t.name}, ${t.base_address || "Quad Cities IA IL"}`);
+        const hit = hits[0];
+        if (hit) {
+          steps.push({ source: "Google Maps", ok: true, detail: `Found ${hit.name}, ${hit.address} — confirm it in the location section` });
+        } else steps.push({ source: "Google Maps", ok: false, detail: "No matching Google profile found" });
+      } catch (e) { steps.push({ source: "Google Maps", ok: false, detail: e instanceof Error ? e.message.slice(0, 160) : "error" }); }
+    }
+
+    // 5. Facebook / Instagram: a scan just for this truck (finishes in the background, a few minutes).
     if (social.length) {
       try {
         const { startFacebookRun } = await import("./facebook.server");
@@ -79,7 +108,7 @@ export const enrichTruck = createServerFn({ method: "POST" })
       } catch (e) { steps.push({ source: "Facebook / Instagram", ok: false, detail: e instanceof Error ? e.message.slice(0, 160) : "error" }); }
     }
 
-    // 4. Venue calendars that list this truck.
+    // 6. Venue calendars that list this truck.
     const [{ data: viaStops }, { data: viaTitles }] = await Promise.all([
       db.from("stops").select("calendar_source_id").eq("truck_id", t.id).not("calendar_source_id", "is", null).limit(200),
       db.from("venue_calendar_titles").select("source_id").eq("truck_id", t.id),
@@ -90,7 +119,43 @@ export const enrichTruck = createServerFn({ method: "POST" })
       let ok = 0;
       for (const id of cals.slice(0, 5)) { try { await syncVenueCalendar(db, id); ok++; } catch (e) { console.error("[enrich] calendar", e); } }
       steps.push({ source: "Venue calendars", ok: ok > 0, detail: `${ok} of ${cals.length} calendar${cals.length === 1 ? "" : "s"} re-synced` });
-    } else steps.push({ source: "Venue calendars", ok: true, detail: "Not listed on any venue calendar" });
+    }
+
+    // 7. Fallback, only when the truck's own sources turned up nothing: web search, then the shared groups.
+    if (found === 0) {
+      try {
+        const { researchTruckWeb } = await import("./truck-research.server");
+        const web = await researchTruckWeb(t.name, t.base_address ?? "");
+        if (web.urls.length) {
+          const { scrapeMarkdown } = await import("./context-dev.server");
+          const { ingestPost } = await import("./facebook.server");
+          const { chicagoDate } = await import("@/data/trucks");
+          const [{ data: trucks }, { data: biz }] = await Promise.all([
+            db.from("trucks").select("id, name, claimed_by, phone, instagram, facebook, reddit").neq("status", "archived").is("deleted_at", null),
+            db.from("businesses").select("owner_id, facebook, instagram, reddit"),
+          ]);
+          const ctx = { db, trucks: trucks ?? [], bizByOwner: new Map((biz ?? []).map((b) => [b.owner_id, b])), today: chicagoDate(), runId: null };
+          let webStops = 0;
+          for (const url of web.urls.slice(0, 2)) {
+            const page = await scrapeMarkdown(url);
+            if ("error" in page) continue;
+            const out = await ingestPost(ctx, "page", { url, text: page.markdown.slice(0, 8000), time: new Date().toISOString(), author: t.name, inputUrl: url }, t).catch(() => []);
+            webStops += out.filter((r) => r.status === "published" || r.status === "suggested").length;
+          }
+          steps.push({ source: "Web search", ok: true, detail: webStops ? `${webStops} stop${webStops === 1 ? "" : "s"} found on public pages` : web.summary ? `Found: ${web.summary.slice(0, 140)}` : "Nothing recent found on the web" });
+        } else {
+          steps.push({ source: "Web search", ok: true, detail: web.summary ? `Found: ${web.summary.slice(0, 140)}` : "Nothing recent found on the web" });
+        }
+      } catch (e) { steps.push({ source: "Web search", ok: false, detail: e instanceof Error ? e.message.slice(0, 160) : "error" }); }
+      const { data: groups } = await db.from("social_sources").select("id").eq("kind", "group").eq("active", true).limit(10);
+      if (groups?.length) {
+        try {
+          const { startFacebookRun } = await import("./facebook.server");
+          await startFacebookRun(db, groups.map((g) => g.id));
+          steps.push({ source: "Community groups", ok: true, detail: `Scanning ${groups.length} shared group${groups.length === 1 ? "" : "s"} for mentions of ${t.name} — results in a few minutes` });
+        } catch (e) { steps.push({ source: "Community groups", ok: false, detail: e instanceof Error ? e.message.slice(0, 160) : "error" }); }
+      }
+    }
 
     return { steps };
   });
