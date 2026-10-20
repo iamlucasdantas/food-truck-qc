@@ -71,7 +71,7 @@ export function ScreenshotStops({ truckId }: { truckId: string }) {
     setBusy("Saving stops…");
     let ok = 0; const failed: string[] = [];
     for (const r of rows) {
-      const resolved = r.location && !r.locationIssue ? r : await locate(r);
+      const resolved = r.location && !r.locationIssue ? r : r.locationIssue ? r : await locate(r);
       const g = resolved.location;
       if (!g || resolved.locationIssue) { failed.push(r.venue); continue; }
       const { error } = await supabase.from("stops").insert({
