@@ -7,12 +7,12 @@ import { ScreenshotStops } from "./ScreenshotStops";
 import type { Truck } from "@/data/trucks";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { ExternalLink, Pencil, GitMerge, Archive, CheckCircle2, Trash2, RotateCcw, UtensilsCrossed, ImageOff, CalendarX, History, Sparkles, Loader2, CheckCircle, XCircle, Link2, Plus } from "lucide-react";
+import { ExternalLink, Pencil, GitMerge, Archive, CheckCircle2, Trash2, RotateCcw, UtensilsCrossed, ImageOff, CalendarX, History, Sparkles, Loader2, XCircle, Link2, Plus } from "lucide-react";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { enrichTruck, type EnrichStep } from "@/lib/enrich.functions";
+import { startEnrich, runEnrich } from "@/lib/enrich.functions";
 import { listTruckSources, addTruckSource, removeTruckSource } from "@/lib/truck-sources.functions";
 import { generateMenuSummary } from "@/lib/menu.functions";
 import { TRUCK_SOURCE_KINDS, truckTypeLabel, type TruckSourceKind } from "@/data/truck-sources";
@@ -30,17 +30,17 @@ export type DrawerActions = {
   del: (id: string) => void; restore: (id: string) => void;
 };
 
-export function TruckDrawer({ truckId, onClose, actions, tab }: { truckId: string | null; onClose: () => void; actions: DrawerActions; tab?: string | undefined }) {
+export function TruckDrawer({ truckId, onClose, actions, tab, onEnrichStarted }: { truckId: string | null; onClose: () => void; actions: DrawerActions; tab?: string | undefined; onEnrichStarted?: ((runId: string, name: string) => void) | undefined }) {
   return (
     <Sheet open={!!truckId} onOpenChange={(o) => !o && onClose()}>
       <SheetContent side="right" className="flex w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-xl">
-        {truckId && <Body key={`${truckId}:${tab ?? ""}`} id={truckId} actions={actions} tab={tab} />}
+        {truckId && <Body key={`${truckId}:${tab ?? ""}`} id={truckId} actions={actions} tab={tab} onEnrichStarted={onEnrichStarted} />}
       </SheetContent>
     </Sheet>
   );
 }
 
-function Body({ id, actions, tab }: { id: string; actions: DrawerActions; tab?: string | undefined }) {
+function Body({ id, actions, tab, onEnrichStarted }: { id: string; actions: DrawerActions; tab?: string | undefined; onEnrichStarted?: ((runId: string, name: string) => void) | undefined }) {
   const [enrichOpen, setEnrichOpen] = useState(false);
   const { data: t, isLoading } = useQuery({
     queryKey: ["admin", "truck", id],
@@ -78,7 +78,7 @@ function Body({ id, actions, tab }: { id: string; actions: DrawerActions; tab?: 
           <Link to="/truck/$id" params={{ id: t.id }} target="_blank" className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground" aria-label="Open public page"><ExternalLink className="h-4 w-4" /></Link>
         </div>
       </SheetHeader>
-      <EnrichDialog open={enrichOpen} onOpenChange={setEnrichOpen} truckId={t.id} name={t.name} />
+      <EnrichDialog open={enrichOpen} onOpenChange={setEnrichOpen} truckId={t.id} name={t.name} onStarted={onEnrichStarted} />
       <Tabs defaultValue={["overview", "menu", "photos", "stops", "sources", "activity"].includes(tab ?? "") ? tab! : "overview"} className="flex min-h-0 flex-1 flex-col">
          <TabsList className="mx-6 mt-4 grid grid-cols-6">
           {["overview", "menu", "photos", "stops", "sources", "activity"].map((k) => <TabsTrigger key={k} value={k} className="capitalize">{k}</TabsTrigger>)}
@@ -311,46 +311,60 @@ function ActivityTab({ id, created, source }: { id: string; created: string; sou
   );
 }
 
-function EnrichDialog({ open, onOpenChange, truckId, name }: { open: boolean; onOpenChange: (o: boolean) => void; truckId: string; name: string }) {
-  const run = useServerFn(enrichTruck);
-  const qc = useQueryClient();
+function EnrichDialog({ open, onOpenChange, truckId, name, onStarted }: { open: boolean; onOpenChange: (o: boolean) => void; truckId: string; name: string; onStarted?: ((runId: string, name: string) => void) | undefined }) {
+  const start = useServerFn(startEnrich);
+  const run = useServerFn(runEnrich);
+  const [links, setLinks] = useState<string[]>([]);
   const [url, setUrl] = useState("");
   const [busy, setBusy] = useState(false);
-  const [steps, setSteps] = useState<EnrichStep[] | null>(null);
+  function addLink() {
+    const v = url.trim();
+    if (!v || links.includes(v) || links.length >= 5) return;
+    setLinks((ls) => [...ls, v]); setUrl("");
+  }
   async function go(e: React.FormEvent) {
-    e.preventDefault(); setBusy(true); setSteps(null);
+    e.preventDefault(); setBusy(true);
     try {
-      const r = await run({ data: { truckId, customUrl: url.trim() || undefined } });
-      setSteps(r.steps);
-      void qc.invalidateQueries({ queryKey: ["admin"] }); void qc.invalidateQueries({ queryKey: ["stops"] });
+      const { runId } = await start({ data: { truckId, customUrls: links.length ? links : undefined } });
+      onOpenChange(false); setLinks([]); setUrl("");
+      onStarted?.(runId, name);
+      toast.success(`Enriching ${name} — watch the progress bar at the bottom`);
+      // The run executes in the background; the progress bar polls the step log.
+      void run({ data: { runId } }).catch((err) => console.error("[enrich]", err));
     } catch (err) { toast.error(err instanceof Error ? err.message : "Enrich failed"); }
     finally { setBusy(false); }
   }
   return (
-    <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) { setSteps(null); setUrl(""); } }}>
+    <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) { setLinks([]); setUrl(""); } }}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Enrich {name}</DialogTitle>
-          <DialogDescription>Searches Facebook, Instagram, the truck's website, venue calendars and an optional custom link for stops. Stops without an address show up in Pending trucks.</DialogDescription>
+          <DialogDescription>Searches this truck's own sources first — Facebook, Instagram, website, calendar links, Google Maps — then the shared community groups. Add extra links below, or just start. Stops without an address show up in Pending trucks.</DialogDescription>
         </DialogHeader>
         <form onSubmit={go} className="space-y-3">
-          <label className="block text-sm font-medium">Custom link (optional)
-            <input className="field mt-1" placeholder="https://… event page, directory, website" value={url} onChange={(e) => setUrl(e.target.value)} />
-          </label>
+          <div className="space-y-2">
+            <label className="block text-sm font-medium">Extra links (optional, up to 5)</label>
+            <div className="flex gap-2">
+              <input className="field flex-1" placeholder="https://… event page, directory, website" value={url} onChange={(e) => setUrl(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addLink(); } }} />
+              <button type="button" onClick={addLink} disabled={!url.trim() || links.length >= 5} className="chip h-10 shrink-0 text-sm disabled:opacity-60"><Plus className="h-4 w-4" />Add</button>
+            </div>
+            {links.length > 0 && (
+              <ul className="space-y-1">
+                {links.map((l) => (
+                  <li key={l} className="flex items-center gap-2 rounded-lg border border-border px-2 py-1.5 text-xs">
+                    <Link2 className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    <span className="min-w-0 flex-1 truncate">{l}</span>
+                    <button type="button" aria-label={`Remove ${l}`} onClick={() => setLinks((ls) => ls.filter((x) => x !== l))} className="text-muted-foreground hover:text-destructive"><XCircle className="h-4 w-4" /></button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
           <button disabled={busy} className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground disabled:opacity-60">
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}{busy ? "Searching sources… (up to a minute)" : "Enrich now"}
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}{busy ? "Starting…" : "Enrich now"}
           </button>
         </form>
-        {steps && (
-          <ul className="space-y-2 text-sm">
-            {steps.map((s, i) => (
-              <li key={i} className="flex gap-2">
-                {s.ok ? <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> : <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />}
-                <span><b>{s.source}:</b> {s.detail}</span>
-              </li>
-            ))}
-          </ul>
-        )}
       </DialogContent>
     </Dialog>
   );

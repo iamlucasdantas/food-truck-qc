@@ -170,3 +170,14 @@
 - [ ] Screenshot upload/save signed-in verification and live Maps validation: requesting user has no matching app account; Maps testing is unavailable in sandbox. User must test on authorized origin; not published.
 - [x] Google Maps place/address search in the stop form; Enrich button (sources, context.dev websites + custom link, per-truck Facebook/Instagram scan, venue calendars); Pending trucks lists trucks with stops missing an address, opening the Stops tab.
 - [ ] Signed-in Admin verification of these three flows.
+
+## Sources tab + Enrich review (2026-10-20, not published)
+- [x] Fixed social_sources kind CHECK rejecting calendar/gmaps sources (applied to live DB)
+- [x] Enrich Google Maps step now ignores hits whose name does not match the truck
+- [x] Web research timeout raised 20s -> 45s (was aborting)
+- [x] Browser-tested as admin: add calendar/gmaps sources, Enrich priority (own sources first, groups fallback)
+
+## Enrich multi-link + progress bar (2026-10-20, not published)
+- [x] Enrich accepts up to 5 custom links (or none); links become truck sources
+- [x] Enrich runs in background (enrich_runs table, migration 0039); dialog+drawer close and a bottom progress bar polls the step log; clicking it expands found/not-found per source
+- [x] Primary-source-first priority kept, shared groups as fallback; browser-tested as admin (Rural Rumps, 6 steps)
