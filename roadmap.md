@@ -152,5 +152,7 @@
 - [x] context.dev key saved
 
 ## Admin stops: Google search, Enrich, address alerts (not published)
+- [x] Screenshot upload automatically enriches venue addresses with Maps, Gemini web research, context.dev and Apify; uncertain matches stay drafts and verified coordinates are retained on save. Gemini live research + 19 focused tests passed; build OK.
+- [ ] Screenshot upload/save signed-in verification and live Maps validation: requesting user has no matching app account; Maps testing is unavailable in sandbox. User must test on authorized origin; not published.
 - [x] Google Maps place/address search in the stop form; Enrich button (sources, context.dev websites + custom link, per-truck Facebook/Instagram scan, venue calendars); Pending trucks lists trucks with stops missing an address, opening the Stops tab.
 - [ ] Signed-in Admin verification of these three flows.

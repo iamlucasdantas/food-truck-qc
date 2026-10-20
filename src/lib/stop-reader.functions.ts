@@ -14,7 +14,7 @@ const SCHEMA = {
 
 const PROMPT = (today: string, truck: string) => `You read screenshots of food truck schedules (Facebook/Instagram posts, flyers, calendars) for the truck "${truck}".
 Today is ${today} (America/Chicago). Return JSON {"stops":[...]} with one entry per dated appearance:
-{"venue": place name, "address": street address if shown or known from the text else "", "city": city + state if shown else "",
+{"venue": place name, "address": street address visibly written in the image only, otherwise "", "city": city + state if shown else "",
  "date": "YYYY-MM-DD" (infer the year: the next occurrence on/after today unless clearly past), "start": "HH:MM" 24h or "", "end": "HH:MM" 24h or "",
  "private": true when marked private/closed event/booked}.
 Never invent places, dates or times. If the image has no schedule, return {"stops":[]}.`;

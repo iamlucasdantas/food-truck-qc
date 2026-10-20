@@ -19,20 +19,21 @@
 - Roles only come from `user_roles` + `has_role()`; never from profile/user metadata.
 - Truck logos are stored as small data URLs on the truck row because the workspace blocks public storage buckets.
 - Guest hearts live in localStorage and merge into favorites on sign-in (FavoritesSync); signed-in-only pages go under src/routes/_authenticated (client-side gate), so public pages stay crawlable.
-- App MCP server lives in src/lib/mcp (one tool per file, OAuth via managed auth, caller-scoped RLS client); generated /mcp routes are never hand-edited.
+- MCP: src/lib/mcp, managed OAuth, caller RLS; never edit generated routes.
 - Sitemap is router-derived (src/lib/sitemap.ts + sitemap[.]xml route); every route must set staticData.sitemap, and truck pages come from active trucks — keeps Google's page list in sync automatically.
 - Only auth emails come from Lovable Cloud; every other email is sent by the owner's HighLevel CRM. App code only POSTs flat snake_case JSON to one inbound-webhook URL per flow (HIGHLEVEL_USER_WEBHOOK_URL, HIGHLEVEL_OWNER_WEBHOOK_URL, HIGHLEVEL_ALERT_WEBHOOK_URL secrets) and fails quietly when unset.
 - Owner recurrence uses stop_series expanded on read; one-date edits use skip_dates + stops. Venue calendars use ICAL.js and atomic source/UID/date reconciliation of calendar-owned stops; admin title links never create trucks.
 - Calendar connections are read-only iCal feed links in calendar_feeds (owner-only RLS); events become public only when the owner imports them.
 - Business-level data (name, description, website, socials, logo, payment methods) lives in one businesses row per owner; trucks keep truck-specific data, and legacy truck website/social columns are only fallbacks for unclaimed imports — so one owner's trucks share handles for own-post matching.
 - Truck photos live in the private truck-photos bucket under <truck_id>/ readable only by the truck's owner/admin; the public gallery gets signed URLs from signTruckPhotos (server, only paths listed in truck_photos) because public buckets are blocked and blanket read policies leak files; rows in truck_photos hold order/cover. AI-read menus are only drafts until the owner publishes them into trucks.menu_sections (+ menu_search for dish search).
-- Business info is asked once per owner: signup steps and the "link to existing business" rules live in src/data/business.ts (unit-tested); the embed form matches an email server-side (owner_id_by_email, service-role only) and only tells the browser known/unknown — so repeat trucks share contact + business_name without leaking account data.
+- Ask business info once: src/data/business.ts governs signup/linking; embed email lookup is server-only and returns known/unknown, never account data.
 - trucks.business_name is set by DB triggers from the owner's businesses row (falls back to the 'Business:' line for unowned submissions) and re-synced when the business is renamed — so every add path, display byline and webhook gets it without asking again.
 - Owner onboarding saves profiles.onboarding; pure step/resume/completeness rules live in src/data/onboarding.ts and UI in src/components/onboarding. Social prefill and Places autocomplete are authenticated server functions; owns_truck() covers creators' pending trucks so setup works before approval.
 - /profile is a role-aware shared shell; private settings/library use caller-owned RLS tables, shared profiles expose opt-in safe fields by RPC, and rules live in src/data/profile.ts so UI and tests agree.
 - Website-form trucks link to an account only via linkMyEmbedTrucks after the account email is confirmed; a typed email never links anything.
-- Admin truck delete is a soft delete (deleted_at/deleted_by via admin_delete_trucks/admin_restore_truck RPCs, logged in truck_deletions) with a 30-day restore window; a daily pg_cron job purges the truck and its stops/photos/menu after that — so mistakes are reversible.
+- Admin deletes via audited admin_delete_trucks/admin_restore_truck RPCs; 30-day restore window, then daily purge of truck/stops/photos/menu.
 - Admin uses components/admin and data/admin.ts. Shared scraper approval uses a DB status trigger and admin_review_suggested_stop; data/ingestion-review.ts validates source categories and locations. Google profile rules separate address, closure and hours.
 - Approval requires an address only for fixed-location trucks (DB trigger + approvalIssue in data/ingestion-review.ts); mobile trucks go live only through dated stops with coordinates.
 - Admin usage stats come from first-party app_events (anon insert, admin read; src/lib/track.ts); pure summaries in data/usage.ts.
-- context.dev reads kind="website" social_sources inside the facebook-daily two-hour job (src/lib/context-dev.server.ts, CONTEXT_DEV_API_KEY); results reuse ingestPost review rules and never block the Apify scan.
+- context.dev website scans use ingestPost in the two-hour facebook-daily job without blocking Apify.
+- Screenshot drafts use bounded, deduplicated, authorized venue enrichment; Gemini/context.dev hints need Maps/Apify coordinates, and location edits invalidate pins.
