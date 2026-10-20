@@ -116,6 +116,99 @@ function Body({ id, actions, tab }: { id: string; actions: DrawerActions; tab?: 
   );
 }
 
+function MenuSummary({ truckId, name, summary, readOnly }: { truckId: string; name: string; summary: string | null; readOnly: boolean }) {
+  const gen = useServerFn(generateMenuSummary);
+  const qc = useQueryClient();
+  const [text, setText] = useState(summary ?? "");
+  const [busy, setBusy] = useState(false);
+  const dirty = text.trim() !== (summary ?? "");
+  async function generate() {
+    setBusy(true);
+    try { const r = await gen({ data: { truckId } }); setText(r.summary); void qc.invalidateQueries({ queryKey: ["admin", "truck", truckId] }); toast.success("Summary written"); }
+    catch (e) { toast.error(e instanceof Error ? e.message : "Couldn't write the summary"); }
+    finally { setBusy(false); }
+  }
+  async function save() {
+    const { error } = await supabase.from("trucks").update({ menu_summary: text.trim() || null, updated_at: new Date().toISOString() }).eq("id", truckId);
+    if (error) return void toast.error(error.message);
+    toast.success("Summary saved"); void qc.invalidateQueries({ queryKey: ["admin", "truck", truckId] });
+  }
+  return (
+    <section className="space-y-2 rounded-lg border border-border p-3">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold">What {name} offers</h3>
+        {!readOnly && (
+          <button type="button" onClick={() => void generate()} disabled={busy} className="chip h-8 text-xs">
+            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}{summary ? "Rewrite with AI" : "Write with AI"}
+          </button>
+        )}
+      </div>
+      <p className="text-xs text-muted-foreground">One paragraph shown above the menu. Written from the truck's profile and website — check it before saving.</p>
+      {readOnly ? <p className="text-sm text-muted-foreground">{summary || "—"}</p> : (
+        <>
+          <textarea className="field min-h-20 w-full text-sm" maxLength={600} placeholder="One paragraph about what this business offers…" value={text} onChange={(e) => setText(e.target.value)} />
+          {dirty && <button type="button" onClick={() => void save()} className="chip h-8 text-xs">Save summary</button>}
+        </>
+      )}
+    </section>
+  );
+}
+
+function SourcesTab({ id }: { id: string }) {
+  const list = useServerFn(listTruckSources);
+  const add = useServerFn(addTruckSource);
+  const remove = useServerFn(removeTruckSource);
+  const qc = useQueryClient();
+  const [kind, setKind] = useState<TruckSourceKind>("page");
+  const [url, setUrl] = useState("");
+  const [busy, setBusy] = useState(false);
+  const { data, isLoading } = useQuery({ queryKey: ["admin", "truck-sources", id], queryFn: () => list({ data: { truckId: id } }) });
+  const inv = () => void qc.invalidateQueries({ queryKey: ["admin", "truck-sources", id] });
+  async function submit(e: React.FormEvent) {
+    e.preventDefault(); setBusy(true);
+    try { await add({ data: { truckId: id, kind, url } }); setUrl(""); toast.success("Source added — the two-hour scans will check it"); inv(); }
+    catch (err) { toast.error(err instanceof Error ? err.message : "Couldn't add the source"); }
+    finally { setBusy(false); }
+  }
+  async function del(sourceId: string) {
+    try { await remove({ data: { truckId: id, sourceId } }); toast.success("Source removed"); inv(); }
+    catch (err) { toast.error(err instanceof Error ? err.message : "Couldn't remove the source"); }
+  }
+  const meta = TRUCK_SOURCE_KINDS.find((k) => k.kind === kind)!;
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">These are this truck's primary sources. Enrich and the two-hour scans check them first; the shared community groups are only a fallback. Another truck's sources are never used for this truck.</p>
+      <form onSubmit={submit} className="space-y-2 rounded-lg border border-border p-3">
+        <div className="grid gap-2 sm:grid-cols-[10rem_minmax(0,1fr)]">
+          <select value={kind} onChange={(e) => setKind(e.target.value as TruckSourceKind)} className="h-9 rounded-lg border border-input bg-background px-2 text-sm" aria-label="Source type">
+            {TRUCK_SOURCE_KINDS.map((k) => <option key={k.kind} value={k.kind}>{k.label}</option>)}
+          </select>
+          <input className="h-9 rounded-lg border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring" placeholder={meta.placeholder} value={url} onChange={(e) => setUrl(e.target.value)} aria-label="Source link" />
+        </div>
+        <button disabled={busy || !url.trim()} className="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground disabled:opacity-60">
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}Add source
+        </button>
+      </form>
+      {isLoading ? <Skeleton className="h-24" /> : !data?.length ? (
+        <EmptyState icon={Link2} title="No sources yet" hint="Add the truck's Facebook, Instagram, website, calendar link or Google Maps profile." />
+      ) : (
+        <ul className="divide-y divide-border rounded-lg border border-border">
+          {data.map((s) => (
+            <li key={s.id} className="flex items-center gap-3 px-3 py-2 text-sm">
+              <span className="min-w-0 flex-1">
+                <span className="block font-medium">{TRUCK_SOURCE_KINDS.find((k) => k.kind === s.kind)?.label ?? s.kind}</span>
+                <a href={s.url} target="_blank" rel="noreferrer" className="block truncate text-xs text-muted-foreground underline-offset-2 hover:underline">{s.url}</a>
+                {s.last_status && <span className="block text-xs text-muted-foreground">Last check: {s.last_status}{s.last_run_at ? ` · ${new Date(s.last_run_at).toLocaleString()}` : ""}</span>}
+              </span>
+              <IconAction label="Remove source" icon={Trash2} tone="danger" onClick={() => void del(s.id)} />
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 function MenuTab({ sections }: { sections: MenuSection[] }) {
   if (!sections.length) return <EmptyState icon={UtensilsCrossed} title="No published menu" hint="The owner can upload a menu photo and publish it from their dashboard." />;
   return (
