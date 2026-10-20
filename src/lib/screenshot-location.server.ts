@@ -4,6 +4,7 @@ import { createLovableAiGatewayRunIdFetch } from "./ai-run-id.server";
 import { scrapeMarkdown } from "./context-dev.server";
 import { DAVENPORT_CENTER } from "@/data/coverage";
 import { trustedStopLocation, type StopLocation } from "@/data/screenshot-location";
+import { screenshotFallback, type ScreenshotLookup } from "@/data/screenshot-fallback";
 
 const MAPS = "https://connector-gateway.lovable.dev/google_maps";
 const APIFY = "https://connector-gateway.lovable.dev/apify";
@@ -55,48 +56,52 @@ export async function researchVenue(d: RequestData, evidence = ""): Promise<{ ad
   return { address: typeof raw.address === "string" ? raw.address.slice(0, 240) : "", url: typeof raw.url === "string" ? raw.url.slice(0, 1000) : "" };
 }
 
-export async function lookupScreenshotVenue(d: RequestData): Promise<{ location?: StopLocation; runId?: string; issue?: string | undefined }> {
-  const issues: string[] = [];
-  const query = [d.venue, d.address, d.city || "Quad Cities IA IL"].filter(Boolean).join(", ");
-  try {
-    const hit = (await mapsLocation(query)).find(h => trustedStopLocation(d.venue, h));
-    if (hit) return { location: hit };
-  } catch (e) { issues.push(e instanceof Error ? e.message : String(e)); }
-  let researched = "";
-  try {
-    const hint = await researchVenue(d);
-    researched = hint.address;
-    if (hint.url && process.env["CONTEXT_DEV_API_KEY"]) {
-      const u = new URL(hint.url);
-      if (u.protocol === "https:") {
-        const page = await scrapeMarkdown(u.toString());
-        if ("error" in page) issues.push(page.error);
-        // Extract the venue address from the retrieved page; still require provider coordinates.
-        else researched = (await researchVenue(d, page.markdown)).address || researched;
-      }
-    }
-    if (researched && !issues.some(i => i.startsWith("Address lookup failed [403]"))) {
-      const hit = (await mapsLocation(`${d.venue}, ${researched}`)).find(h => trustedStopLocation(d.venue, h));
-      if (hit) return { location: hit };
-    }
-  } catch (e) { issues.push(e instanceof Error ? e.message : String(e)); }
-  const apify = process.env["APIFY_API_KEY"];
-  if (apify) {
-    try {
+export async function lookupScreenshotVenue(d: RequestData, skipApify = false, apifyIssue = ""): Promise<ScreenshotLookup> {
+  let mapsFailed = false;
+  const plans = [
+    ...(!skipApify ? [{ name: "Apify", lookup: async (): Promise<ScreenshotLookup> => {
+      const key = process.env["APIFY_API_KEY"];
+      if (!key) return { issue: "Not connected." };
       const j = await checked(await fetch(`${APIFY}/acts/compass~crawler-google-places/runs?timeout=120`, {
-        method: "POST", headers: headers(apify), signal: AbortSignal.timeout(10000),
-        body: JSON.stringify({ searchStringsArray: [d.venue], locationQuery: researched || d.address || d.city || "Davenport Iowa USA", maxCrawledPlacesPerSearch: 3, language: "en", skipClosedPlaces: false }),
+        method: "POST", headers: headers(key), signal: AbortSignal.timeout(10000),
+        body: JSON.stringify({ searchStringsArray: [[d.venue, d.address].filter(Boolean).join(", ")], locationQuery: d.city || "Quad Cities Iowa Illinois USA", maxCrawledPlacesPerSearch: 3, language: "en", skipClosedPlaces: false }),
       })) as { data?: { id?: string } };
-      if (j.data?.id) return { runId: j.data.id, issue: issues.join(" · ") || undefined };
-    } catch (e) { issues.push(e instanceof Error ? e.message : String(e)); }
-  }
-  return { issue: issues.join(" · ") || "No unambiguous address found. Choose the venue in Google Maps." };
+      return j.data?.id ? { runId: j.data.id } : { issue: "No lookup run returned." };
+    } }] : [{ name: "Apify", lookup: async () => ({ issue: apifyIssue }) }]),
+    { name: "Google Maps", lookup: async (): Promise<ScreenshotLookup> => {
+      try {
+        const query = [d.venue, d.address, d.city || "Quad Cities IA IL"].filter(Boolean).join(", ");
+        const location = (await mapsLocation(query)).find(h => trustedStopLocation(d.venue, h));
+        return location ? { location } : { issue: "No confirmed match." };
+      } catch (error) { mapsFailed = true; throw error; }
+    } },
+    { name: "context.dev", lookup: async (): Promise<ScreenshotLookup> => {
+      if (!process.env["CONTEXT_DEV_API_KEY"]) return { issue: "Not connected." };
+      const hint = await researchVenue(d);
+      if (!hint.url) return { issue: "No evidenced venue website found." };
+      const u = new URL(hint.url);
+      if (u.protocol !== "https:") return { issue: "No secure venue website found." };
+      const page = await scrapeMarkdown(u.toString());
+      if ("error" in page) return { issue: page.error };
+      const researched = (await researchVenue(d, page.markdown)).address;
+      if (!researched) return { issue: "The venue page did not confirm an address." };
+      // Page evidence fills a review draft independently of Maps. Never invent coordinates.
+      if (!mapsFailed) {
+        try {
+          const location = (await mapsLocation(`${d.venue}, ${researched}`)).find(h => trustedStopLocation(d.venue, h));
+          if (location) return { location: { ...location, source: "context.dev + Google Maps" } };
+        } catch { /* Preserve the evidenced address even when pin verification fails. */ }
+      }
+      return { address: researched, city: d.city };
+    } },
+  ];
+  return screenshotFallback(plans);
 }
 
 export async function pollScreenshotVenue(runId: string, venue: string): Promise<{ pending?: boolean; location?: StopLocation; issue?: string }> {
   const key = process.env["APIFY_API_KEY"] || "";
   const j = await checked(await fetch(`${APIFY}/actor-runs/${encodeURIComponent(runId)}`, { headers: headers(key), signal: AbortSignal.timeout(10000) })) as { data?: { status?: string; defaultDatasetId?: string } };
-  if (["READY", "RUNNING"].includes(j.data?.status ?? "")) return { pending: true };
+  if (["READY", "RUNNING", "TIMING-OUT", "ABORTING"].includes(j.data?.status ?? "")) return { pending: true };
   if (j.data?.status !== "SUCCEEDED" || !j.data.defaultDatasetId) return { issue: `Apify lookup ${j.data?.status || "failed"}. Choose the address manually.` };
   const rows = await checked(await fetch(`${APIFY}/datasets/${j.data.defaultDatasetId}/items?limit=3`, { headers: headers(key), signal: AbortSignal.timeout(10000) })) as { title?: string; address?: string; city?: string; location?: { lat: number; lng: number } }[];
   const hits = rows.flatMap(r => r.location ? [{ name: r.title ?? "", address: r.address ?? "", city: r.city ?? "", ...r.location, source: "Apify / Google Maps" }] : []);
