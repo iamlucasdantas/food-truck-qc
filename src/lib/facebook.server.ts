@@ -101,7 +101,7 @@ async function startActor(kind: Kind, all: Source[]): Promise<string> {
 /** Create a run and start one Apify job per source kind. Fast — safe for cron. */
 export async function startFacebookRun(db: DB) {
   const categoryReview = await syncTruckSources(db);
-  const { data: sources = [] } = await db.from("social_sources").select("*").eq("active", true);
+  const { data: sources = [] } = await db.from("social_sources").select("*").eq("active", true).neq("kind", "website");
   const list = sources ?? [];
   if (!list.length) throw new Error("No active social sources");
   const meta: Meta = { runs: {}, total: list.length };
