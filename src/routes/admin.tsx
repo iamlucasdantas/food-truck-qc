@@ -349,7 +349,9 @@ function FacebookTab() {
   const cont = useServerFn(continueFacebookUpdate);
   const [busy, setBusy] = useState(false);
   const [url, setUrl] = useState("");
-  const [kind, setKind] = useState<"group" | "page" | "reddit" | "instagram">("group");
+  const [kind, setKind] = useState<"group" | "page" | "reddit" | "instagram" | "website">("group");
+  const webScan = useServerFn(runWebsiteScan);
+  const [webBusy, setWebBusy] = useState(false);
   const { data: sources = [] } = useQuery({
     queryKey: ["admin", "social"],
     queryFn: async () => (await supabase.from("social_sources").select("*").order("created_at", { ascending: false })).data ?? [],
@@ -363,10 +365,17 @@ function FacebookTab() {
   const running = latest?.status === "running";
 
   const add = async () => {
-    if (!/facebook\.com\//i.test(url)) return toast.error("Paste a facebook.com URL");
+    const host = { group: /facebook\.com\//i, page: /facebook\.com\//i, reddit: /reddit\.com\//i, instagram: /instagram\.com\//i, website: /^https?:\/\/[^/\s]+\.[a-z]{2,}/i }[kind];
+    if (!host.test(url.trim())) return toast.error(kind === "website" ? "Paste a full https:// website link" : `Paste a ${kind === "reddit" ? "reddit.com" : kind === "instagram" ? "instagram.com" : "facebook.com"} URL`);
     const { error } = await supabase.from("social_sources").insert({ kind, url: url.trim(), name: url.trim().split("/").filter(Boolean).pop() ?? "" });
     if (error) return toast.error(error.message);
     setUrl(""); inv(); return undefined;
+  };
+  const scanWebsites = async () => {
+    setWebBusy(true);
+    try { const r = await webScan(); r.error ? toast.error(r.error) : toast.success(`Websites checked: ${r.scanned}, stops added: ${r.stops}`); }
+    catch (e) { toast.error(e instanceof Error ? e.message : String(e)); }
+    setWebBusy(false); inv();
   };
   const loop = async (runId: string) => {
     for (let i = 0; i < 60; i++) {
