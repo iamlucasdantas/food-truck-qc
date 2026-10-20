@@ -50,4 +50,13 @@ describe("filters", () => {
     expect(restoreDaysLeft("2026-10-01T00:00:00Z", new Date("2026-10-11T00:00:00Z"))).toBe(20);
     expect(restoreDaysLeft("2026-08-01T00:00:00Z", new Date("2026-10-11T00:00:00Z"))).toBe(0);
   });
+  it("open now is on by default in the live view and goes grey when clicked", () => {
+    expect(openNowApplied({ explicitOpen: false, showAll: false, inNowView: true, openCount: 3 })).toBe(true);
+    expect(openNowApplied({ explicitOpen: false, showAll: true, inNowView: true, openCount: 3 })).toBe(false);
+    expect(openNowApplied({ explicitOpen: true, showAll: false, inNowView: true, openCount: 3 })).toBe(true);
+  });
+  it("open now never empties the map or hides a future day", () => {
+    expect(openNowApplied({ explicitOpen: false, showAll: false, inNowView: true, openCount: 0 })).toBe(false);
+    expect(openNowApplied({ explicitOpen: false, showAll: false, inNowView: false, openCount: 3 })).toBe(false);
+  });
 });
