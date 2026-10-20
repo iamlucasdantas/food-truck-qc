@@ -27,7 +27,7 @@ export type DrawerActions = {
   del: (id: string) => void; restore: (id: string) => void;
 };
 
-export function TruckDrawer({ truckId, onClose, actions, tab }: { truckId: string | null; onClose: () => void; actions: DrawerActions; tab?: string }) {
+export function TruckDrawer({ truckId, onClose, actions, tab }: { truckId: string | null; onClose: () => void; actions: DrawerActions; tab?: string | undefined }) {
   return (
     <Sheet open={!!truckId} onOpenChange={(o) => !o && onClose()}>
       <SheetContent side="right" className="flex w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-xl">
@@ -37,7 +37,7 @@ export function TruckDrawer({ truckId, onClose, actions, tab }: { truckId: strin
   );
 }
 
-function Body({ id, actions, tab }: { id: string; actions: DrawerActions; tab?: string }) {
+function Body({ id, actions, tab }: { id: string; actions: DrawerActions; tab?: string | undefined }) {
   const [enrichOpen, setEnrichOpen] = useState(false);
   const { data: t, isLoading } = useQuery({
     queryKey: ["admin", "truck", id],
@@ -76,7 +76,7 @@ function Body({ id, actions, tab }: { id: string; actions: DrawerActions; tab?: 
         </div>
       </SheetHeader>
       <EnrichDialog open={enrichOpen} onOpenChange={setEnrichOpen} truckId={t.id} name={t.name} />
-      <Tabs defaultValue={["overview", "menu", "photos", "stops", "activity"].includes(tab ?? "") ? tab : "overview"} className="flex min-h-0 flex-1 flex-col">
+      <Tabs defaultValue={["overview", "menu", "photos", "stops", "activity"].includes(tab ?? "") ? tab! : "overview"} className="flex min-h-0 flex-1 flex-col">
         <TabsList className="mx-6 mt-4 grid grid-cols-5">
           {["overview", "menu", "photos", "stops", "activity"].map((k) => <TabsTrigger key={k} value={k} className="capitalize">{k}</TabsTrigger>)}
         </TabsList>
