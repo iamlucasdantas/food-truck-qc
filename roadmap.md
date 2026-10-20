@@ -178,6 +178,6 @@
 - [x] Browser-tested as admin: add calendar/gmaps sources, Enrich priority (own sources first, groups fallback)
 
 ## Enrich multi-link + progress bar (2026-10-20, not published)
-- [ ] Enrich accepts multiple custom links (or none)
-- [ ] Enrich runs in background with a persistent progress bar; clicking it shows the step log (found / not found)
-- [ ] Keep primary-source-first priority, shared groups as fallback
+- [x] Enrich accepts up to 5 custom links (or none); links become truck sources
+- [x] Enrich runs in background (enrich_runs table, migration 0039); dialog+drawer close and a bottom progress bar polls the step log; clicking it expands found/not-found per source
+- [x] Primary-source-first priority kept, shared groups as fallback; browser-tested as admin (Rural Rumps, 6 steps)
