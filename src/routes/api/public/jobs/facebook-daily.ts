@@ -16,6 +16,10 @@ export const Route = createFileRoute("/api/public/jobs/facebook-daily")({
         const hour = Number(new Intl.DateTimeFormat("en-US", { timeZone: "America/Chicago", hour: "numeric", hourCycle: "h23" }).format(new Date()));
         if (body.data.kind === "daily" ? hour !== 6 : !isSocialScanTime(new Date())) return Response.json({ skipped: true });
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        // A run stuck "running" (webhook lost, processing crashed) would block every future scan — expire it after 2h.
+        const staleBefore = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+        await supabaseAdmin.from("ingestion_runs").update({ status: "failed", finished_at: new Date().toISOString(), error: "Run expired: still running after 2 hours; marked failed so the next scheduled scan can start." })
+          .eq("source", "apify_facebook").eq("status", "running").lt("started_at", staleBefore);
         const { data: open } = await supabaseAdmin.from("ingestion_runs").select("id").eq("source", "apify_facebook").eq("status", "running").limit(1);
         if (open?.length) return Response.json({ skipped: "already running" });
         const { startFacebookRun } = await import("@/lib/facebook.server");
