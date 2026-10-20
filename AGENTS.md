@@ -33,3 +33,6 @@
 - Website-form trucks link to an account only via linkMyEmbedTrucks after the account email is confirmed; a typed email never links anything.
 - Admin truck delete is a soft delete (deleted_at/deleted_by via admin_delete_trucks/admin_restore_truck RPCs, logged in truck_deletions) with a 30-day restore window; a daily pg_cron job purges the truck and its stops/photos/menu after that — so mistakes are reversible.
 - Admin uses components/admin and data/admin.ts. Shared scraper approval uses a DB status trigger and admin_review_suggested_stop; data/ingestion-review.ts validates source categories and locations. Google profile rules separate address, closure and hours.
+- Approval requires an address only for fixed-location trucks (DB trigger + approvalIssue in data/ingestion-review.ts); mobile trucks go live only through dated stops with coordinates.
+- Admin usage stats come from first-party app_events (anon insert, admin read; src/lib/track.ts); pure summaries in data/usage.ts.
+- context.dev reads kind="website" social_sources inside the facebook-daily two-hour job (src/lib/context-dev.server.ts, CONTEXT_DEV_API_KEY); results reuse ingestPost review rules and never block the Apify scan.
