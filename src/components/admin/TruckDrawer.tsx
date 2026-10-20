@@ -7,7 +7,12 @@ import { ScreenshotStops } from "./ScreenshotStops";
 import type { Truck } from "@/data/trucks";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { ExternalLink, Pencil, GitMerge, Archive, CheckCircle2, Trash2, RotateCcw, UtensilsCrossed, ImageOff, CalendarX, History } from "lucide-react";
+import { ExternalLink, Pencil, GitMerge, Archive, CheckCircle2, Trash2, RotateCcw, UtensilsCrossed, ImageOff, CalendarX, History, Sparkles, Loader2, CheckCircle, XCircle } from "lucide-react";
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { enrichTruck, type EnrichStep } from "@/lib/enrich.functions";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,17 +27,18 @@ export type DrawerActions = {
   del: (id: string) => void; restore: (id: string) => void;
 };
 
-export function TruckDrawer({ truckId, onClose, actions }: { truckId: string | null; onClose: () => void; actions: DrawerActions }) {
+export function TruckDrawer({ truckId, onClose, actions, tab }: { truckId: string | null; onClose: () => void; actions: DrawerActions; tab?: string }) {
   return (
     <Sheet open={!!truckId} onOpenChange={(o) => !o && onClose()}>
       <SheetContent side="right" className="flex w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-xl">
-        {truckId && <Body id={truckId} actions={actions} />}
+        {truckId && <Body key={`${truckId}:${tab ?? ""}`} id={truckId} actions={actions} tab={tab} />}
       </SheetContent>
     </Sheet>
   );
 }
 
-function Body({ id, actions }: { id: string; actions: DrawerActions }) {
+function Body({ id, actions, tab }: { id: string; actions: DrawerActions; tab?: string }) {
+  const [enrichOpen, setEnrichOpen] = useState(false);
   const { data: t, isLoading } = useQuery({
     queryKey: ["admin", "truck", id],
     queryFn: async () => (await supabase.from("trucks").select("*").eq("id", id).maybeSingle()).data,
@@ -60,6 +66,7 @@ function Body({ id, actions }: { id: string; actions: DrawerActions }) {
           ) : (
             <>
               <IconAction label="Edit" icon={Pencil} onClick={() => actions.edit(t.id)} />
+              <IconAction label="Enrich from all sources" icon={Sparkles} tone="primary" onClick={() => setEnrichOpen(true)} />
               <IconAction label="Merge into another truck" icon={GitMerge} onClick={() => actions.merge(t.id)} />
               <IconAction label={t.status === "archived" ? "Approve" : "Archive"} icon={t.status === "archived" ? CheckCircle2 : Archive} onClick={() => actions.toggleArchive(t.id, t.status)} />
               <IconAction label="Delete" icon={Trash2} tone="danger" onClick={() => actions.del(t.id)} />
@@ -68,7 +75,8 @@ function Body({ id, actions }: { id: string; actions: DrawerActions }) {
           <Link to="/truck/$id" params={{ id: t.id }} target="_blank" className="grid h-8 w-8 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground" aria-label="Open public page"><ExternalLink className="h-4 w-4" /></Link>
         </div>
       </SheetHeader>
-      <Tabs defaultValue="overview" className="flex min-h-0 flex-1 flex-col">
+      <EnrichDialog open={enrichOpen} onOpenChange={setEnrichOpen} truckId={t.id} name={t.name} />
+      <Tabs defaultValue={["overview", "menu", "photos", "stops", "activity"].includes(tab ?? "") ? tab : "overview"} className="flex min-h-0 flex-1 flex-col">
         <TabsList className="mx-6 mt-4 grid grid-cols-5">
           {["overview", "menu", "photos", "stops", "activity"].map((k) => <TabsTrigger key={k} value={k} className="capitalize">{k}</TabsTrigger>)}
         </TabsList>
@@ -200,5 +208,50 @@ function ActivityTab({ id, created, source }: { id: string; created: string; sou
         </li>
       ))}
     </ol>
+  );
+}
+
+function EnrichDialog({ open, onOpenChange, truckId, name }: { open: boolean; onOpenChange: (o: boolean) => void; truckId: string; name: string }) {
+  const run = useServerFn(enrichTruck);
+  const qc = useQueryClient();
+  const [url, setUrl] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [steps, setSteps] = useState<EnrichStep[] | null>(null);
+  async function go(e: React.FormEvent) {
+    e.preventDefault(); setBusy(true); setSteps(null);
+    try {
+      const r = await run({ data: { truckId, customUrl: url.trim() || undefined } });
+      setSteps(r.steps);
+      void qc.invalidateQueries({ queryKey: ["admin"] }); void qc.invalidateQueries({ queryKey: ["stops"] });
+    } catch (err) { toast.error(err instanceof Error ? err.message : "Enrich failed"); }
+    finally { setBusy(false); }
+  }
+  return (
+    <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) { setSteps(null); setUrl(""); } }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Enrich {name}</DialogTitle>
+          <DialogDescription>Searches Facebook, Instagram, the truck's website, venue calendars and an optional custom link for stops. Stops without an address show up in Pending trucks.</DialogDescription>
+        </DialogHeader>
+        <form onSubmit={go} className="space-y-3">
+          <label className="block text-sm font-medium">Custom link (optional)
+            <input className="field mt-1" placeholder="https://… event page, directory, website" value={url} onChange={(e) => setUrl(e.target.value)} />
+          </label>
+          <button disabled={busy} className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground disabled:opacity-60">
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}{busy ? "Searching sources… (up to a minute)" : "Enrich now"}
+          </button>
+        </form>
+        {steps && (
+          <ul className="space-y-2 text-sm">
+            {steps.map((s, i) => (
+              <li key={i} className="flex gap-2">
+                {s.ok ? <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> : <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />}
+                <span><b>{s.source}:</b> {s.detail}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
