@@ -1,5 +1,10 @@
 # Roadmap
 
+## Screenshot fallback order (2026-10-20)
+- [x] Implement Apify → Google Maps → context.dev fallback on errors, empty results and polling deadlines; context.dev addresses remain review drafts without verified coordinates.
+- [x] Latest evidenced failure at 21:00:31 UTC: invalid Instagram directUrls caused Apify 400 and scheduled scan 500. Validate links and isolate actor failures so other social jobs/context.dev continue.
+- [ ] Authenticated screenshot upload/save verification: no app account matches requesting user's email; needs Admin sign-in. Google Maps live checks require an authorized deployed origin. No screenshot-specific error was retained in available logs.
+
 ## Food-truck category review
 - [x] Reviewed all 56 non-deleted food-truck records using saved Google categories and available official/public evidence; corrected 12 categories, preserved 44, and delivered full inventory with 21 evidence/identity questions. Three corrected public profiles verified without runtime errors; no status, classification, address, hours or publication changes.
 - [ ] Resolve the 21 category/identity questions in the dated category report: needs readable official profiles/menus or owner confirmation; no categories guessed.

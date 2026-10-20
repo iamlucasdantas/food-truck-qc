@@ -30,11 +30,11 @@ export function ScreenshotStops({ truckId }: { truckId: string }) {
       if (runId) {
         for (let attempt = 0; attempt < 24; attempt++) {
           await new Promise(resolve => setTimeout(resolve, 5000));
-          result = await enrich({ data: { ...request, runId } });
+          result = await enrich({ data: { ...request, runId, finishApify: attempt === 23 } });
           if (!("pending" in result && result.pending)) break;
         }
       }
-      return result.location ? applyStopLocation(row, result.location) : { ...row, locationIssue: ("issue" in result ? result.issue : undefined) || "Address lookup is incomplete. Choose a place below." };
+      return result.location ? applyStopLocation(row, result.location) : { ...row, address: result.address || row.address, city: result.city || row.city, locationIssue: result.issue || "Address lookup is incomplete. Choose a place below." };
     } catch (e) { return { ...row, locationIssue: e instanceof Error ? e.message : String(e) }; }
   };
 
