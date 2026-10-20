@@ -1,5 +1,15 @@
+/** Facebook/Google labels that say nothing about the food (e.g. Facebook's generic "Page"). */
+export const GENERIC_CATEGORY = /^(other|unknown|uncategorized|point of interest|establishment|food|page|local business|business|company|brand|public figure|community|organization)$/i;
+/** Geocoder-friendly forms of an address: as typed, then without country / ZIP, which often make the geocoder miss. */
+export function addressVariants(address: string): string[] {
+  const a = address.trim();
+  if (!a) return [];
+  const noCountry = a.replace(/,?\s*(united states( of america)?|usa|us)\b\.?/gi, '').replace(/\s*,\s*,/g, ',').trim().replace(/,$/, '');
+  const noZip = noCountry.replace(/,?\s*\d{5}(-\d{4})?\s*$/, '').trim().replace(/,$/, '');
+  return [...new Set([a, noCountry, noZip])].filter(Boolean);
+}
 export function profileCategory(categories: string[], facebookText = ''): string | null {
-  const meaningful = categories.map(s => s.trim().replace(/_/g, ' ')).filter(s => s && !/^(other|unknown|uncategorized|point of interest|establishment|food)$/i.test(s));
+  const meaningful = categories.map(s => s.trim().replace(/_/g, ' ')).filter(s => s && !GENERIC_CATEGORY.test(s));
   if (meaningful.length) return meaningful[0] ?? null;
   const matches: [RegExp, string][] = [
     [/\b(bbq|barbecue|smoked meats|brisket)\b/i, 'BBQ'], [/\b(tacos?|mexican|birria)\b/i, 'Mexican'],
@@ -14,7 +24,7 @@ export function completeAddress(address: string | null | undefined, lat: number 
 }
 export function approvalIssue(t: { category: string; base_address: string | null; base_lat?: number | null; base_lng?: number | null }): string | null {
   if (!completeAddress(t.base_address, t.base_lat, t.base_lng)) return 'Address and coordinates required';
-  if (!t.category.trim() || /^(other|unknown|uncategorized)$/i.test(t.category.trim())) return 'Google or Facebook category required';
+  if (!t.category.trim() || GENERIC_CATEGORY.test(t.category.trim())) return 'Google or Facebook category required';
   return null;
 }
 export function discoveredTruckId(name: string): string {
