@@ -33,7 +33,7 @@ function apifyHeaders() {
 
 /** Every truck with a social URL/handle is also a source of that kind. */
 async function syncTruckSources(db: DB) {
-  const { data: rawTrucks } = await db.from("trucks").select("id, name, claimed_by, created_by, status, facebook, instagram, reddit")
+  const { data: rawTrucks } = await db.from("trucks").select("id, name, claimed_by, created_by, status, facebook, instagram, reddit, website")
     .is("deleted_at", null).or("status.eq.active,and(status.eq.pending,or(claimed_by.not.is.null,created_by.not.is.null))");
   const { data: bizRows } = await db.from("businesses").select("owner_id, facebook, instagram, reddit");
   const biz = new Map((bizRows ?? []).map((b) => [b.owner_id, b]));
@@ -53,6 +53,9 @@ async function syncTruckSources(db: DB) {
       const url = /^https?:\/\//i.test(t.reddit) ? t.reddit : `https://www.reddit.com/user/${t.reddit.replace(/^@/, "")}/`;
       if (/reddit\.com/i.test(url) && !have.has(normUrl(url))) rows.push({ kind: "reddit", url, name: t.name, truck_id: t.id });
     }
+    // The truck's own website is read with context.dev in the same scans.
+    if (t.website && /^https?:\/\//i.test(t.website) && !/(facebook|instagram|reddit|linktr)\./i.test(t.website) && !have.has(normUrl(t.website)))
+      rows.push({ kind: "website", url: t.website, name: t.name, truck_id: t.id });
   }
   // One bad row must not drop the whole batch, so insert per row and log failures.
   for (const r of rows) {
