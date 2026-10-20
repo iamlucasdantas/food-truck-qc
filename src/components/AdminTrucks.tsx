@@ -139,7 +139,7 @@ export function AdminTrucks({ search }: { search: S }) {
       if (!hit) return void toast.error('Address not found. Check the street and city.');
       location = {base_address:address,base_lat:hit.lat,base_lng:hit.lng};
     }
-    const { error } = await supabase.from("trucks").update({ ...location, is_food_truck: fd.get("is_food_truck") === "on", name: g("name") ?? "Untitled", category, phone: g("phone"), website: g("website"), instagram: g("instagram"), facebook: g("facebook"), ...(tt === "fixed" || tt === "mobile" ? { truck_type: tt } : {}) }).eq("id", id);
+    const { error } = await supabase.from("trucks").update({ ...location, is_food_truck: fd.get("is_food_truck") === "on", name: g("name") ?? "Untitled", category, phone: g("phone"), website: g("website"), instagram: g("instagram"), facebook: g("facebook"), ...(tt === "fixed" || tt === "mobile" || tt === "hybrid" ? { truck_type: tt } : {}) }).eq("id", id);
     if (error) return void toast.error(error.message);
     toast.success("Saved"); setEdit(null); inv();
   }
@@ -307,7 +307,7 @@ export function AdminTrucks({ search }: { search: S }) {
                   </td>
                   <td className={pad}>{/^other$/i.test(t.category) ? "Category needs review" : t.category}</td>
                   <td className={pad}>{t.city || "—"}</td>
-                  <td className={pad}>{t.truck_type === "fixed" ? "Fixed" : "Mobile"}</td>
+                  <td className={pad}>{t.truck_type === "fixed" ? "Fixed" : t.truck_type === "hybrid" ? "Hybrid" : "Mobile"}</td>
                   <td className={pad}>{pill(t)}</td>
                   <td className={cn(pad, "text-muted-foreground")}>{t.claimed_by ? "Claimed" : "Unclaimed"}</td>
                   <td className={cn(pad, "text-muted-foreground")}>{SOURCE_LABEL[t.source] ?? t.source}</td>
@@ -333,7 +333,7 @@ export function AdminTrucks({ search }: { search: S }) {
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-1.5">
                 {pill(t)}
-                <StatusPill tone="neutral">{t.truck_type === "fixed" ? "Fixed" : "Mobile"}</StatusPill>
+                <StatusPill tone="neutral">{t.truck_type === "fixed" ? "Fixed" : t.truck_type === "hybrid" ? "Hybrid" : "Mobile"}</StatusPill>
                 <StatusPill tone={t.claimed_by ? "accent" : "neutral"}>{t.claimed_by ? "Claimed" : "Unclaimed"}</StatusPill>
                 <span className="ml-auto text-xs text-muted-foreground">{SOURCE_LABEL[t.source] ?? t.source}</span>
               </div>
@@ -377,8 +377,9 @@ export function AdminTrucks({ search }: { search: S }) {
               <label className="flex items-center gap-2 text-sm sm:col-span-2"><input type="checkbox" name="is_food_truck" defaultChecked={editing.is_food_truck} />Food truck, trailer or cart</label>
               <label className="space-y-1 text-sm sm:col-span-2"><span className="text-muted-foreground">Type</span>
                 <select name="truck_type" className="h-9 w-full rounded-lg border border-input bg-background px-2 text-sm" defaultValue={editing.truck_type}>
-                  <option value="mobile">Mobile</option><option value="fixed">Fixed location</option>
+                   <option value="mobile">Mobile</option><option value="fixed">Fixed location</option><option value="hybrid">Hybrid (fixed spot, also moves)</option>
                 </select>
+                <p className="text-xs text-muted-foreground">Address is required only for fixed locations. Mobile and hybrid trucks go live through dated stops.</p>
               </label>
               <div className="flex justify-end gap-2 sm:col-span-2"><button type="button" className={btn.secondary} onClick={() => setEdit(null)}>Cancel</button><button className={btn.primary}>Save changes</button></div>
             </form>

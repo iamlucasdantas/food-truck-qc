@@ -863,6 +863,7 @@ export type Database = {
           menu: Json
           menu_search: string
           menu_sections: Json | null
+          menu_summary: string | null
           menu_updated_at: string | null
           merged_into: string | null
           name: string
@@ -906,6 +907,7 @@ export type Database = {
           menu?: Json
           menu_search?: string
           menu_sections?: Json | null
+          menu_summary?: string | null
           menu_updated_at?: string | null
           merged_into?: string | null
           name: string
@@ -949,6 +951,7 @@ export type Database = {
           menu?: Json
           menu_search?: string
           menu_sections?: Json | null
+          menu_summary?: string | null
           menu_updated_at?: string | null
           merged_into?: string | null
           name?: string

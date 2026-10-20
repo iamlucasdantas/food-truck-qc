@@ -26,10 +26,12 @@ export const Route = createFileRoute("/api/public/jobs/facebook-daily")({
           const { startFacebookRun } = await import("@/lib/facebook.server");
           runId = (await startFacebookRun(supabaseAdmin)).id;
         }
-        // context.dev website/directory sources run in the same two-hour window; a failure never blocks the social scan.
+        // context.dev website/directory sources and per-truck calendar links run in the same two-hour window; a failure never blocks the social scan.
         const { scanWebsiteSources } = await import("@/lib/context-dev.server");
         const websites = await scanWebsiteSources(supabaseAdmin, 4, 20_000).catch((e: unknown) => ({ scanned: 0, stops: 0, error: String(e) }));
-        return Response.json(runId ? { runId, websites } : { skipped: "already running", websites });
+        const { syncTruckCalendars } = await import("@/lib/truck-calendar.server");
+        const calendars = await syncTruckCalendars(supabaseAdmin).catch((e: unknown) => ({ synced: 0, stops: 0, review: 0, errors: [String(e)] }));
+        return Response.json(runId ? { runId, websites, calendars } : { skipped: "already running", websites, calendars });
       },
     },
   },
