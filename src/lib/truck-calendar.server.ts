@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { expandVenueCalendar, cleanCalendarTitle, calendarTitleKey, nonFoodEvent } from "@/data/venue-calendar";
+import { expandVenueCalendar, cleanCalendarTitle, nonFoodEvent } from "@/data/venue-calendar";
 import { normVenue } from "@/data/posts";
 import { readPublicLink, CALENDAR_FETCH_LIMITS } from "./safe-link-fetch.server";
 
