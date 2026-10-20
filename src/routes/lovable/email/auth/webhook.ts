@@ -9,7 +9,7 @@ import { EmailChangeEmail } from '@/lib/email-templates/email-change'
 import { ReauthenticationEmail } from '@/lib/email-templates/reauthentication'
 
 // Configuration
-const SITE_NAME = "Food Truck QC"
+const SITE_NAME = "FoodTruckQC"
 const SENDER_DOMAIN = "notify.foodtruckqc.com"
 const ROOT_DOMAIN = "foodtruckqc.com"
 const FROM_DOMAIN = "foodtruckqc.com"

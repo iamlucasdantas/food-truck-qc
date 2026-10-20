@@ -18,7 +18,7 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 }
 
 // Configuration
-const SITE_NAME = "Food Truck QC"
+const SITE_NAME = "FoodTruckQC"
 const ROOT_DOMAIN = "foodtruckqc.com"
 
 // Sample data for preview mode ONLY (not used in actual email sending).
