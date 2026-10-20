@@ -4,8 +4,7 @@ import { Download, CalendarX } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { chicagoDate } from "@/data/trucks";
 import { inDateRange, stopStatus, toCsv, type LogStatus } from "@/data/stop-drafts";
-import { EmptyState, StatusPill } from "./ui";
-import { SectionHeader } from "./AdminShell";
+import { EmptyState, SectionHeader, StatusPill } from "./ui";
 
 const TONE: Record<LogStatus, "success" | "neutral" | "warning" | "danger"> = { live: "success", past: "neutral", upcoming: "warning", cancelled: "danger" };
 
