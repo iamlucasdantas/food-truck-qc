@@ -39,6 +39,8 @@ import { Route as ApiPublicJobsVenueCalendarsRouteImport } from './routes/api/pu
 import { Route as ApiPublicV1FavoritesRouteImport } from './routes/api/public/v1/favorites'
 import { Route as ApiPublicV1StopsRouteImport } from './routes/api/public/v1/stops'
 import { Route as ApiPublicV1TrucksRouteImport } from './routes/api/public/v1/trucks'
+import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
+import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -194,6 +196,16 @@ const ApiPublicV1TrucksRoute = ApiPublicV1TrucksRouteImport.update({
   path: '/api/public/v1/trucks',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
+  id: '/lovable/email/auth/preview',
+  path: '/lovable/email/auth/preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
+  id: '/lovable/email/auth/webhook',
+  path: '/lovable/email/auth/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -225,6 +237,8 @@ export interface FileRoutesByFullPath {
   '/api/public/v1/favorites': typeof ApiPublicV1FavoritesRoute
   '/api/public/v1/stops': typeof ApiPublicV1StopsRoute
   '/api/public/v1/trucks': typeof ApiPublicV1TrucksRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -256,6 +270,8 @@ export interface FileRoutesByTo {
   '/api/public/v1/favorites': typeof ApiPublicV1FavoritesRoute
   '/api/public/v1/stops': typeof ApiPublicV1StopsRoute
   '/api/public/v1/trucks': typeof ApiPublicV1TrucksRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -289,6 +305,8 @@ export interface FileRoutesById {
   '/api/public/v1/favorites': typeof ApiPublicV1FavoritesRoute
   '/api/public/v1/stops': typeof ApiPublicV1StopsRoute
   '/api/public/v1/trucks': typeof ApiPublicV1TrucksRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -322,6 +340,8 @@ export interface FileRouteTypes {
     | '/api/public/v1/favorites'
     | '/api/public/v1/stops'
     | '/api/public/v1/trucks'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -353,6 +373,8 @@ export interface FileRouteTypes {
     | '/api/public/v1/favorites'
     | '/api/public/v1/stops'
     | '/api/public/v1/trucks'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
   id:
     | '__root__'
     | '/'
@@ -385,6 +407,8 @@ export interface FileRouteTypes {
     | '/api/public/v1/favorites'
     | '/api/public/v1/stops'
     | '/api/public/v1/trucks'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -414,6 +438,8 @@ export interface RootRouteChildren {
   ApiPublicV1FavoritesRoute: typeof ApiPublicV1FavoritesRoute
   ApiPublicV1StopsRoute: typeof ApiPublicV1StopsRoute
   ApiPublicV1TrucksRoute: typeof ApiPublicV1TrucksRoute
+  LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
+  LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -628,6 +654,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicV1TrucksRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/email/auth/preview': {
+      id: '/lovable/email/auth/preview'
+      path: '/lovable/email/auth/preview'
+      fullPath: '/lovable/email/auth/preview'
+      preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/auth/webhook': {
+      id: '/lovable/email/auth/webhook'
+      path: '/lovable/email/auth/webhook'
+      fullPath: '/lovable/email/auth/webhook'
+      preLoaderRoute: typeof LovableEmailAuthWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -684,6 +724,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicV1FavoritesRoute: ApiPublicV1FavoritesRoute,
   ApiPublicV1StopsRoute: ApiPublicV1StopsRoute,
   ApiPublicV1TrucksRoute: ApiPublicV1TrucksRoute,
+  LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
+  LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
