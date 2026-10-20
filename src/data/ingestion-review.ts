@@ -22,8 +22,9 @@ export function profileCategory(categories: string[], facebookText = ''): string
 export function completeAddress(address: string | null | undefined, lat: number | null | undefined, lng: number | null | undefined): boolean {
   return !!address?.trim() && lat != null && lng != null && Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
 }
-export function approvalIssue(t: { category: string; base_address: string | null; base_lat?: number | null; base_lng?: number | null }): string | null {
-  if (!completeAddress(t.base_address, t.base_lat, t.base_lng)) return 'Address and coordinates required';
+/** Fixed-location trucks always need an address; mobile trucks can be approved without one (they only go live through dated stops with an address). */
+export function approvalIssue(t: { category: string; base_address: string | null; base_lat?: number | null; base_lng?: number | null; truck_type?: string | null }): string | null {
+  if (t.truck_type === 'fixed' && !completeAddress(t.base_address, t.base_lat, t.base_lng)) return 'Fixed location needs an address and coordinates';
   if (!t.category.trim() || GENERIC_CATEGORY.test(t.category.trim())) return 'Google or Facebook category required';
   return null;
 }
