@@ -11,6 +11,7 @@ import { describeRule, WEEKDAYS, ymd, type Freq, type Series } from "@/data/sche
 import { useStops } from "@/lib/queries";
 import { geocode } from "@/lib/geocode";
 import { listFeedEvents, saveFeedUrl } from "@/lib/calendar.functions";
+import { PlaceSearch } from "@/components/PlaceSearch";
 
 const TruckMap = lazy(() => import("@/components/TruckMap"));
 const hhmm = (iso: string) => { const d = new Date(iso); return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; };
@@ -225,6 +226,7 @@ function StopEditor({ truck, target, done }: { truck: Truck; target: EditTarget;
         <label className="text-sm font-medium">Start<input className="field mt-1" type="time" required value={f.start} onChange={(e) => set("start", e.target.value)} /></label>
         <label className="text-sm font-medium">End<input className="field mt-1" type="time" required value={f.end} onChange={(e) => set("end", e.target.value)} /></label>
       </div>
+      <PlaceSearch onPick={(p) => { setF((x) => ({ ...x, venue: p.name && !p.address.startsWith(p.name) ? p.name : x.venue, address: p.address, pos: { lat: p.lat, lng: p.lng }, city: p.city })); setShowMap(true); }} />
       <input className="field" placeholder="Venue name (optional)" value={f.venue} onChange={(e) => set("venue", e.target.value)} />
       <div className="flex gap-2">
         <input className="field" placeholder="Address, e.g. 1200 River Dr, Moline" value={f.address} onChange={(e) => set("address", e.target.value)} />

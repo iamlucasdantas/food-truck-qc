@@ -360,7 +360,7 @@ export function AdminTrucks({ search }: { search: S }) {
         </div>
       )}
 
-      <TruckDrawer truckId={drawerId} onClose={() => setRaw({ truck: undefined })}
+      <TruckDrawer truckId={drawerId} tab={typeof search["dtab"] === "string" ? search["dtab"] : undefined} onClose={() => setRaw({ truck: undefined, dtab: undefined })}
         actions={{ edit: setEdit, merge: setMerge, toggleArchive, del: (id) => { const r = byId(id); if (r) setConfirm([r]); }, restore: (id) => void restore(id) }} />
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEdit(null)}>

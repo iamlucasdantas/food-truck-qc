@@ -99,10 +99,10 @@ async function startActor(kind: Kind, all: Source[]): Promise<string> {
 }
 
 /** Create a run and start one Apify job per source kind. Fast — safe for cron. */
-export async function startFacebookRun(db: DB) {
-  const categoryReview = await syncTruckSources(db);
+export async function startFacebookRun(db: DB, onlyIds?: string[]) {
+  const categoryReview = onlyIds ? [] : await syncTruckSources(db);
   const { data: sources = [] } = await db.from("social_sources").select("*").eq("active", true).neq("kind", "website");
-  const list = sources ?? [];
+  const list = (sources ?? []).filter((s) => !onlyIds || onlyIds.includes(s.id));
   if (!list.length) throw new Error("No active social sources");
   const meta: Meta = { runs: {}, total: list.length };
   for (const kind of KINDS) {
@@ -111,7 +111,7 @@ export async function startFacebookRun(db: DB) {
   }
   const catNote = categoryReview.length ? ` · ${categoryReview.length} categories need review` : "";
   const { data: run, error } = await db.from("ingestion_runs").insert({
-    source: "apify_facebook", notes: `Social update · 0/${list.length} sources${catNote}`, cities_total: list.map((s) => s.id), meta: { ...meta, categoryReview } as Meta,
+    source: "apify_facebook", notes: `${onlyIds ? "Enrich" : "Social update"} · 0/${list.length} sources${catNote}`, cities_total: list.map((s) => s.id), meta: { ...meta, categoryReview } as Meta,
   }).select().single();
   if (error) throw new Error(error.message);
   return run;
