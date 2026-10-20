@@ -426,7 +426,7 @@ function Index() {
             )}
             <div className="mt-3 grid grid-cols-2 gap-2">
               <Button asChild className="h-11">
-                <a data-truck={sel.truck?.id ?? ""} data-venue={sel.stop?.venue_name ?? ""} href={`https://www.google.com/maps/dir/?api=1&destination=${sel.lat},${sel.lng}`} target="_blank" rel="noopener noreferrer"><Navigation />Directions</a>
+                <a data-truck={sel.t.id} data-venue={sel.stop?.venue_name ?? ""} href={`https://www.google.com/maps/dir/?api=1&destination=${sel.lat},${sel.lng}`} target="_blank" rel="noopener noreferrer"><Navigation />Directions</a>
               </Button>
               <Button asChild variant="outline" className="h-11">
                 <Link to="/truck/$id" params={{ id: sel.t.id }} hash="menu"><Utensils />Menu</Link>
