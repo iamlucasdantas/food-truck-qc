@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { parseCsv, slugify } from "@/data/trucks";
 import { geocode } from "@/lib/geocode";
 import { useServerFn } from "@tanstack/react-start";
-import { seedCity, SEED_CITIES } from "@/lib/apify.functions";
+import { seedCity, startSeedCity, SEED_CITIES } from "@/lib/apify.functions";
 import { startFacebookUpdate, continueFacebookUpdate } from "@/lib/facebook.functions";
 import { notifyCrmTruckDecision } from "@/lib/crm.functions";
 import { AdminTrucks } from "@/components/AdminTrucks";
@@ -268,6 +268,7 @@ function Logs() {
 function ApifySeed() {
   const inv = useInvalidate();
   const seed = useServerFn(seedCity);
+  const startSeed = useServerFn(startSeedCity);
   const [busy, setBusy] = useState(false);
   const [log, setLog] = useState<string[]>([]);
   const { data: count = 0 } = useQuery({
@@ -294,7 +295,13 @@ function ApifySeed() {
     for (const city of todo) {
       setLog((l) => [...l, `⏳ ${city}…`]);
       try {
-        const out = await seed({ data: { city, runId } });
+        const { apifyRunId } = await startSeed({ data: { city } });
+        let out = await seed({ data: { city, runId, apifyRunId } });
+        for (let i = 0; out.pending && i < 120; i++) { // poll every 5s, up to 10 min per city
+          await new Promise((r) => setTimeout(r, 5000));
+          out = await seed({ data: { city, runId, apifyRunId } });
+        }
+        if (out.pending) throw new Error("Apify still running after 10 minutes — use Continue later");
         created += out.created;
         setLog((l) => [...l.slice(0, -1), `✓ ${city}: ${out.found} found, ${out.created} new, ${out.updated} updated`]);
       } catch (e) {

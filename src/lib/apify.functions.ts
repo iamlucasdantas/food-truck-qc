@@ -14,26 +14,55 @@ type Place = {
   temporarilyClosed?: boolean; permanentlyClosed?: boolean;
 };
 
-/** Admin-only: scrape one city from Google Maps via Apify and upsert trucks + 30 days of gray base stops. */
-export const seedCity = createServerFn({ method: "POST" })
+const GATEWAY = "https://connector-gateway.lovable.dev/apify";
+function apifyHeaders() {
+  const token = process.env['APIFY_API_KEY'], lovable = process.env['LOVABLE_API_KEY'];
+  if (!token || !lovable) throw new Error('Apify connection is not configured');
+  return { Authorization: `Bearer ${lovable}`, 'X-Connection-Api-Key': token, "Content-Type": "application/json" };
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function requireAdmin(supabase: any, userId: string) {
+  const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
+  if (!isAdmin) throw new Error("Forbidden");
+}
+
+/** Admin-only: start one city's Google Maps scrape as a background Apify run (a waiting call times out at the gateway with 502). */
+export const startSeedCity = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { city: string; runId?: string | undefined }) => {
+  .inputValidator((d: { city: string }) => {
     if (!SEED_CITIES.includes(d.city)) throw new Error("Unknown city");
     return d;
   })
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    const { data: isAdmin } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
-    if (!isAdmin) throw new Error("Forbidden");
-    const token = process.env['APIFY_API_KEY'], lovable = process.env['LOVABLE_API_KEY'];
-    if (!token || !lovable) throw new Error('Apify connection is not configured');
-
-    const res = await fetch("https://connector-gateway.lovable.dev/apify/acts/compass~crawler-google-places/run-sync-get-dataset-items", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${lovable}`, 'X-Connection-Api-Key':token, "Content-Type": "application/json" },
+    await requireAdmin(context.supabase, context.userId);
+    const res = await fetch(`${GATEWAY}/acts/compass~crawler-google-places/runs?timeout=600`, {
+      method: "POST", headers: apifyHeaders(),
       body: JSON.stringify({ searchStringsArray: ["food truck"], locationQuery: `${data.city}, USA`, maxCrawledPlacesPerSearch: 25, language: "en", scrapeContacts: true, skipClosedPlaces: false }),
     });
     if (!res.ok) throw new Error(`Apify request failed [${res.status}]: ${(await res.text()).slice(0, 300)}`);
+    const run = ((await res.json()) as { data: { id: string } }).data;
+    return { apifyRunId: run.id };
+  });
+
+/** Admin-only: check a city's Apify run; when finished, upsert trucks + 30 days of gray base stops. */
+export const seedCity = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { city: string; apifyRunId: string; runId?: string | undefined }) => {
+    if (!SEED_CITIES.includes(d.city)) throw new Error("Unknown city");
+    if (!/^[A-Za-z0-9]{5,40}$/.test(d.apifyRunId ?? "")) throw new Error("Invalid run");
+    return d;
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    await requireAdmin(supabase, userId);
+    const headers = apifyHeaders();
+    const st = await fetch(`${GATEWAY}/actor-runs/${data.apifyRunId}`, { headers });
+    if (!st.ok) throw new Error(`Apify status failed [${st.status}]: ${(await st.text()).slice(0, 200)}`);
+    const runInfo = ((await st.json()) as { data: { status: string; defaultDatasetId: string } }).data;
+    if (runInfo.status === "READY" || runInfo.status === "RUNNING") return { pending: true as const, city: data.city, found: 0, created: 0, updated: 0, errors: [] as string[] };
+    if (runInfo.status !== "SUCCEEDED") throw new Error(`Apify run ${runInfo.status.toLowerCase()}`);
+    const res = await fetch(`${GATEWAY}/datasets/${runInfo.defaultDatasetId}/items?clean=true&limit=200`, { headers });
+    if (!res.ok) throw new Error(`Apify dataset failed [${res.status}]: ${(await res.text()).slice(0, 300)}`);
     const places = ((await res.json()) as Place[]).filter((p) => p.placeId && p.title && p.location && inServiceRegion(p.location.lat,p.location.lng) && isFoodTruckPlace(p.categoryName, p.categories, p.title));
 
     const ids = places.map((p) => p.placeId!);
@@ -117,5 +146,5 @@ export const seedCity = createServerFn({ method: "POST" })
         }).eq("id", data.runId);
       }
     }
-    return { city: data.city, found: places.length, created, updated, errors };
+    return { pending: false as const, city: data.city, found: places.length, created, updated, errors };
   });
