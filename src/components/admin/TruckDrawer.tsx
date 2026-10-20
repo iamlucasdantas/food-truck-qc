@@ -1,5 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { LocationConfirmation } from '@/components/LocationConfirmation';
+import { OwnerMenu } from "@/components/OwnerMenu";
+import { OwnerPhotos } from "@/components/OwnerPhotos";
+import { OwnerSchedule } from "@/components/OwnerSchedule";
+import { ScreenshotStops } from "./ScreenshotStops";
+import type { Truck } from "@/data/trucks";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { ExternalLink, Pencil, GitMerge, Archive, CheckCircle2, Trash2, RotateCcw, UtensilsCrossed, ImageOff, CalendarX, History } from "lucide-react";
@@ -78,12 +83,17 @@ function Body({ id, actions }: { id: string; actions: DrawerActions }) {
                 <div key={k} className="contents"><dt className="text-muted-foreground">{k}</dt><dd className="min-w-0 break-words">{v || "—"}</dd></div>
               ))}
             </dl>
+            {!t.deleted_at && <button onClick={() => actions.edit(t.id)} className="chip mt-4"><Pencil className="h-4 w-4" />Edit all details</button>}
             {t.description && <p className="mt-6 whitespace-pre-line text-sm text-muted-foreground">{t.description}</p>}
             {!t.deleted_at && <LocationConfirmation truck={t} admin />}
           </TabsContent>
-          <TabsContent value="menu" className="mt-0"><MenuTab sections={(t.menu_sections as MenuSection[] | null) ?? []} /></TabsContent>
-          <TabsContent value="photos" className="mt-0"><PhotosTab id={t.id} /></TabsContent>
-          <TabsContent value="stops" className="mt-0"><StopsTab id={t.id} /></TabsContent>
+          <TabsContent value="menu" className="mt-0 space-y-4">{t.deleted_at ? <MenuTab sections={(t.menu_sections as MenuSection[] | null) ?? []} /> : <OwnerMenu truck={t as Truck} />}</TabsContent>
+          <TabsContent value="photos" className="mt-0">{t.deleted_at ? <PhotosTab id={t.id} /> : <OwnerPhotos truckId={t.id} />}</TabsContent>
+          <TabsContent value="stops" className="mt-0 space-y-4">
+            {!t.deleted_at && <><ScreenshotStops truckId={t.id} /><OwnerSchedule truck={t as Truck} /></>}
+            <h3 className="text-sm font-semibold">Stop history</h3>
+            <StopsTab id={t.id} />
+          </TabsContent>
           <TabsContent value="activity" className="mt-0"><ActivityTab id={t.id} created={t.created_at} source={t.source} /></TabsContent>
         </div>
       </Tabs>
