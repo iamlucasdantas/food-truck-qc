@@ -14,7 +14,7 @@ export function UsageStats() {
       const [ev, trucks, fav, api] = await Promise.all([
         supabase.from("app_events").select("kind,truck_id,venue,path,visitor").gte("created_at", since).limit(20000),
         supabase.from("trucks").select("id,name"),
-        supabase.from("favorites").select("id", { count: "exact", head: true }).gte("created_at", since),
+        supabase.from("favorites").select("truck_id", { count: "exact", head: true }).gte("created_at", since),
         supabase.from("chat_api_logs").select("id", { count: "exact", head: true }).gte("created_at", since),
       ]);
       return { ...summarizeUsage(ev.data ?? []), names: new Map((trucks.data ?? []).map((t) => [t.id, t.name])), favorites: fav.count ?? 0, api: api.count ?? 0 };
