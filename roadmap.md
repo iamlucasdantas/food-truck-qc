@@ -1,5 +1,8 @@
 # Roadmap
 
+## Screenshot fallback order (2026-10-20)
+- [ ] Diagnose latest screenshot failure; implement Apify → Google Maps → context.dev fallback on errors, empty results and bounded timeouts; run focused tests.
+
 ## Food-truck category review
 - [x] Reviewed all 56 non-deleted food-truck records using saved Google categories and available official/public evidence; corrected 12 categories, preserved 44, and delivered full inventory with 21 evidence/identity questions. Three corrected public profiles verified without runtime errors; no status, classification, address, hours or publication changes.
 - [ ] Resolve the 21 category/identity questions in the dated category report: needs readable official profiles/menus or owner confirmation; no categories guessed.
