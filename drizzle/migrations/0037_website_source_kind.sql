@@ -1,0 +1,2 @@
+ALTER TABLE public.social_sources DROP CONSTRAINT IF EXISTS social_sources_kind_check;
+ALTER TABLE public.social_sources ADD CONSTRAINT social_sources_kind_check CHECK (kind = ANY (ARRAY['group','page','instagram','reddit','website']));
