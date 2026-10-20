@@ -1,5 +1,12 @@
 # Roadmap
 
+## Truck profile: hybrid type, per-truck sources, Enrich priority, menu summary (2026-10-20)
+- [ ] Hybrid truck type (fixed spot that also moves); address required only for fixed; hybrid keeps base pin when it has coordinates.
+- [ ] Sources tab in the truck panel: Facebook, Instagram, Google Maps profile, calendar link, website/specific page per truck; calendar links sync in the two-hour routine.
+- [ ] Enrich order: truck's own sources first (never another truck's profile), then web search + general groups as fallback; context.dev processes pages.
+- [ ] Menu tab: one-paragraph AI summary of what the business offers, shown above menu items and on the public page when there is no menu.
+- [ ] Focused tests + build; signed-in Admin verification pending (no matching session).
+
 ## Screenshot fallback order (2026-10-20)
 - [x] Implement Apify → Google Maps → context.dev fallback on errors, empty results and polling deadlines; context.dev addresses remain review drafts without verified coordinates.
 - [x] Latest evidenced failure at 21:00:31 UTC: invalid Instagram directUrls caused Apify 400 and scheduled scan 500. Validate links and isolate actor failures so other social jobs/context.dev continue.
