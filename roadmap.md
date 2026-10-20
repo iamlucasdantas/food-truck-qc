@@ -149,4 +149,4 @@
 - [x] Stops log with date/truck/status/source filters + CSV
 - [x] Usage stats + direction clicks per location (from today)
 - [x] context.dev website/directory sources in the two-hour scan
-- [ ] Waiting on context.dev API key
+- [x] context.dev key saved
