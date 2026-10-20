@@ -4,6 +4,7 @@ import { splitVenues, resolvePostDate, mergeHints, isUnknownTruckName, reviewTru
 import { postMenuToSections, menuSearchText, type PostMenu } from "@/data/menu";
 import { resolveVenue } from "@/lib/venues.server";
 import { completeAddress, discoveredTruckId, profileCategory } from "@/data/ingestion-review";
+import { socialSourceUrl } from "@/data/social-source-url";
 import { authorIsTruck, ownerHandles, centralToUtc, chicagoDate, keepExtraction, matchTruckByName, slugify, groupStops } from "@/data/trucks";
 
 type DB = SupabaseClient<Database>;
@@ -46,8 +47,8 @@ async function syncTruckSources(db: DB) {
     if (t.facebook && /facebook\.com/i.test(t.facebook) && !have.has(normUrl(t.facebook)))
       rows.push({ kind: "page", url: t.facebook, name: t.name, truck_id: t.id });
     if (t.instagram) {
-      const url = /^https?:\/\//i.test(t.instagram) ? t.instagram : `https://www.instagram.com/${t.instagram.replace(/^@/, "")}/`;
-      if (/instagram\.com/i.test(url) && !have.has(normUrl(url))) rows.push({ kind: "instagram", url, name: t.name, truck_id: t.id });
+      const url = socialSourceUrl(t.instagram, "instagram");
+      if (url && !have.has(normUrl(url))) rows.push({ kind: "instagram", url, name: t.name, truck_id: t.id });
     }
     if (t.reddit) {
       const url = /^https?:\/\//i.test(t.reddit) ? t.reddit : `https://www.reddit.com/user/${t.reddit.replace(/^@/, "")}/`;
@@ -66,11 +67,6 @@ async function syncTruckSources(db: DB) {
   return trucks.filter((t) => t.status === "active").length ? (await db.from("trucks").select("id").eq("status", "active").eq("is_food_truck", true).is("deleted_at", null).or("category.is.null,category.eq.,category.ilike.other,category.ilike.unknown")).data?.map((t) => t.id) ?? [] : [];
 }
 
-function cleanUrl(raw: string): string | null {
-  const s = raw.trim().replace(/^\/\//, "");
-  try { const u = new URL(/^https?:\/\//i.test(s) ? s : `https://${s}`); return u.hostname.includes(".") ? u.toString() : null; } catch { return null; }
-}
-
 /** Facebook session cookies (JSON array exported from a dedicated account) or null when the secret is unset/invalid. */
 function facebookCookies(): unknown[] | null {
   const raw = process.env["FACEBOOK_COOKIES_JSON"];
@@ -81,7 +77,8 @@ export const facebookSessionConfigured = () => !!facebookCookies();
 
 async function startActor(kind: Kind, all: Source[]): Promise<string> {
   // Apify rejects the whole job if one link is malformed, so fix or skip bad ones.
-  const sources = all.flatMap((s) => { const url = cleanUrl(s.url); return url ? [{ ...s, url }] : []; });
+  const sources = all.flatMap((s) => { const url = socialSourceUrl(s.url, kind); return url ? [{ ...s, url }] : []; });
+  if (!sources.length) throw new Error(`No valid ${kind} source URLs. Correct the source links in Admin.`);
   const input =
     kind === "page" ? { startUrls: sources.map((s) => ({ url: s.url })), resultsLimit: 5, onlyPostsNewerThan: "14 days" }
     : kind === "group" ? { startUrls: sources.map((s) => ({ url: s.url })), resultsLimit: 40, viewOption: "CHRONOLOGICAL", onlyPostsNewerThan: "7 days" }
@@ -92,7 +89,7 @@ async function startActor(kind: Kind, all: Source[]): Promise<string> {
   if (cookies) Object.assign(input, { cookies });
   const hooks = btoa(JSON.stringify([{ eventTypes: ["ACTOR.RUN.SUCCEEDED", "ACTOR.RUN.FAILED", "ACTOR.RUN.TIMED_OUT", "ACTOR.RUN.ABORTED"], requestUrl: `${PUBLIC_ORIGIN}/api/public/apify-webhook` }]));
   const res = await fetch(`https://connector-gateway.lovable.dev/apify/acts/${ACTORS[kind]}/runs?webhooks=${hooks}`, {
-    method: "POST", headers: { ...apifyHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(input),
+    method: "POST", headers: { ...apifyHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(input), signal: AbortSignal.timeout(10000),
   });
   if (!res.ok) throw new Error(`Apify ${kind} start failed [${res.status}]: ${(await res.text()).slice(0, 200)}`);
   return ((await res.json()) as { data: { id: string } }).data.id;
@@ -105,13 +102,35 @@ export async function startFacebookRun(db: DB, onlyIds?: string[]) {
   const list = (sources ?? []).filter((s) => !onlyIds || onlyIds.includes(s.id));
   if (!list.length) throw new Error("No active social sources");
   const meta: Meta = { runs: {}, total: list.length };
+  const completed: string[] = [], errors: string[] = [];
   for (const kind of KINDS) {
     const s = list.filter((x) => x.kind === kind);
-    if (s.length) meta.runs![kind] = await startActor(kind, s);
+    const valid: Source[] = [];
+    for (const source of s) {
+      const url = socialSourceUrl(source.url, kind);
+      if (url) valid.push({ ...source, url });
+      else {
+        completed.push(source.id);
+        const reason = `Invalid ${kind} source URL — correct the link in Admin.`;
+        errors.push(`${source.name}: ${reason}`);
+        await db.from("social_sources").update({ last_run_at: new Date().toISOString(), last_status: "blocked", last_reason: reason, last_posts: 0, last_stops: 0 }).eq("id", source.id);
+      }
+    }
+    if (valid.length) {
+      try { meta.runs = { ...meta.runs, [kind]: await startActor(kind, valid) }; }
+      catch (error) {
+        const reason = error instanceof Error ? error.message : String(error);
+        errors.push(reason);
+        // One rejected actor must not orphan jobs already started or block context.dev.
+        completed.push(...valid.map(source => source.id));
+        await db.from("social_sources").update({ last_run_at: new Date().toISOString(), last_status: "blocked", last_reason: reason.slice(0, 300) }).in("id", valid.map(source => source.id));
+      }
+    }
   }
   const catNote = categoryReview.length ? ` · ${categoryReview.length} categories need review` : "";
   const { data: run, error } = await db.from("ingestion_runs").insert({
-    source: "apify_facebook", notes: `${onlyIds ? "Enrich" : "Social update"} · 0/${list.length} sources${catNote}`, cities_total: list.map((s) => s.id), meta: { ...meta, categoryReview } as Meta,
+    source: "apify_facebook", notes: `${onlyIds ? "Enrich" : "Social update"} · ${completed.length}/${list.length} sources${catNote}`, cities_total: list.map((s) => s.id), cities_done: completed, error: errors.join("\n") || null, meta: { ...meta, categoryReview } as Meta,
+    ...(completed.length === list.length ? { status: "partial", finished_at: new Date().toISOString() } : {}),
   }).select().single();
   if (error) throw new Error(error.message);
   return run;
