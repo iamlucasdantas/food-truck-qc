@@ -12,3 +12,4 @@
 - Google weekly hours snapshots on trucks expand through data/google-hours.ts into marked apify_maps stops shared by public useStops and API/MCP; admin-only refresh batches at most 10 saved Places IDs so public reads never trigger billable lookups.
 - Base location confirmation uses confirm_truck_location RPC (admin or active claimed owner), explicit evidence and address-change reset; admin refresh confirms matched fixed addresses, not merchant verification. Google closures archive without deletion, never based on daily closed hours.
 - All Apify discovery/social calls use the linked gateway connection so credentials stay server-only. Regional venue matching uses the shared coverage circle; new social-page trucks enter pending review before publication.
+- Google Maps city seeds start Apify runs asynchronously and the Admin page polls status/dataset; run-sync calls longer than ~90s fail with gateway 502.
