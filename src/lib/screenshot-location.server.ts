@@ -55,7 +55,7 @@ export async function researchVenue(d: RequestData): Promise<{ address: string; 
   return { address: typeof raw.address === "string" ? raw.address.slice(0, 240) : "", url: typeof raw.url === "string" ? raw.url.slice(0, 1000) : "" };
 }
 
-export async function lookupScreenshotVenue(d: RequestData): Promise<{ location?: StopLocation; runId?: string; issue?: string }> {
+export async function lookupScreenshotVenue(d: RequestData): Promise<{ location?: StopLocation; runId?: string; issue?: string | undefined }> {
   const issues: string[] = [];
   const query = [d.venue, d.address, d.city || "Quad Cities IA IL"].filter(Boolean).join(", ");
   try {
@@ -75,7 +75,7 @@ export async function lookupScreenshotVenue(d: RequestData): Promise<{ location?
         else if (hint.address && page.markdown.toLowerCase().includes(hint.address.split(",")[0]?.toLowerCase() || "__missing__")) researched = hint.address;
       }
     }
-    if (researched) {
+    if (researched && !issues.some(i => i.startsWith("Address lookup failed [403]"))) {
       const hit = (await mapsLocation(`${d.venue}, ${researched}`)).find(h => trustedStopLocation(d.venue, h));
       if (hit) return { location: hit };
     }

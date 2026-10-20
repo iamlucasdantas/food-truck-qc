@@ -2,7 +2,7 @@ import { needsAddressCheck } from "./posts";
 import type { StopDraft } from "./stop-drafts";
 
 export type StopLocation = { name: string; address: string; city: string; lat: number; lng: number; source: string };
-export type EnrichedStopDraft = StopDraft & { location?: StopLocation; locationIssue?: string };
+export type EnrichedStopDraft = StopDraft & { location?: StopLocation | undefined; locationIssue?: string | undefined };
 
 export function trustedStopLocation(venue: string, hit: StopLocation): boolean {
   return !!hit.address.trim() && Number.isFinite(hit.lat) && Number.isFinite(hit.lng)
