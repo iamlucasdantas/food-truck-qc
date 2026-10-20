@@ -18,6 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CUISINES, adminDefaultVisible, adminStatus, cityOf, filtersToSearch, parseFilters, restoreDaysLeft, type AdminStatus, type Filters } from "@/data/filters";
 import { EmptyState, IconAction, Initials, SectionHeader, StatusPill, btn, statusTone } from "@/components/admin/ui";
 import { TruckDrawer } from "@/components/admin/TruckDrawer";
+import { EnrichProgress, type ActiveEnrichRun } from "@/components/admin/EnrichProgress";
 import { cn } from "@/lib/utils";
 import { LocationQueue } from '@/components/admin/LocationQueue';
 import { geocode } from '@/lib/geocode';
@@ -65,6 +66,7 @@ export function AdminTrucks({ search }: { search: S }) {
   const [edit, setEdit] = useState<string | null>(null);
   const [merge, setMerge] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  const [enrichRuns, setEnrichRuns] = useState<ActiveEnrichRun[]>([]);
   const [compact, setCompact] = useState(false);
   const [saved, setSaved] = useState<{ name: string; search: S }[]>([]);
   useEffect(() => {
@@ -361,7 +363,10 @@ export function AdminTrucks({ search }: { search: S }) {
       )}
 
       <TruckDrawer truckId={drawerId} tab={typeof search["dtab"] === "string" ? search["dtab"] : undefined} onClose={() => setRaw({ truck: undefined, dtab: undefined })}
+        onEnrichStarted={(runId, name) => setEnrichRuns((rs) => [...rs, { id: runId, name }])}
         actions={{ edit: setEdit, merge: setMerge, toggleArchive, del: (id) => { const r = byId(id); if (r) setConfirm([r]); }, restore: (id) => void restore(id) }} />
+
+      <EnrichProgress runs={enrichRuns} onRemove={(id) => setEnrichRuns((rs) => rs.filter((r) => r.id !== id))} />
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEdit(null)}>
         <DialogContent className="max-w-lg">

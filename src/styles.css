@@ -222,3 +222,8 @@ html, body { overflow-x: hidden; }
 }
 .profile-time::-webkit-date-and-time-value { min-width: 0; text-align: left; }
 .profile-time::-webkit-datetime-edit { min-width: 0; padding: 0; }
+
+@keyframes enrich-slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
