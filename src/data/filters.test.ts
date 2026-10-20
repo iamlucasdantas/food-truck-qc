@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EMPTY_FILTERS, adminDefaultVisible, adminStatus, cityOf, filtersToSearch, matchesFilters, parseFilters, restoreDaysLeft, type FilterRow } from "./filters";
+import { EMPTY_FILTERS, adminDefaultVisible, adminStatus, cityOf, filtersToSearch, matchesFilters, openNowApplied, parseFilters, restoreDaysLeft, type FilterRow } from "./filters";
 
 const row = (o: Partial<FilterRow> = {}): FilterRow => ({
   name: "Ana's Tacos", business_name: "Ana Foods", category: "Mexican", menu_search: "carne asada burrito elote", city: "Moline", truck_type: "mobile", ...o,
