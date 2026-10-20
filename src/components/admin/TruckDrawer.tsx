@@ -7,12 +7,15 @@ import { ScreenshotStops } from "./ScreenshotStops";
 import type { Truck } from "@/data/trucks";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { ExternalLink, Pencil, GitMerge, Archive, CheckCircle2, Trash2, RotateCcw, UtensilsCrossed, ImageOff, CalendarX, History, Sparkles, Loader2, CheckCircle, XCircle } from "lucide-react";
+import { ExternalLink, Pencil, GitMerge, Archive, CheckCircle2, Trash2, RotateCcw, UtensilsCrossed, ImageOff, CalendarX, History, Sparkles, Loader2, CheckCircle, XCircle, Link2, Plus } from "lucide-react";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { enrichTruck, type EnrichStep } from "@/lib/enrich.functions";
+import { listTruckSources, addTruckSource, removeTruckSource } from "@/lib/truck-sources.functions";
+import { generateMenuSummary } from "@/lib/menu.functions";
+import { TRUCK_SOURCE_KINDS, truckTypeLabel, type TruckSourceKind } from "@/data/truck-sources";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -76,15 +79,15 @@ function Body({ id, actions, tab }: { id: string; actions: DrawerActions; tab?: 
         </div>
       </SheetHeader>
       <EnrichDialog open={enrichOpen} onOpenChange={setEnrichOpen} truckId={t.id} name={t.name} />
-      <Tabs defaultValue={["overview", "menu", "photos", "stops", "activity"].includes(tab ?? "") ? tab! : "overview"} className="flex min-h-0 flex-1 flex-col">
-        <TabsList className="mx-6 mt-4 grid grid-cols-5">
-          {["overview", "menu", "photos", "stops", "activity"].map((k) => <TabsTrigger key={k} value={k} className="capitalize">{k}</TabsTrigger>)}
+      <Tabs defaultValue={["overview", "menu", "photos", "stops", "sources", "activity"].includes(tab ?? "") ? tab! : "overview"} className="flex min-h-0 flex-1 flex-col">
+         <TabsList className="mx-6 mt-4 grid grid-cols-6">
+          {["overview", "menu", "photos", "stops", "sources", "activity"].map((k) => <TabsTrigger key={k} value={k} className="capitalize">{k}</TabsTrigger>)}
         </TabsList>
         <div className="min-h-0 flex-1 overflow-y-auto p-6">
           <TabsContent value="overview" className="mt-0">
             <dl className="grid grid-cols-[8rem_minmax(0,1fr)] gap-x-4 gap-y-3 text-sm">
               {([
-                ["Type", t.truck_type === "fixed" ? "Fixed location" : "Mobile"], ["Address", t.base_address], ["Phone", t.phone], ["Website", t.website],
+                ["Type", truckTypeLabel(t.truck_type)], ["Address", t.base_address], ["Phone", t.phone], ["Website", t.website],
                 ["Instagram", t.instagram], ["Facebook", t.facebook], ["Source", t.source], ["Payments", t.payment_methods.join(", ")],
                 ["Created", new Date(t.created_at).toLocaleString()], ["Updated", new Date(t.updated_at).toLocaleString()], ["ID", t.id],
               ] as const).map(([k, v]) => (
