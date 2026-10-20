@@ -1,11 +1,13 @@
 # Roadmap
 
-## Truck profile: hybrid type, per-truck sources, Enrich priority, menu summary (2026-10-20)
-- [ ] Hybrid truck type (fixed spot that also moves); address required only for fixed; hybrid keeps base pin when it has coordinates.
-- [ ] Sources tab in the truck panel: Facebook, Instagram, Google Maps profile, calendar link, website/specific page per truck; calendar links sync in the two-hour routine.
-- [ ] Enrich order: truck's own sources first (never another truck's profile), then web search + general groups as fallback; context.dev processes pages.
-- [ ] Menu tab: one-paragraph AI summary of what the business offers, shown above menu items and on the public page when there is no menu.
-- [ ] Focused tests + build; signed-in Admin verification pending (no matching session).
+## Truck profile: hybrid type, per-truck sources, Enrich priority, menu summary (2026-10-20, not published)
+- [x] Hybrid truck type (fixed spot that also moves); address required only for fixed; hybrid keeps base pin when it has coordinates.
+- [x] Sources tab in the truck panel: Facebook, Instagram, Google Maps profile, calendar link, website/specific page per truck; calendar links sync in the two-hour routine (events with known venues become stops, the rest wait for an address in Pending trucks).
+- [x] Enrich order: truck's own sources first (never another truck's profile), then web search + shared groups as fallback; context.dev processes pages.
+- [x] Menu tab: one-paragraph AI summary of what the business offers, editable, shown above the menu on the public page.
+- [x] Fixed pre-existing API bug: truck IDs with underscores (bonbon-s-tacos-yp_1i) were rejected with "invalid query" on the agent endpoints.
+- [x] 363 tests passed, build OK.
+- [ ] Signed-in Admin verification of the Sources tab, Enrich order and AI summary: no matching session in sandbox.
 
 ## Screenshot fallback order (2026-10-20)
 - [x] Implement Apify → Google Maps → context.dev fallback on errors, empty results and polling deadlines; context.dev addresses remain review drafts without verified coordinates.
