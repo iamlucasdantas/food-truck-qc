@@ -54,7 +54,7 @@ export async function scanWebsiteSources(db: DB, max = 6, budgetMs = 50_000): Pr
     const owner = s.truck_id ? ctx.trucks.find((t) => t.id === s.truck_id) ?? null : null;
     try {
       const out = await ingestPost(ctx, owner ? "page" : "group", { url: s.url, text: page.markdown.slice(0, 8000), time: new Date().toISOString(), author: owner?.name ?? page.title, inputUrl: s.url }, owner);
-      const added = out.filter((r) => r.status === "published" || r.status === "pending" || r.status === "suggested").length;
+      const added = out.filter((r) => r.status === "published" || r.status === "suggested").length;
       stops += added;
       await db.from("social_sources").update({ last_run_at: new Date().toISOString(), last_status: "ok", last_reason: null, last_posts: 1, last_stops: added }).eq("id", s.id);
     } catch (e) {
