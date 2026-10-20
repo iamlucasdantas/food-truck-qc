@@ -12,7 +12,7 @@ export const AgentInputShape = {
   query:z.string().max(100).optional(), location:z.string().max(200).optional(), city:z.string().max(80).optional(),
   cuisine:z.string().max(60).optional(), dish:z.string().max(80).optional(), menu_item:z.string().max(80).optional(),
   near:z.string().max(200).optional(), address:z.string().max(200).optional(),
-  truck_id:z.string().max(120).regex(/^[a-z0-9-]+$/i).optional(),
+  truck_id:z.string().max(120).regex(/^[a-z0-9_-]+$/i).optional(),
   when:z.string().refine(v => ['now','today','tomorrow','this_week'].includes(v) || (/^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v)) && new Date(v).toISOString().slice(0,10) === v), 'Invalid when').optional(),
 };
 export const SearchQuery = z.object({...AgentInputShape, open_now:bool.optional(),lat:z.coerce.number().min(-90).max(90).optional(),lng:z.coerce.number().min(-180).max(180).optional(),radius_miles:z.coerce.number().min(1).max(100).optional(),days:z.coerce.number().int().min(1).max(14).optional(),limit:z.coerce.number().int().min(1).max(50).optional()}).refine(p => (p.lat == null) === (p.lng == null), 'Provide lat and lng together');
