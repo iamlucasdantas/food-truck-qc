@@ -1,12 +1,13 @@
 /** Pure Admin shell rules (sidebar sections, badge counters, command palette). Unit-tested in admin.test.ts. */
 
-export type AdminSection = "overview" | "claims" | "pending" | "trucks" | "csv" | "apify" | "facebook" | "logs" | "api" | "calendars";
+export type AdminSection = "overview" | "claims" | "pending" | "trucks" | "csv" | "apify" | "facebook" | "logs" | "api" | "calendars" | "stops";
 
 export const ADMIN_SECTIONS: { key: AdminSection; label: string; group: "Workspace" | "Data sources" }[] = [
   { key: "overview", label: "Overview", group: "Workspace" },
   { key: "pending", label: "Pending trucks", group: "Workspace" },
   { key: "claims", label: "Claims", group: "Workspace" },
   { key: "trucks", label: "Trucks", group: "Workspace" },
+  { key: "stops", label: "Stops log", group: "Workspace" },
   { key: "facebook", label: "Facebook", group: "Data sources" },
   { key: "calendars", label: "Calendar sources", group: "Data sources" },
   { key: "apify", label: "Google Maps seed", group: "Data sources" },
