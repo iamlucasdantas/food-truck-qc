@@ -2,8 +2,15 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { parseStopDrafts, type StopDraft } from "@/data/stop-drafts";
 
-const MODEL = "google/gemini-2.5-flash";
-const GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const MODEL = "openai/gpt-6-astra";
+const GATEWAY = "https://ai.gateway.lovable.dev/v1/responses";
+const str = { type: "string" };
+const SCHEMA = {
+  type: "object", additionalProperties: false, required: ["stops"],
+  properties: { stops: { type: "array", items: { type: "object", additionalProperties: false,
+    required: ["venue", "address", "city", "date", "start", "end", "private"],
+    properties: { venue: str, address: str, city: str, date: str, start: str, end: str, private: { type: "boolean" } } } } },
+};
 
 const PROMPT = (today: string, truck: string) => `You read screenshots of food truck schedules (Facebook/Instagram posts, flyers, calendars) for the truck "${truck}".
 Today is ${today} (America/Chicago). Return JSON {"stops":[...]} with one entry per dated appearance:
@@ -32,19 +39,33 @@ export const readStopsScreenshot = createServerFn({ method: "POST" })
     const today = chicagoDate();
     const res = await fetch(GATEWAY, {
       method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "Lovable-API-Key": key, "X-Lovable-AIG-SDK": "fetch" },
       body: JSON.stringify({
-        model: MODEL, response_format: { type: "json_object" },
-        messages: [{ role: "user", content: [{ type: "text", text: PROMPT(today, truck?.name ?? "this truck") }, { type: "image_url", image_url: { url: data.image } }] }],
+        model: MODEL, stream: true, store: false, reasoning: { effort: "low", summary: "auto" }, include: ["reasoning.encrypted_content"],
+        input: [{ role: "user", content: [{ type: "input_text", text: PROMPT(today, truck?.name ?? "this truck") }, { type: "input_image", image_url: data.image }] }],
+        text: { format: { type: "json_schema", name: "stops", strict: true, schema: SCHEMA } },
       }),
     });
-    if (!res.ok) {
+    if (!res.ok || !res.body) {
       const body = await res.text().catch(() => "");
       console.error(`[stop reader] gateway failed [${res.status}]: ${body.slice(0, 300)}`);
       return { stops: [], skipped: 0, error: res.status === 429 ? "The AI reader is busy — try again in a minute." : res.status === 402 ? "AI credits are used up." : "Couldn't read the screenshot." };
     }
-    const j = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+    const reader = res.body.getReader();
+    const dec = new TextDecoder();
+    let buf = "", text = "";
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let i: number;
+      while ((i = buf.indexOf("\n\n")) >= 0) {
+        const line = buf.slice(0, i).split("\n").find((l) => l.startsWith("data:")); buf = buf.slice(i + 2);
+        if (!line) continue;
+        try { const ev = JSON.parse(line.slice(5).trim()) as { type?: string; delta?: string }; if (ev.type === "response.output_text.delta" && ev.delta) text += ev.delta; } catch { /* keep-alive */ }
+      }
+    }
     let raw: unknown = [];
-    try { raw = (JSON.parse(j.choices?.[0]?.message?.content ?? "{}") as { stops?: unknown }).stops ?? []; } catch { raw = []; }
+    try { raw = (JSON.parse(text || "{}") as { stops?: unknown }).stops ?? []; } catch { raw = []; }
     return parseStopDrafts(raw, today);
   });
