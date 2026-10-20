@@ -139,7 +139,7 @@ export function AdminTrucks({ search }: { search: S }) {
       if (!hit) return void toast.error('Address not found. Check the street and city.');
       location = {base_address:address,base_lat:hit.lat,base_lng:hit.lng};
     }
-    const { error } = await supabase.from("trucks").update({ ...location, is_food_truck: fd.get("is_food_truck") === "on", name: g("name") ?? "Untitled", category, phone: g("phone"), website: g("website"), instagram: g("instagram"), facebook: g("facebook"), ...(tt === "fixed" || tt === "mobile" ? { truck_type: tt } : {}) }).eq("id", id);
+    const { error } = await supabase.from("trucks").update({ ...location, is_food_truck: fd.get("is_food_truck") === "on", name: g("name") ?? "Untitled", category, phone: g("phone"), website: g("website"), instagram: g("instagram"), facebook: g("facebook"), ...(tt === "fixed" || tt === "mobile" || tt === "hybrid" ? { truck_type: tt } : {}) }).eq("id", id);
     if (error) return void toast.error(error.message);
     toast.success("Saved"); setEdit(null); inv();
   }
@@ -377,8 +377,9 @@ export function AdminTrucks({ search }: { search: S }) {
               <label className="flex items-center gap-2 text-sm sm:col-span-2"><input type="checkbox" name="is_food_truck" defaultChecked={editing.is_food_truck} />Food truck, trailer or cart</label>
               <label className="space-y-1 text-sm sm:col-span-2"><span className="text-muted-foreground">Type</span>
                 <select name="truck_type" className="h-9 w-full rounded-lg border border-input bg-background px-2 text-sm" defaultValue={editing.truck_type}>
-                  <option value="mobile">Mobile</option><option value="fixed">Fixed location</option>
+                   <option value="mobile">Mobile</option><option value="fixed">Fixed location</option><option value="hybrid">Hybrid (fixed spot, also moves)</option>
                 </select>
+                <p className="text-xs text-muted-foreground">Address is required only for fixed locations. Mobile and hybrid trucks go live through dated stops.</p>
               </label>
               <div className="flex justify-end gap-2 sm:col-span-2"><button type="button" className={btn.secondary} onClick={() => setEdit(null)}>Cancel</button><button className={btn.primary}>Save changes</button></div>
             </form>
