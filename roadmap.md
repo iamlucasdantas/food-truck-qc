@@ -150,3 +150,7 @@
 - [x] Usage stats + direction clicks per location (from today)
 - [x] context.dev website/directory sources in the two-hour scan
 - [x] context.dev key saved
+
+## Admin stops: Google search, Enrich, address alerts (not published)
+- [x] Google Maps place/address search in the stop form; Enrich button (sources, context.dev websites + custom link, per-truck Facebook/Instagram scan, venue calendars); Pending trucks lists trucks with stops missing an address, opening the Stops tab.
+- [ ] Signed-in Admin verification of these three flows.
