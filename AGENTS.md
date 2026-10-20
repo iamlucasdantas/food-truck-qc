@@ -36,4 +36,4 @@
 - Approval requires an address only for fixed-location trucks (DB trigger + approvalIssue in data/ingestion-review.ts); mobile trucks go live only through dated stops with coordinates.
 - Admin usage stats come from first-party app_events (anon insert, admin read; src/lib/track.ts); pure summaries in data/usage.ts.
 - context.dev website scans use ingestPost in the two-hour facebook-daily job without blocking Apify.
-- Screenshot drafts use bounded, deduplicated, authorized venue enrichment; Gemini/context.dev hints need Maps/Apify coordinates, and location edits invalidate pins.
+- Screenshot enrichment uses bounded sequential fallbacks; signed polls bind lookup inputs, failures continue, and page addresses stay drafts without verified pins.
