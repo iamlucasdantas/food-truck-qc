@@ -15,6 +15,7 @@ const CALENDAR_HOSTS = ["calendar.google.com", "outlook.live.com", "outlook.offi
 
 function httpUrl(raw: string): URL | null {
   const value = raw.trim().replace(/^\/\//, "");
+  if (/^[a-z][a-z0-9+.-]*:\/\//i.test(value) && !/^https?:\/\//i.test(value)) return null;
   try {
     const url = new URL(/^https?:\/\//i.test(value) ? value : `https://${value}`);
     if (!/^https?:$/.test(url.protocol) || url.username || url.password) return null;
@@ -26,7 +27,11 @@ function httpUrl(raw: string): URL | null {
 
 /** Validate and normalize a per-truck source link. Returns null when the link does not fit the kind. */
 export function truckSourceUrl(raw: string, kind: TruckSourceKind): string | null {
-  if (kind === "page" || kind === "instagram") return socialSourceUrl(raw, kind);
+  if (kind === "instagram") return socialSourceUrl(raw, kind);
+  if (kind === "page") {
+    const url = socialSourceUrl(raw, kind);
+    return url && !/\/groups\//i.test(new URL(url).pathname) ? url : null;
+  }
   const url = httpUrl(raw);
   if (!url) return null;
   const host = url.hostname.toLowerCase();
