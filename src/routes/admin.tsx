@@ -20,6 +20,8 @@ import { CalendarSources } from "@/components/admin/CalendarSources";
 import { GoogleHours } from '@/components/admin/GoogleHours';
 import { EmptyState, IconAction, Initials, ListSkeleton, SectionHeader, StatusPill, btn, statusTone } from "@/components/admin/ui";
 import { sectionFromSearch } from "@/data/admin";
+import { runWebsiteScan } from "@/lib/context-dev.functions";
+import { StopsLog } from "@/components/admin/StopsLog";
 import { LogoMark } from "@/components/Logo";
 import { approvalIssue } from "@/data/ingestion-review";
 
@@ -70,6 +72,7 @@ function Admin() {
       {section === "logs" && <><SectionHeader title="Import logs" description="Every CSV, Google Maps and Facebook run." /><Logs /></>}
       {section === "api" && <AgentApiLog />}
       {section === "calendars" && <CalendarSources />}
+      {section === "stops" && <StopsLog />}
     </AdminShell>
   );
 }
@@ -399,15 +402,16 @@ function FacebookTab() {
     <div className="space-y-3">
       <div className="panel space-y-3 p-5">
         <div className="flex flex-wrap gap-2">
-          <select className="field w-auto" value={kind} onChange={(e) => setKind(e.target.value as typeof kind)}><option value="group">Facebook group</option><option value="page">Facebook page</option><option value="reddit">Reddit</option><option value="instagram">Instagram</option></select>
+          <select className="field w-auto" value={kind} onChange={(e) => setKind(e.target.value as typeof kind)}><option value="group">Facebook group</option><option value="page">Facebook page</option><option value="reddit">Reddit</option><option value="instagram">Instagram</option><option value="website">Website / directory (context.dev)</option></select>
           <input className="field flex-1" placeholder="https://www.facebook.com/groups/…" value={url} onChange={(e) => setUrl(e.target.value)} />
           <button onClick={() => void add()} className="chip bg-primary text-primary-foreground">Add</button>
         </div>
-        <p className="text-sm text-muted-foreground">Only public groups work. Every truck with a Facebook link is checked automatically too. Automatic scans: 10am, noon, 2pm, 4pm, 6pm and 8pm Central daily; uses Apify and AI credits.</p>
+        <p className="text-sm text-muted-foreground">Only public groups work. Every truck with a Facebook link is checked automatically too. Automatic scans: 10am, noon, 2pm, 4pm, 6pm and 8pm Central daily; uses Apify and AI credits. Websites and food-truck directories are read with context.dev in the same scans.</p>
         {latest && <p className="text-sm font-semibold">Sources done {latest.cities_done.length}/{latest.cities_total.length} · {latest.status} · {latest.items_created} stops added</p>}
         <div className="flex flex-wrap gap-2">
           {running && <button disabled={busy} onClick={() => void run(true)} className="chip bg-primary text-primary-foreground">{busy ? "Running…" : "Continue"}</button>}
           <button disabled={busy || running} onClick={() => void run(false)} className="chip">{busy ? "Running…" : "Run Facebook update"}</button>
+          <button disabled={webBusy} onClick={() => void scanWebsites()} className="chip">{webBusy ? "Reading websites…" : "Run website scan"}</button>
         </div>
       </div>
       <AdminSuggestions />
