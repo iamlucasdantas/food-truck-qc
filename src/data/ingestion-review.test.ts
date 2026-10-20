@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { approvalIssue, completeAddress, discoveredTruckId, profileCategory } from './ingestion-review';
+import { addressVariants, approvalIssue, completeAddress, discoveredTruckId, profileCategory } from './ingestion-review';
 describe('source-backed truck review', () => {
   it('preserves the Google profile category instead of Other', () => {
     expect(profileCategory(['Food truck'])).toBe('Food truck');
@@ -17,6 +17,15 @@ describe('source-backed truck review', () => {
   it('blocks approval with Other even with a location', () => {
     expect(approvalIssue({ category: 'Other', base_address: '911 11th St', base_lat: 41.8, base_lng: -90.5 })).toBe('Google or Facebook category required');
     expect(approvalIssue({ category: 'BBQ', base_address: '911 11th St', base_lat: 41.8, base_lng: -90.5 })).toBeNull();
+  });
+  it("treats Facebook's generic Page label as no category", () => {
+    expect(profileCategory(['Page'])).toBeNull();
+    expect(approvalIssue({ category: 'Page', base_address: '1 Main St', base_lat: 41.5, base_lng: -90.5 })).toBe('Google or Facebook category required');
+  });
+  it('retries the address without country and ZIP', () => {
+    expect(addressVariants('1806 15th Street Place, Moline, IL, United States, 61265')).toEqual([
+      '1806 15th Street Place, Moline, IL, United States, 61265', '1806 15th Street Place, Moline, IL, 61265', '1806 15th Street Place, Moline, IL',
+    ]);
   });
   it('gives repeated detections the same truck identity', () => {
     expect(discoveredTruckId("Mexie's Food Truck")).toBe(discoveredTruckId('MEXIES food-truck'));

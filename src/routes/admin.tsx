@@ -170,6 +170,7 @@ function PendingTrucks() {
                     <StatusPill tone="neutral">{t.truck_type === "fixed" ? <><Home className="h-3 w-3" />Fixed</> : <><TruckIcon className="h-3 w-3" />Mobile</>}</StatusPill>
                   </div>
                   <p className="flex min-w-0 items-center gap-1 truncate text-sm text-muted-foreground">{/^other$/i.test(t.category) ? "Category needs review" : t.category} · <MapPin className="h-3 w-3 shrink-0" />{t.base_address ?? "Address needs review"}</p>
+                  {approvalIssue(t) && <p className="mt-1 text-xs font-medium text-destructive">Can't approve yet: {approvalIssue(t)} — open details to fix it.</p>}
                 </div>
                 <div className="flex gap-1">
                   <IconAction label="Open details" icon={PanelRightOpen} onClick={() => void navigate({ search: { tab: "trucks", truck: t.id } })} />
