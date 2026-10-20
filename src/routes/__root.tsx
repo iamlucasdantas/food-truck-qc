@@ -15,6 +15,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { initAnalytics, trackPageView } from "../lib/analytics";
+import { trackNavigation, wireDirectionClicks } from "../lib/track";
 import { AuthProvider } from "@/hooks/use-auth";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -135,8 +136,11 @@ function RootComponent() {
   // navigation as a page view (gtag only auto-tracks the first load).
   useEffect(() => {
     initAnalytics();
+    wireDirectionClicks();
+    trackNavigation(window.location.pathname);
     const unsubscribe = router.subscribe("onResolved", ({ toLocation }) => {
       trackPageView(toLocation.pathname + toLocation.searchStr);
+      trackNavigation(toLocation.pathname);
     });
     return unsubscribe;
   }, [router]);
