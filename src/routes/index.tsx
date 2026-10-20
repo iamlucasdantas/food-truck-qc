@@ -1,4 +1,4 @@
-import { CUISINES, cityOf, matchesFilters, parseFilters, filtersToSearch, type CuisineKey, type Filters } from "@/data/filters";
+import { CUISINES, cityOf, matchesFilters, openNowApplied, parseFilters, filtersToSearch, type CuisineKey, type Filters } from "@/data/filters";
 import { truckByline } from "@/data/onboarding";
 import { DAVENPORT_CENTER, DEFAULT_RADIUS_MILES, REGION_RADIUS_MILES, mapRadius } from '@/data/coverage';
 import { Logo } from "@/components/Logo";
@@ -112,8 +112,8 @@ function Index() {
   const effWin: Window = dayIdx > 0 && win === "now" ? "all" : win;
 
   const [showClosed, setShowClosed] = useState(false);
-  const { results, openDefault } = useMemo(() => {
-    const none = { results: [], openDefault: { applied: false, noneOpen: false } };
+  const { results, openDefault, openOnly } = useMemo(() => {
+    const none = { results: [], openDefault: { applied: false, noneOpen: false }, openOnly: false };
     if (!now || !date) return none;
     const rows = trucks
       .map((t) => {
@@ -125,14 +125,18 @@ function Index() {
       .filter((r) => !onlyFav || isFav(r.t.id))
       .filter((r) => !onlyOpen || r.status === "open")
       .filter((r) => !card || r.t.accepts_card);
-    // Default "right now" view: only open trucks; if none are open in the area, show the closed ones instead.
-    const isNowView = dayIdx === 0 && effWin === "now" && !onlyOpen && !showClosed;
+    // "Open now" starts on in the live view; clicking the chip turns it grey and shows every truck.
+    const inNowView = dayIdx === 0 && effWin === "now";
     const openRows = rows.filter((r) => r.status === "open");
-    const applied = isNowView && openRows.length > 0;
-    const out = applied ? openRows : rows;
+    const openOnly = openNowApplied({ explicitOpen: onlyOpen, showAll: showClosed, inNowView, openCount: openRows.length });
+    const out = openOnly ? openRows : rows;
     out.sort(sort === "open" ? byStatusThenDistance : (a, b) => a.dist - b.dist);
-    return { results: out, openDefault: { applied, noneOpen: isNowView && rows.length > 0 && openRows.length === 0 } };
+    return { results: out, openDefault: { applied: openOnly, noneOpen: inNowView && !onlyOpen && !showClosed && rows.length > 0 && openRows.length === 0 }, openOnly };
   }, [now, date, dayIdx, effWin, search, center, radius, onlyFav, onlyOpen, showClosed, card, isFav, trucks, byTruck, sort]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const showAllTrucks = () => { setOnlyOpen(false); setShowClosed(true); };
+  const showOpenOnly = () => { setOnlyOpen(true); setShowClosed(false); };
+  const toggleOpenNow = () => (openOnly ? showAllTrucks() : showOpenOnly());
 
   const cityList = useMemo(() => Array.from(new Set(trucks.map((t) => cityOf(t.base_address)).filter(Boolean))).sort(), [trucks]);
   const pins = useMemo(() => results.map((r) => ({
@@ -150,10 +154,9 @@ function Index() {
   if (f.dish) active.push({ key: "dish", label: `Dish: ${f.dish}`, clear: () => setF({ dish: "" }) });
   if (f.city) active.push({ key: "city", label: f.city, clear: () => setF({ city: "" }) });
   if (f.type) active.push({ key: "type", label: f.type === "fixed" ? "Fixed location" : "Mobile", clear: () => setF({ type: "" }) });
-  if (onlyOpen) active.push({ key: "open", label: "Open now", clear: () => setOnlyOpen(false) });
   if (card) active.push({ key: "card", label: "Takes card", clear: () => setCard(false) });
   if (onlyFav) active.push({ key: "fav", label: "Favorites only", clear: () => setOnlyFav(false) });
-  const clearAll = () => { setDayIdx(0); setWin("now"); setCard(false); setOnlyFav(false); void navigate({ search: {}, replace: true }); };
+  const clearAll = () => { setDayIdx(0); setWin("now"); setCard(false); setOnlyFav(false); setShowClosed(false); void navigate({ search: {}, replace: true }); };
   const toggleCuisine = (k: CuisineKey) => setCuisines((xs) => xs.includes(k) ? xs.filter((x) => x !== k) : [...xs, k]);
 
   const snaps = () => { const vh = window.innerHeight; return [148, Math.round(vh * 0.45), Math.round(vh * 0.88)]; };
@@ -186,8 +189,8 @@ function Index() {
 
   const quickRow = (
     <div className="no-scrollbar edge-fade -mx-3 flex gap-2 overflow-x-auto px-3 py-1">
-      <button onClick={() => setOnlyOpen(!onlyOpen)} className={chip(onlyOpen)} aria-pressed={onlyOpen}>
-        <span className="h-2 w-2 rounded-full bg-pin-open" />Open now
+      <button onClick={toggleOpenNow} className={chip(openOnly)} aria-pressed={openOnly} title={openOnly ? "Showing only trucks open right now — click to see every truck" : "Showing every truck — click to see only the ones open right now"}>
+        <span className={`h-2 w-2 rounded-full ${openOnly ? "bg-pin-open" : "bg-muted-foreground/50"}`} />Open now
       </button>
       <label className={`${chip(dayIdx !== 0)} relative cursor-pointer pr-8`}>
         {date ? dayLabel(date, dayIdx) : "Today"}
@@ -218,11 +221,13 @@ function Index() {
 
   const listHeader = (
     <div className="flex items-center justify-between gap-2 px-3">
-      <p className="min-w-0 truncate text-sm font-semibold">
-        {results.length} {openDefault.applied ? "open " : ""}trucks within {radius} mi
-        {openDefault.applied && <button type="button" onClick={() => setShowClosed(true)} className="ml-2 font-normal text-primary underline-offset-2 hover:underline">Show closed too</button>}
-        {openDefault.noneOpen && <span className="ml-2 font-normal text-muted-foreground">· none open right now</span>}
-      </p>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold leading-snug">
+          {results.length} {openOnly ? "open " : ""}trucks within {radius} mi
+          {openDefault.noneOpen && <span className="ml-2 font-normal text-muted-foreground">· none open right now</span>}
+        </p>
+        {openOnly && <button type="button" onClick={showAllTrucks} className={`-ml-1 h-6 rounded-full px-1 text-xs font-medium text-primary underline-offset-2 hover:underline ${focus}`}>Show closed too</button>}
+      </div>
       <label className="relative inline-flex h-10 shrink-0 items-center gap-1 rounded-full px-3 text-sm text-muted-foreground hover:bg-muted">
         Sort: <span className="font-semibold text-foreground">{sort === "open" ? "Open now first" : "Nearest"}</span><ChevronDown className="h-4 w-4" />
         <select value={sort} onChange={(e) => setSort(e.target.value as "nearest" | "open")} className="absolute inset-0 cursor-pointer opacity-0" aria-label="Sort">
@@ -323,7 +328,7 @@ function Index() {
       </Section>
       <Section title="Extras">
         <div className="divide-y divide-border">
-          {([["Open now", onlyOpen, setOnlyOpen], ["Takes card", card, setCard], ["Favorites only", onlyFav, setOnlyFav]] as [string, boolean, (v: boolean) => void][]).map(([l, v, set]) => (
+          {([["Open now", openOnly, toggleOpenNow], ["Takes card", card, setCard], ["Favorites only", onlyFav, setOnlyFav]] as [string, boolean, (v: boolean) => void][]).map(([l, v, set]) => (
             <label key={l} className="flex min-h-12 cursor-pointer items-center justify-between gap-3 text-sm font-medium">{l}<Switch checked={v} onCheckedChange={set} /></label>
           ))}
         </div>

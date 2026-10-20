@@ -76,6 +76,17 @@ export function matchesFilters(r: FilterRow, f: Filters): boolean {
   return true;
 }
 
+/**
+ * Map "Open now" rule: the live view starts filtered to trucks open right now; when the
+ * visitor clicks the chip it goes grey and every truck in range shows again.
+ * `explicitOpen` = chip/URL asked for open-only, `showAll` = visitor clicked to see everything.
+ */
+export function openNowApplied(f: { explicitOpen: boolean; showAll: boolean; inNowView: boolean; openCount: number }): boolean {
+  if (f.showAll) return false;
+  if (f.explicitOpen) return true;
+  return f.inNowView && f.openCount > 0;
+}
+
 /** Admin trucks default view: with no status filter selected, only approved (active) trucks are listed. */
 export function adminDefaultVisible(r: FilterRow, f: Filters): boolean {
   if (!matchesFilters(r, f)) return false;

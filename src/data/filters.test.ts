@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EMPTY_FILTERS, adminDefaultVisible, adminStatus, cityOf, filtersToSearch, matchesFilters, parseFilters, restoreDaysLeft, type FilterRow } from "./filters";
+import { EMPTY_FILTERS, adminDefaultVisible, adminStatus, cityOf, filtersToSearch, matchesFilters, openNowApplied, parseFilters, restoreDaysLeft, type FilterRow } from "./filters";
 
 const row = (o: Partial<FilterRow> = {}): FilterRow => ({
   name: "Ana's Tacos", business_name: "Ana Foods", category: "Mexican", menu_search: "carne asada burrito elote", city: "Moline", truck_type: "mobile", ...o,
@@ -49,5 +49,14 @@ describe("filters", () => {
     expect(adminStatus({ status: "archived", deleted_at: "2026-10-01" })).toBe("deleted");
     expect(restoreDaysLeft("2026-10-01T00:00:00Z", new Date("2026-10-11T00:00:00Z"))).toBe(20);
     expect(restoreDaysLeft("2026-08-01T00:00:00Z", new Date("2026-10-11T00:00:00Z"))).toBe(0);
+  });
+  it("open now is on by default in the live view and goes grey when clicked", () => {
+    expect(openNowApplied({ explicitOpen: false, showAll: false, inNowView: true, openCount: 3 })).toBe(true);
+    expect(openNowApplied({ explicitOpen: false, showAll: true, inNowView: true, openCount: 3 })).toBe(false);
+    expect(openNowApplied({ explicitOpen: true, showAll: false, inNowView: true, openCount: 3 })).toBe(true);
+  });
+  it("open now never empties the map or hides a future day", () => {
+    expect(openNowApplied({ explicitOpen: false, showAll: false, inNowView: true, openCount: 0 })).toBe(false);
+    expect(openNowApplied({ explicitOpen: false, showAll: false, inNowView: false, openCount: 3 })).toBe(false);
   });
 });
