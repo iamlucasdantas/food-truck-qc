@@ -98,13 +98,17 @@ function Body({ id, actions, tab }: { id: string; actions: DrawerActions; tab?: 
             {t.description && <p className="mt-6 whitespace-pre-line text-sm text-muted-foreground">{t.description}</p>}
             {!t.deleted_at && <LocationConfirmation truck={t} admin />}
           </TabsContent>
-          <TabsContent value="menu" className="mt-0 space-y-4">{t.deleted_at ? <MenuTab sections={(t.menu_sections as MenuSection[] | null) ?? []} /> : <OwnerMenu truck={t as Truck} />}</TabsContent>
+          <TabsContent value="menu" className="mt-0 space-y-4">
+            <MenuSummary truckId={t.id} name={t.name} summary={t.menu_summary} readOnly={!!t.deleted_at} />
+            {t.deleted_at ? <MenuTab sections={(t.menu_sections as MenuSection[] | null) ?? []} /> : <OwnerMenu truck={t as Truck} />}
+          </TabsContent>
           <TabsContent value="photos" className="mt-0">{t.deleted_at ? <PhotosTab id={t.id} /> : <OwnerPhotos truckId={t.id} />}</TabsContent>
           <TabsContent value="stops" className="mt-0 space-y-4">
             {!t.deleted_at && <><ScreenshotStops truckId={t.id} /><OwnerSchedule truck={t as Truck} /></>}
             <h3 className="text-sm font-semibold">Stop history</h3>
             <StopsTab id={t.id} />
           </TabsContent>
+          <TabsContent value="sources" className="mt-0"><SourcesTab id={t.id} /></TabsContent>
           <TabsContent value="activity" className="mt-0"><ActivityTab id={t.id} created={t.created_at} source={t.source} /></TabsContent>
         </div>
       </Tabs>
