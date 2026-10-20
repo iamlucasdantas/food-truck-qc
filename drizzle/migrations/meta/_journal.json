@@ -267,6 +267,13 @@
       "when": 1792519826295,
       "tag": "0037_website_source_kind",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1792531622618,
+      "tag": "0038_hybrid_truck_type_and_menu_summary",
+      "breakpoints": true
     }
   ]
 }
