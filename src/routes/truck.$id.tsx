@@ -121,6 +121,7 @@ function TruckPage() {
 
       <PublicTruckSchedule stops={stops} name={t.name} />
 
+      {t.menu_summary && <p className="panel p-5 text-sm leading-relaxed text-muted-foreground">{t.menu_summary}</p>}
       {sections?.length ? (
         <section id="menu" className="panel scroll-mt-4 p-5" aria-labelledby="menu-h">
           <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
