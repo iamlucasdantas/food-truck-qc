@@ -222,7 +222,7 @@ function Index() {
   const listHeader = (
     <div className="flex items-center justify-between gap-2 px-3">
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold">
+        <p className="text-sm font-semibold leading-snug">
           {results.length} {openOnly ? "open " : ""}trucks within {radius} mi
           {openDefault.noneOpen && <span className="ml-2 font-normal text-muted-foreground">· none open right now</span>}
         </p>
