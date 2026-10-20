@@ -171,6 +171,7 @@ function PendingTrucks() {
                   </div>
                   <p className="flex min-w-0 items-center gap-1 truncate text-sm text-muted-foreground">{/^other$/i.test(t.category) ? "Category needs review" : t.category} · <MapPin className="h-3 w-3 shrink-0" />{t.base_address ?? "Address needs review"}</p>
                   {approvalIssue(t) && <p className="mt-1 text-xs font-medium text-destructive">Can't approve yet: {approvalIssue(t)} — open details to fix it.</p>}
+                  {!approvalIssue(t) && t.truck_type !== "fixed" && !t.base_address && <p className="mt-1 text-xs text-muted-foreground">Mobile with no address: can be approved, shows live only when it has a dated stop with an address.</p>}
                 </div>
                 <div className="flex gap-1">
                   <IconAction label="Open details" icon={PanelRightOpen} onClick={() => void navigate({ search: { tab: "trucks", truck: t.id } })} />
