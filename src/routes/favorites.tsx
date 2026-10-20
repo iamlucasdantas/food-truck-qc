@@ -122,7 +122,7 @@ function Favorites() {
                       <Heart className="h-5 w-5 fill-primary text-primary" />
                     </button>
                     {r.loc && (
-                      <a target="_blank" rel="noreferrer" href={`https://www.google.com/maps/dir/?api=1&destination=${r.loc.lat},${r.loc.lng}`}
+                      <a data-truck={r.t.id} target="_blank" rel="noreferrer" href={`https://www.google.com/maps/dir/?api=1&destination=${r.loc.lat},${r.loc.lng}`}
                         className="mt-3 flex h-11 items-center justify-center gap-2 rounded-xl bg-muted text-sm font-semibold hover:bg-accent">
                         <Navigation className="h-4 w-4" />Directions
                       </a>
