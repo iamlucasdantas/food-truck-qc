@@ -64,7 +64,7 @@
             "truck_id": {
               "type": "string",
               "maxLength": 120,
-              "pattern": "^[a-z0-9-]+$"
+              "pattern": "^[a-z0-9_-]+$"
             },
             "when": {
               "type": "string"
@@ -150,7 +150,7 @@
             "truck_id": {
               "type": "string",
               "maxLength": 120,
-              "pattern": "^[a-z0-9-]+$"
+              "pattern": "^[a-z0-9_-]+$"
             },
             "when": {
               "type": "string"
