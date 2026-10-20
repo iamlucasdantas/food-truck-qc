@@ -55,6 +55,36 @@ export type Database = {
           },
         ]
       }
+      app_events: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          path: string | null
+          truck_id: string | null
+          venue: string | null
+          visitor: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          path?: string | null
+          truck_id?: string | null
+          venue?: string | null
+          visitor?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          path?: string | null
+          truck_id?: string | null
+          venue?: string | null
+          visitor?: string | null
+        }
+        Relationships: []
+      }
       businesses: {
         Row: {
           created_at: string

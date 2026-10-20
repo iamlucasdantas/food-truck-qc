@@ -21,10 +21,15 @@ export const Route = createFileRoute("/api/public/jobs/facebook-daily")({
         await supabaseAdmin.from("ingestion_runs").update({ status: "failed", finished_at: new Date().toISOString(), error: "Run expired: still running after 2 hours; marked failed so the next scheduled scan can start." })
           .eq("source", "apify_facebook").eq("status", "running").lt("started_at", staleBefore);
         const { data: open } = await supabaseAdmin.from("ingestion_runs").select("id").eq("source", "apify_facebook").eq("status", "running").limit(1);
-        if (open?.length) return Response.json({ skipped: "already running" });
-        const { startFacebookRun } = await import("@/lib/facebook.server");
-        const run = await startFacebookRun(supabaseAdmin);
-        return Response.json({ runId: run.id });
+        let runId: string | null = null;
+        if (!open?.length) {
+          const { startFacebookRun } = await import("@/lib/facebook.server");
+          runId = (await startFacebookRun(supabaseAdmin)).id;
+        }
+        // context.dev website/directory sources run in the same two-hour window; a failure never blocks the social scan.
+        const { scanWebsiteSources } = await import("@/lib/context-dev.server");
+        const websites = await scanWebsiteSources(supabaseAdmin, 4, 20_000).catch((e: unknown) => ({ scanned: 0, stops: 0, error: String(e) }));
+        return Response.json(runId ? { runId, websites } : { skipped: "already running", websites });
       },
     },
   },

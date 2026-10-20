@@ -3,7 +3,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Command as Cmdk } from "cmdk";
 import {
-  LayoutDashboard, Clock, BadgeCheck, Truck, Facebook, MapPinned, FileSpreadsheet, ScrollText, Search, LogOut, Map as MapIcon, ChevronRight, Zap, CornerDownLeft, PhoneCall, CalendarDays,
+  LayoutDashboard, Clock, BadgeCheck, Truck, Facebook, MapPinned, FileSpreadsheet, ScrollText, Search, LogOut, Map as MapIcon, ChevronRight, Zap, CornerDownLeft, PhoneCall, CalendarDays, History,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -17,7 +17,7 @@ import { ADMIN_SECTIONS, badgeText, buildCommands, filterCommands, isPaletteShor
 import { Initials } from "./ui";
 
 const ICONS: Record<AdminSection, typeof Truck> = {
-  overview: LayoutDashboard, pending: Clock, claims: BadgeCheck, trucks: Truck, facebook: Facebook, apify: MapPinned, csv: FileSpreadsheet, logs: ScrollText, api: PhoneCall, calendars: CalendarDays,
+  overview: LayoutDashboard, pending: Clock, claims: BadgeCheck, trucks: Truck, facebook: Facebook, apify: MapPinned, csv: FileSpreadsheet, logs: ScrollText, api: PhoneCall, calendars: CalendarDays, stops: History,
 };
 
 /** Lightweight lists shared by the sidebar badges and the command palette. */

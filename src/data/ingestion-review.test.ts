@@ -18,6 +18,10 @@ describe('source-backed truck review', () => {
     expect(approvalIssue({ category: 'Other', base_address: '911 11th St', base_lat: 41.8, base_lng: -90.5 })).toBe('Google or Facebook category required');
     expect(approvalIssue({ category: 'BBQ', base_address: '911 11th St', base_lat: 41.8, base_lng: -90.5 })).toBeNull();
   });
+  it('requires an address only for fixed-location trucks', () => {
+    expect(approvalIssue({ category: 'BBQ', base_address: null, truck_type: 'fixed' })).toBe('Fixed location needs an address and coordinates');
+    expect(approvalIssue({ category: 'BBQ', base_address: null, truck_type: 'mobile' })).toBeNull();
+  });
   it("treats Facebook's generic Page label as no category", () => {
     expect(profileCategory(['Page'])).toBeNull();
     expect(approvalIssue({ category: 'Page', base_address: '1 Main St', base_lat: 41.5, base_lng: -90.5 })).toBe('Google or Facebook category required');

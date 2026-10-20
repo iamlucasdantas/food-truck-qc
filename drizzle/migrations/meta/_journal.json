@@ -253,6 +253,20 @@
       "when": 1792432713176,
       "tag": "0035_social_sources_all_kinds",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1792519697537,
+      "tag": "0036_fixed_address_rule_and_app_events",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1792519826295,
+      "tag": "0037_website_source_kind",
+      "breakpoints": true
     }
   ]
 }

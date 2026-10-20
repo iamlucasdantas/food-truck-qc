@@ -20,6 +20,8 @@ import { CalendarSources } from "@/components/admin/CalendarSources";
 import { GoogleHours } from '@/components/admin/GoogleHours';
 import { EmptyState, IconAction, Initials, ListSkeleton, SectionHeader, StatusPill, btn, statusTone } from "@/components/admin/ui";
 import { sectionFromSearch } from "@/data/admin";
+import { runWebsiteScan } from "@/lib/context-dev.functions";
+import { StopsLog } from "@/components/admin/StopsLog";
 import { LogoMark } from "@/components/Logo";
 import { approvalIssue } from "@/data/ingestion-review";
 
@@ -70,6 +72,7 @@ function Admin() {
       {section === "logs" && <><SectionHeader title="Import logs" description="Every CSV, Google Maps and Facebook run." /><Logs /></>}
       {section === "api" && <AgentApiLog />}
       {section === "calendars" && <CalendarSources />}
+      {section === "stops" && <StopsLog />}
     </AdminShell>
   );
 }
@@ -171,6 +174,7 @@ function PendingTrucks() {
                   </div>
                   <p className="flex min-w-0 items-center gap-1 truncate text-sm text-muted-foreground">{/^other$/i.test(t.category) ? "Category needs review" : t.category} · <MapPin className="h-3 w-3 shrink-0" />{t.base_address ?? "Address needs review"}</p>
                   {approvalIssue(t) && <p className="mt-1 text-xs font-medium text-destructive">Can't approve yet: {approvalIssue(t)} — open details to fix it.</p>}
+                  {!approvalIssue(t) && t.truck_type !== "fixed" && !t.base_address && <p className="mt-1 text-xs text-muted-foreground">Mobile with no address: can be approved, shows live only when it has a dated stop with an address.</p>}
                 </div>
                 <div className="flex gap-1">
                   <IconAction label="Open details" icon={PanelRightOpen} onClick={() => void navigate({ search: { tab: "trucks", truck: t.id } })} />
@@ -348,7 +352,9 @@ function FacebookTab() {
   const cont = useServerFn(continueFacebookUpdate);
   const [busy, setBusy] = useState(false);
   const [url, setUrl] = useState("");
-  const [kind, setKind] = useState<"group" | "page" | "reddit" | "instagram">("group");
+  const [kind, setKind] = useState<"group" | "page" | "reddit" | "instagram" | "website">("group");
+  const webScan = useServerFn(runWebsiteScan);
+  const [webBusy, setWebBusy] = useState(false);
   const { data: sources = [] } = useQuery({
     queryKey: ["admin", "social"],
     queryFn: async () => (await supabase.from("social_sources").select("*").order("created_at", { ascending: false })).data ?? [],
@@ -362,10 +368,17 @@ function FacebookTab() {
   const running = latest?.status === "running";
 
   const add = async () => {
-    if (!/facebook\.com\//i.test(url)) return toast.error("Paste a facebook.com URL");
+    const host = { group: /facebook\.com\//i, page: /facebook\.com\//i, reddit: /reddit\.com\//i, instagram: /instagram\.com\//i, website: /^https?:\/\/[^/\s]+\.[a-z]{2,}/i }[kind];
+    if (!host.test(url.trim())) return toast.error(kind === "website" ? "Paste a full https:// website link" : `Paste a ${kind === "reddit" ? "reddit.com" : kind === "instagram" ? "instagram.com" : "facebook.com"} URL`);
     const { error } = await supabase.from("social_sources").insert({ kind, url: url.trim(), name: url.trim().split("/").filter(Boolean).pop() ?? "" });
     if (error) return toast.error(error.message);
     setUrl(""); inv(); return undefined;
+  };
+  const scanWebsites = async () => {
+    setWebBusy(true);
+    try { const r = await webScan(); r.error ? toast.error(r.error) : toast.success(`Websites checked: ${r.scanned}, stops added: ${r.stops}`); }
+    catch (e) { toast.error(e instanceof Error ? e.message : String(e)); }
+    setWebBusy(false); inv();
   };
   const loop = async (runId: string) => {
     for (let i = 0; i < 60; i++) {
@@ -389,15 +402,16 @@ function FacebookTab() {
     <div className="space-y-3">
       <div className="panel space-y-3 p-5">
         <div className="flex flex-wrap gap-2">
-          <select className="field w-auto" value={kind} onChange={(e) => setKind(e.target.value as typeof kind)}><option value="group">Facebook group</option><option value="page">Facebook page</option><option value="reddit">Reddit</option><option value="instagram">Instagram</option></select>
+          <select className="field w-auto" value={kind} onChange={(e) => setKind(e.target.value as typeof kind)}><option value="group">Facebook group</option><option value="page">Facebook page</option><option value="reddit">Reddit</option><option value="instagram">Instagram</option><option value="website">Website / directory (context.dev)</option></select>
           <input className="field flex-1" placeholder="https://www.facebook.com/groups/…" value={url} onChange={(e) => setUrl(e.target.value)} />
           <button onClick={() => void add()} className="chip bg-primary text-primary-foreground">Add</button>
         </div>
-        <p className="text-sm text-muted-foreground">Only public groups work. Every truck with a Facebook link is checked automatically too. Automatic scans: 10am, noon, 2pm, 4pm, 6pm and 8pm Central daily; uses Apify and AI credits.</p>
+        <p className="text-sm text-muted-foreground">Only public groups work. Every truck with a Facebook link is checked automatically too. Automatic scans: 10am, noon, 2pm, 4pm, 6pm and 8pm Central daily; uses Apify and AI credits. Websites and food-truck directories are read with context.dev in the same scans.</p>
         {latest && <p className="text-sm font-semibold">Sources done {latest.cities_done.length}/{latest.cities_total.length} · {latest.status} · {latest.items_created} stops added</p>}
         <div className="flex flex-wrap gap-2">
           {running && <button disabled={busy} onClick={() => void run(true)} className="chip bg-primary text-primary-foreground">{busy ? "Running…" : "Continue"}</button>}
           <button disabled={busy || running} onClick={() => void run(false)} className="chip">{busy ? "Running…" : "Run Facebook update"}</button>
+          <button disabled={webBusy} onClick={() => void scanWebsites()} className="chip">{webBusy ? "Reading websites…" : "Run website scan"}</button>
         </div>
       </div>
       <AdminSuggestions />

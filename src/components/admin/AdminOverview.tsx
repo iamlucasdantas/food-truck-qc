@@ -1,3 +1,4 @@
+import { UsageStats } from "./UsageStats";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { Truck, Radio, Clock, BadgeCheck, CalendarDays, ScanSearch, MapPinOff, MessageSquareText, ArrowUpRight, ArrowDownRight, Activity, CheckCircle2, Inbox } from "lucide-react";
@@ -148,6 +149,7 @@ export function AdminOverview() {
             )}
         </Card>
       </div>
+      <UsageStats />
     </>
   );
 }

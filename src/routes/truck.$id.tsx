@@ -113,7 +113,7 @@ function TruckPage() {
                 <p>{s0 ? `${s0.venue_name}, ${s0.city}` : (t.base_address ?? "Base location")}</p>
                 {(() => { const o = s0 && tick && Date.parse(s0.starts_at) <= tick && Date.parse(s0.ends_at) > tick; return <p className={`text-xs font-semibold ${o ? "text-foreground" : "text-muted-foreground"}`}>{o ? `Open now · until ${fmtCentral(s0.ends_at)}` : s0 ? `Next open ${fmtCentral(s0.starts_at)}` : "Closed now"}</p>; })()}
               </div>
-              <a target="_blank" rel="noreferrer" className="chip" href={`https://www.google.com/maps/dir/?api=1&destination=${pt.lat},${pt.lng}`}>Directions</a>
+              <a data-truck={t.id} data-venue={s0?.venue_name ?? t.base_address ?? ""} target="_blank" rel="noreferrer" className="chip" href={`https://www.google.com/maps/dir/?api=1&destination=${pt.lat},${pt.lng}`}>Directions</a>
             </div>
           </section>
         );

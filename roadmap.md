@@ -142,3 +142,11 @@
 - [x] Updated docs with six real authenticated HTTP 200 responses; all 247 regression tests passed and automatic build OK; missing/incorrect key returns 401
 - [ ] Signed-in Admin classification save and OAuth MCP invocation unverified: requesting user's account unavailable for session minting; code/manifest verified, no publication requested
 - [x] Voice agent tolerant params, POST/Bearer, Admin API log: done; publication requested 2026-10-17 for app.foodtruckqc.com
+
+## Admin editing, stop log, stats, context.dev (2026-10-20, not published)
+- [x] Mobile trucks approvable without address; fixed trucks require address
+- [x] Truck panel: edit details, menu, photos, stops; add stops from screenshot (AI draft)
+- [x] Stops log with date/truck/status/source filters + CSV
+- [x] Usage stats + direction clicks per location (from today)
+- [x] context.dev website/directory sources in the two-hour scan
+- [ ] Waiting on context.dev API key
