@@ -15,7 +15,7 @@ describe('scraper listing creation', () => {
     webhook.mockReset();
     const db = { from: (table: string) => {
       const q: Record<string, any> = {};
-      for (const method of ['select', 'eq', 'neq', 'lt', 'gt', 'limit']) q[method] = () => q;
+      for (const method of ['select', 'eq', 'neq', 'lt', 'gt', 'limit', 'is']) q[method] = () => q;
       q['upsert'] = (row: Record<string, unknown>) => { inserted.push({table, ...row}); return q; };
       q['insert'] = (row: Record<string, unknown>) => { inserted.push({table, ...row}); return q; };
       q['then'] = (resolve: (v: unknown) => unknown) => Promise.resolve({data:table === 'trucks' ? [{id:'social-mexiesfoodtruck'}] : [],count:0,error:null}).then(resolve);

@@ -43,16 +43,18 @@ export async function resolveVenue(db: DB, name: string, cityHint = "", address 
   const key = normVenue(clean || address);
   const { data: venues } = await db.from("venues").select("*").limit(2000);
   const saved = clean ? matchVenue(clean, venues ?? []) : null;
-  if (saved) return { name: saved.name, address: saved.address, city: saved.city, lat: saved.lat, lng: saved.lng, check: !saved.confirmed };
+  if (saved?.confirmed) return { name: saved.name, address: saved.address, city: saved.city, lat: saved.lat, lng: saved.lng, check: false };
 
   if (clean) {
-    const { data: stops } = await db.from("stops").select("venue_name, address, city, lat, lng").eq("source", "owner").ilike("venue_name", clean.replace(/[%_]/g, "")).limit(1);
+    const { data: stops } = await db.from("stops").select("venue_name, address, city, lat, lng").eq("source", "owner").eq('cancelled', false).ilike("venue_name", clean.replace(/[%_]/g, "")).order('created_at', { ascending: false }).limit(1);
     const s = stops?.[0];
-    if (s && inQuadCities(s.lat, s.lng)) {
-      await db.from("venues").upsert({ name: clean, norm_name: key, address: s.address, city: s.city, lat: s.lat, lng: s.lng, confirmed: true, source: "owner_stop" }, { onConflict: "norm_name", ignoreDuplicates: true });
+    if (s?.address && inQuadCities(s.lat, s.lng)) {
+      await db.from("venues").upsert({ name: clean, norm_name: key, address: s.address, city: s.city, lat: s.lat, lng: s.lng, confirmed: true, source: "owner_stop" }, { onConflict: "norm_name" });
       return { name: clean, address: s.address, city: s.city, lat: s.lat, lng: s.lng, check: false };
     }
   }
+
+  if (saved) return { name: saved.name, address: saved.address, city: saved.city, lat: saved.lat, lng: saved.lng, check: true };
 
   const hit = await placesLookup(address || clean, cityHint);
   if (!hit) return null;
