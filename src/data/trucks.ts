@@ -1,4 +1,5 @@
 import type { Tables } from "@/integrations/supabase/types";
+import { resolveFeedConflicts } from './feed-priority';
 
 export type Truck = Tables<"trucks">;
 export type Stop = Omit<Tables<"stops">, "calendar_source_id" | "calendar_uid" | "calendar_occurrence"> & Partial<Pick<Tables<"stops">, "calendar_source_id" | "calendar_uid" | "calendar_occurrence">>;
@@ -54,6 +55,7 @@ const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
 /** Best stop for one truck on a date/time window, with status relative to now. */
 /** Google Maps base-location stops are low-confidence: shown gray ("none"), only when no real stop matches. */
 export function pickStop(stops: Stop[], date: Date, win: Window, now: Date): { stop: Stop | null; status: Status } {
+  stops = resolveFeedConflicts(stops);
   const real = pickReal(stops.filter((s) => s.source !== "apify_maps" || s.note === "Google opening hours"), date, win, now);
   if (real.stop) return real;
   const base = stops.find((s) => !s.cancelled && s.source === "apify_maps" && sameDay(new Date(s.starts_at), date));
@@ -289,9 +291,9 @@ const venueKey = (s: string) => s.toLowerCase().replace(/\(.*?\)/g, "").replace(
  * Collapse repeated posts about the same outing: same truck, same venue name, overlapping times.
  * The most recently created row wins (newest post = latest info); `merged` counts the rows folded in.
  */
-export function groupStops<T extends Pick<Stop, "truck_id" | "venue_name" | "starts_at" | "ends_at" | "created_at">>(stops: T[]): (T & { merged: number })[] {
+export function groupStops<T extends Pick<Stop, "truck_id" | "venue_name" | "starts_at" | "ends_at" | "created_at"> & { source?: string; source_url?: string | null }>(stops: T[]): (T & { merged: number })[] {
   const out: (T & { merged: number })[] = [];
-  for (const s of stops) {
+  for (const s of resolveFeedConflicts(stops)) {
     const k = venueKey(s.venue_name);
     const hit = out.find((g) => g.truck_id === s.truck_id && venueKey(g.venue_name) === k && k !== ""
       && new Date(g.starts_at) < new Date(s.ends_at) && new Date(s.starts_at) < new Date(g.ends_at));
