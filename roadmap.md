@@ -1,5 +1,10 @@
 # Roadmap
 
+## Facebook priority and Schaab’s SSAB map stop (2026-10-21)
+- [ ] Apply Facebook-over-other-feed conflict precedence with focused regression tests.
+- [ ] Diagnose Schaab’s SSAB stop, repair evidenced missing data if needed, and verify public map placement.
+- [ ] Verify tests and app; do not publish without approval.
+
 ## Truck profile: hybrid type, per-truck sources, Enrich priority, menu summary (2026-10-20, not published)
 - [x] Hybrid truck type (fixed spot that also moves); address required only for fixed; hybrid keeps base pin when it has coordinates.
 - [x] Sources tab in the truck panel: Facebook, Instagram, Google Maps profile, calendar link, website/specific page per truck; calendar links sync in the two-hour routine (events with known venues become stops, the rest wait for an address in Pending trucks).
