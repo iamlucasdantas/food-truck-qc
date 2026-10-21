@@ -361,6 +361,7 @@ export async function processFacebookRun(db: DB, runId: string, budgetMs = 20_00
   const today = chicagoDate();
   const ctx: IngestCtx = { db, trucks, bizByOwner, today, runId };
 
+  let fallbacks = 0;
   for (const kind of KINDS) {
     const kindSources = sources.filter((s) => s.kind === kind);
     if (!kindSources.length || kindSources.every((s) => done.has(s.id))) continue;
@@ -400,6 +401,11 @@ export async function processFacebookRun(db: DB, runId: string, budgetMs = 20_00
       if (done.has(src.id)) continue;
       const posts = bySource.get(src.id) ?? [];
       if (!posts.length) {
+        if (kind === "page" && fallbacks < 3 && Date.now() - t0 < budgetMs) {
+          fallbacks++;
+          const fb = await contextDevPage(ctx, src, trucks);
+          if (fb.ok) { found++; created += fb.stops; done.add(src.id); errors.push(`${src.name}: Apify returned no posts — read with context.dev (${fb.stops} stops)`); continue; }
+        }
         const reason = blockedReason(kind, items, src.url);
         if (kind === "group") errors.push(`Group skipped (${reason}): ${src.url}`);
         done.add(src.id);
@@ -436,6 +442,12 @@ export async function processFacebookRun(db: DB, runId: string, budgetMs = 20_00
           else errors.push(`${p.url}: ${e instanceof Error ? e.message : String(e)}`);
         }
       }
+      if (!left && kind === "page" && srcStops === 0 && fallbacks < 3 && Date.now() - t0 < budgetMs) {
+        // Apify saw posts but no stop came out of them: read the public page directly as a second opinion.
+        fallbacks++;
+        const fb = await contextDevPage(ctx, src, trucks);
+        if (fb.ok) { created += fb.stops; srcStops += fb.stops; }
+      }
       if (left) remaining += left;
       else {
         done.add(src.id);
@@ -453,4 +465,20 @@ export async function processFacebookRun(db: DB, runId: string, budgetMs = 20_00
     ...(finished ? { status: errs.length ? "partial" : "success", finished_at: new Date().toISOString() } : {}),
   }).eq("id", runId);
   return { done: finished, remaining, pending, sourcesDone: done.size, total };
+}
+
+/**
+ * Second scraper for a truck's own public Facebook page: context.dev reads the page (latest posts at the top)
+ * and the text goes through the same ingestPost rules as an Apify post. Used when Apify returns nothing usable.
+ */
+export async function contextDevPage(ctx: IngestCtx, src: Source, trucks: TruckLite[]): Promise<{ ok: boolean; stops: number; error?: string }> {
+  const { scrapeMarkdown } = await import("./context-dev.server");
+  const page = await scrapeMarkdown(src.url);
+  if ("error" in page) return { ok: false, stops: 0, error: page.error };
+  const owner = trucks.find((t) => t.id === src.truck_id) ?? null;
+  // Keep only the first part of the page — the three most recent posts sit there.
+  const res = await ingestPost(ctx, "page", { url: src.url, text: page.markdown.slice(0, 9000), time: new Date().toISOString(), author: owner?.name ?? page.title, inputUrl: src.url }, owner);
+  const stops = res.filter((r) => r.status === "published" || r.status === "suggested").length;
+  await ctx.db.from("social_sources").update({ last_run_at: new Date().toISOString(), last_status: "ok", last_posts: 1, last_stops: stops, last_reason: `Read with context.dev · ${stops} stops` }).eq("id", src.id);
+  return { ok: true, stops };
 }
