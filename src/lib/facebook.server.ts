@@ -205,6 +205,11 @@ truck_name = the truck the post is about (the poster when they write in first pe
 If the post announces no specific stop, return an empty list. is_food_truck = clearly a mobile food truck/trailer/cart.
 menu = dishes/items the post says will be served (with prices if written), grouped in sections; empty list when the post lists no menu items. Never invent items.`;
 
+/** Text plus up to 3 post photos as a multimodal message (flyers often hold the whole schedule). */
+function withImages(text: string, images: string[]) {
+  return images.length ? [{ type: "text", text }, ...images.map((url) => ({ type: "image_url", image_url: { url } }))] : text;
+}
+
 /** Central-time date of a post timestamp (falls back to today). */
 function postDay(time: string, today: string): string {
   const t = Date.parse(time);
@@ -224,7 +229,7 @@ async function extract(text: string, postTime: string, url: string, pageOwner: s
       response_format: { type: "json_schema", json_schema: { name: "stops", strict: true, schema: SCHEMA } },
       messages: [
         { role: "system", content: SYSTEM },
-        { role: "user", content: withImages(`Today: ${today}\nPost date: ${day}\nPost URL: ${url}\n${pageOwner ? `Posted by the truck: ${pageOwner}\n` : ""}${hints.length ? `Venue/time pairs found: ${hints.map((h) => `${h.venue} ${h.start}-${h.end}`).join("; ")}\n` : ""}Post:\n${text.slice(0, 4000)}${images.length ? "\n(The attached images belong to this post — read any schedule, venues, dates, times or menu written in them.)" : ""}` },
+        { role: "user", content: withImages(`Today: ${today}\nPost date: ${day}\nPost URL: ${url}\n${pageOwner ? `Posted by the truck: ${pageOwner}\n` : ""}${hints.length ? `Venue/time pairs found: ${hints.map((h) => `${h.venue} ${h.start}-${h.end}`).join("; ")}\n` : ""}Post:\n${text.slice(0, 4000)}${images.length ? "\n(The attached images belong to this post — read any schedule, venues, dates, times or menu written in them.)" : ""}`, images) },
       ],
     }),
   });
@@ -261,7 +266,7 @@ export async function ingestPost(ctx: IngestCtx, kind: Kind | "paste", p: Post, 
   const handlesOf = (t: TruckLite) => ownerHandles(t, t.claimed_by ? ctx.bizByOwner.get(t.claimed_by) : null);
   const sameBusiness = (a: TruckLite, b: TruckLite) => a.id === b.id || (!!a.claimed_by && a.claimed_by === b.claimed_by);
   const out: StopResult[] = [];
-  const { stops: ex, menu } = await extract(p.text, p.time, p.url, owner?.name ?? null, today);
+  const { stops: ex, menu } = await extract(p.text, p.time, p.url, owner?.name ?? null, today, p.images ?? []);
   let menuTruck: TruckLite | null = null;
   for (const e of ex) {
     const base = { venue: e.venue, address: e.address || null, city: e.city, date: e.date, start: e.start, end: e.end, own: false, checkAddress: false, newTruck: false };
@@ -404,8 +409,9 @@ export async function processFacebookRun(db: DB, runId: string, budgetMs = 20_00
     const urls = allPosts.map((p) => p.post.url);
     const seen = new Set<string>();
     for (let i = 0; i < urls.length; i += 200) {
-      const { data } = await db.from("social_posts").select("url").in("url", urls.slice(i, i + 200));
-      (data ?? []).forEach((r) => seen.add(r.url));
+      const { data } = await db.from("social_posts").select("url, stops_created").in("url", urls.slice(i, i + 200));
+      // A truck's own recent post that gave no stop is read again (photos/edits may now reveal the location).
+      (data ?? []).forEach((r) => { if (kind === "group" || r.stops_created > 0) seen.add(r.url); });
     }
 
     for (const src of kindSources) {
