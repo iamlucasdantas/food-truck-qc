@@ -6,6 +6,7 @@ import { resolveVenue } from "@/lib/venues.server";
 import { completeAddress, discoveredTruckId, profileCategory } from "@/data/ingestion-review";
 import { socialSourceUrl } from "@/data/social-source-url";
 import { authorIsTruck, ownerHandles, centralToUtc, chicagoDate, keepExtraction, matchTruckByName, slugify, groupStops } from "@/data/trucks";
+import { isFacebookFeed } from '@/data/feed-priority';
 
 type DB = SupabaseClient<Database>;
 type Kind = "page" | "group" | "reddit" | "instagram";
@@ -291,8 +292,9 @@ export async function ingestPost(ctx: IngestCtx, kind: Kind | "paste", p: Post, 
     const starts = centralToUtc(e.date, e.start || "11:00");
     let ends = centralToUtc(e.date, e.end || "14:00");
     if (ends <= starts) ends = new Date(starts.getTime() + 3 * 3_600_000);
-    // Never overwrite owner stops: skip if the owner already has a stop overlapping this time.
+    // Direct manual confirmations are protected, but recurring/calendar-derived rows are feeds.
     const { count } = await db.from("stops").select("id", { count: "exact", head: true }).eq("truck_id", truck.id).eq("source", "owner")
+      .is('source_url', null).is('series_id', null).is('calendar_source_id', null)
       .eq("cancelled", false).lt("starts_at", ends.toISOString()).gt("ends_at", starts.toISOString());
     if (count) { out.push({ ...r, status: "owner-has-stop" }); continue; }
     const venueName = geo.name || e.venue || e.address || "From their own post";
@@ -304,7 +306,9 @@ export async function ingestPost(ctx: IngestCtx, kind: Kind | "paste", p: Post, 
       const { data: near } = await db.from("stops").select("truck_id, venue_name, starts_at, ends_at, created_at").eq("truck_id", truck.id)
         .eq("cancelled", false).lt("starts_at", ends.toISOString()).gt("ends_at", starts.toISOString());
       const probe = { truck_id: truck.id, venue_name: venueName, starts_at: starts.toISOString(), ends_at: ends.toISOString(), created_at: "" };
-      if ((near ?? []).some((n) => groupStops([n, probe]).length === 1)) { out.push({ ...r, status: "duplicate" }); continue; }
+      // A Facebook correction must be saved even when another feed announced the same outing.
+      // The shared read resolver picks it over calendar/Google/Instagram occurrences.
+      if (!isFacebookFeed({ source_url: p.url }) && (near ?? []).some((n) => groupStops([n, probe]).length === 1)) { out.push({ ...r, status: "duplicate" }); continue; }
       const { error } = await db.from("stops").insert({
         truck_id: truck.id, venue_name: venueName, address: geo.address, city: geo.city || e.city || "",
         lat: geo.lat, lng: geo.lng, starts_at: starts.toISOString(), ends_at: ends.toISOString(), source: "own_post", confidence: e.confidence, source_url: p.url || null,

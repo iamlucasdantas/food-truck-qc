@@ -32,7 +32,7 @@ export async function runSearch(input:SearchInput, defaults:{days:number;limit:n
   const now = new Date(); const window = timeWindow(input.when,input.days ?? defaults.days,!!defaults.upcoming,now);
   const from = new Date(Math.min(window.from.getTime(),now.getTime())); const future = new Date(now.getTime()+7*864e5); const to = new Date(Math.max(window.to.getTime(),future.getTime()));
   let tq = sb.from('trucks').select('id,name,business_name,category,description,truck_type,website,menu_search,menu_sections,menu,base_address,base_lat,base_lng,is_food_truck,google_regular_hours,google_place_id,google_hours_updated_at').eq('status','active').eq('is_food_truck',true).is('deleted_at',null).limit(1000);
-  let sq = sb.from('stops').select('truck_id,venue_name,address,city,lat,lng,starts_at,ends_at,source,created_at').eq('cancelled',false).gt('ends_at',from.toISOString()).lt('starts_at',to.toISOString()).order('starts_at').limit(5000);
+  let sq = sb.from('stops').select('truck_id,venue_name,address,city,lat,lng,starts_at,ends_at,source,source_url,series_id,calendar_source_id,created_at').eq('cancelled',false).gt('ends_at',from.toISOString()).lt('starts_at',to.toISOString()).order('starts_at').limit(5000);
   let rq = sb.from('stop_series').select('*').lte('start_date',chicagoDate(to)).or(`end_date.is.null,end_date.gte.${chicagoDate(from)}`).limit(2000);
   if (input.truck_id) { tq=tq.eq('id',input.truck_id); sq=sq.eq('truck_id',input.truck_id); rq=rq.eq('truck_id',input.truck_id); }
   const [tr,sr,rr] = await Promise.all([tq,sq,rq]); if (tr.error || sr.error || rr.error) return {error:'lookup failed' as const};

@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Stop, Truck } from "@/data/trucks";
 import { expandSeries, type Series } from "@/data/schedule";
 import { expandGoogleHours, googleHours } from '@/data/google-hours';
+import { resolveFeedConflicts } from '@/data/feed-priority';
 
 export function useTrucks() {
   return useQuery({
@@ -36,7 +37,7 @@ export function useStops(from: Date | null, to: Date | null, truckIds?: string[]
       if (error) throw error;
       if (hoursError) throw hoursError;
       const timed = new Set((hoursTrucks ?? []).filter(t => googleHours(t.google_regular_hours)?.periods.length).map(t => t.id));
-      return [...data.filter(s => s.source !== 'apify_maps' || !timed.has(s.truck_id)), ...expandSeries((series ?? []) as Series[], from, to), ...expandGoogleHours(hoursTrucks ?? [], from, to)].sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+      return resolveFeedConflicts([...data.filter(s => s.source !== 'apify_maps' || !timed.has(s.truck_id)), ...expandSeries((series ?? []) as Series[], from, to), ...expandGoogleHours(hoursTrucks ?? [], from, to)]);
     },
   });
 }
