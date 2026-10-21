@@ -205,6 +205,22 @@ truck_name = the truck the post is about (the poster when they write in first pe
 If the post announces no specific stop, return an empty list. is_food_truck = clearly a mobile food truck/trailer/cart.
 menu = dishes/items the post says will be served (with prices if written), grouped in sections; empty list when the post lists no menu items. Never invent items.`;
 
+async function inlineImages(urls: string[]): Promise<string[]> {
+  const out: string[] = [];
+  for (const url of urls.slice(0, 3)) {
+    try {
+      const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      const type = r.headers.get("content-type") ?? "";
+      if (!r.ok || !type.startsWith("image/")) continue;
+      const buf = new Uint8Array(await r.arrayBuffer());
+      if (buf.byteLength > 4_000_000) continue;
+      let bin = ""; for (let k = 0; k < buf.length; k += 0x8000) bin += String.fromCharCode(...buf.subarray(k, k + 0x8000));
+      out.push(`data:${type.split(";")[0]};base64,${btoa(bin)}`);
+    } catch { /* skip unreadable photo */ }
+  }
+  return out;
+}
+
 /** Text plus up to 3 post photos as a multimodal message (flyers often hold the whole schedule). */
 function withImages(text: string, images: string[]) {
   return images.length ? [{ type: "text", text }, ...images.map((url) => ({ type: "image_url", image_url: { url } }))] : text;
@@ -222,17 +238,21 @@ async function extract(text: string, postTime: string, url: string, pageOwner: s
   const day = postDay(postTime, today);
   const hints = splitVenues(text);
   const date = resolvePostDate(text, day);
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  const ask = (imgs: string[]) => fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       model: MODEL,
       response_format: { type: "json_schema", json_schema: { name: "stops", strict: true, schema: SCHEMA } },
       messages: [
         { role: "system", content: SYSTEM },
-        { role: "user", content: withImages(`Today: ${today}\nPost date: ${day}\nPost URL: ${url}\n${pageOwner ? `Posted by the truck: ${pageOwner}\n` : ""}${hints.length ? `Venue/time pairs found: ${hints.map((h) => `${h.venue} ${h.start}-${h.end}`).join("; ")}\n` : ""}Post:\n${text.slice(0, 4000)}${images.length ? "\n(The attached images belong to this post — read any schedule, venues, dates, times or menu written in them.)" : ""}`, images) },
+        { role: "user", content: withImages(`Today: ${today}\nPost date: ${day}\nPost URL: ${url}\n${pageOwner ? `Posted by the truck: ${pageOwner}\n` : ""}${hints.length ? `Venue/time pairs found: ${hints.map((h) => `${h.venue} ${h.start}-${h.end}`).join("; ")}\n` : ""}Post:\n${text.slice(0, 4000)}${images.length ? "\n(The attached images belong to this post — read any schedule, venues, dates, times or menu written in them.)" : ""}`, imgs) },
       ],
     }),
   });
+  // Flyer photos are inlined (the AI can't open Facebook image links); if the AI rejects them, read the text alone.
+  const inline = await inlineImages(images);
+  let res = await ask(inline);
+  if (res.status === 400 && inline.length) { console.error(`[facebook] AI rejected post images: ${(await res.text()).slice(0, 200)}`); res = await ask([]); }
   if (res.status === 402 || res.status === 403) throw new AiStop(`AI paused [${res.status}]: ${(await res.text()).slice(0, 200)}`);
   if (!res.ok) throw new Error(`AI failed [${res.status}]`);
   const j = (await res.json()) as { choices?: { message?: { content?: string } }[] };
