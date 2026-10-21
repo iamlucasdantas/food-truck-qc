@@ -146,7 +146,16 @@ type Item = Record<string, unknown> & {
 };
 
 /** Normalized post across Facebook, Reddit and Instagram items. */
-export type Post = { url: string; text: string; time: string; author: string; inputUrl: string };
+export type Post = { url: string; text: string; time: string; author: string; inputUrl: string; images?: string[] };
+
+/** Photo URLs attached to a scraped post (schedule flyers are usually images, not text). */
+function postImages(it: Item): string[] {
+  const out: string[] = [];
+  const add = (v: unknown) => { if (typeof v === "string" && /^https:\/\//.test(v) && !out.includes(v)) out.push(v); };
+  for (const m of (Array.isArray(it["media"]) ? it["media"] : []) as Record<string, any>[]) { add(m?.photo_image?.uri); add(m?.image?.uri); add(m?.thumbnail); }
+  add(it["displayUrl"]); for (const u of (Array.isArray(it["images"]) ? it["images"] : [])) add(u);
+  return out.slice(0, 3);
+}
 
 function normalizeItem(kind: Kind, it: Item): Post | null {
   if (kind === "reddit") {
@@ -158,13 +167,15 @@ function normalizeItem(kind: Kind, it: Item): Post | null {
   if (kind === "instagram") {
     const text = (it.caption ?? "").trim();
     const url = it.url ?? it.postUrl;
-    if (!url || !text) return null;
-    return { url, text, time: it.timestamp ?? "", author: it.ownerUsername ?? "", inputUrl: it.inputUrl ?? "" };
+    const images = postImages(it);
+    if (!url || (!text && !images.length)) return null;
+    return { url, text, time: it.timestamp ?? "", author: it.ownerUsername ?? "", inputUrl: it.inputUrl ?? "", images };
   }
   const url = it.url ?? it.postUrl ?? it.topLevelUrl;
   const text = (it.text ?? "").trim();
-  if (!url || !text) return null;
-  return { url, text, time: it.time ?? "", author: it.user?.name ?? it.pageName ?? "", inputUrl: it.inputUrl ?? it.facebookUrl ?? "" };
+  const images = postImages(it);
+  if (!url || (!text && !images.length)) return null;
+  return { url, text, time: it.time ?? "", author: it.user?.name ?? it.pageName ?? "", inputUrl: it.inputUrl ?? it.facebookUrl ?? "", images };
 }
 
 type Extracted = ExtractedStop;
@@ -200,7 +211,7 @@ function postDay(time: string, today: string): string {
   return Number.isFinite(t) ? chicagoDate(new Date(t)) : today;
 }
 
-async function extract(text: string, postTime: string, url: string, pageOwner: string | null, today: string): Promise<{ stops: Extracted[]; menu: PostMenu }> {
+async function extract(text: string, postTime: string, url: string, pageOwner: string | null, today: string, images: string[] = []): Promise<{ stops: Extracted[]; menu: PostMenu }> {
   const key = process.env["LOVABLE_API_KEY"];
   if (!key) throw new AiStop("LOVABLE_API_KEY is not configured");
   const day = postDay(postTime, today);
@@ -213,7 +224,7 @@ async function extract(text: string, postTime: string, url: string, pageOwner: s
       response_format: { type: "json_schema", json_schema: { name: "stops", strict: true, schema: SCHEMA } },
       messages: [
         { role: "system", content: SYSTEM },
-        { role: "user", content: `Today: ${today}\nPost date: ${day}\nPost URL: ${url}\n${pageOwner ? `Posted by the truck: ${pageOwner}\n` : ""}${hints.length ? `Venue/time pairs found: ${hints.map((h) => `${h.venue} ${h.start}-${h.end}`).join("; ")}\n` : ""}Post:\n${text.slice(0, 4000)}` },
+        { role: "user", content: withImages(`Today: ${today}\nPost date: ${day}\nPost URL: ${url}\n${pageOwner ? `Posted by the truck: ${pageOwner}\n` : ""}${hints.length ? `Venue/time pairs found: ${hints.map((h) => `${h.venue} ${h.start}-${h.end}`).join("; ")}\n` : ""}Post:\n${text.slice(0, 4000)}${images.length ? "\n(The attached images belong to this post — read any schedule, venues, dates, times or menu written in them.)" : ""}` },
       ],
     }),
   });
