@@ -81,7 +81,7 @@ async function startActor(kind: Kind, all: Source[]): Promise<string> {
   const sources = all.flatMap((s) => { const url = socialSourceUrl(s.url, kind); return url ? [{ ...s, url }] : []; });
   if (!sources.length) throw new Error(`No valid ${kind} source URLs. Correct the source links in Admin.`);
   const input =
-    kind === "page" ? { startUrls: sources.map((s) => ({ url: s.url })), resultsLimit: 5, onlyPostsNewerThan: "14 days" }
+    kind === "page" ? { startUrls: sources.map((s) => ({ url: s.url })), resultsLimit: 3 }
     : kind === "group" ? { startUrls: sources.map((s) => ({ url: s.url })), resultsLimit: 40, viewOption: "CHRONOLOGICAL", onlyPostsNewerThan: "7 days" }
     : kind === "reddit" ? { startUrls: sources.map((s) => ({ url: s.url })), maxItems: 30, sort: "new" }
     : { directUrls: sources.map((s) => s.url), resultsType: "posts", resultsLimit: 10 };
@@ -146,7 +146,16 @@ type Item = Record<string, unknown> & {
 };
 
 /** Normalized post across Facebook, Reddit and Instagram items. */
-export type Post = { url: string; text: string; time: string; author: string; inputUrl: string };
+export type Post = { url: string; text: string; time: string; author: string; inputUrl: string; images?: string[] };
+
+/** Photo URLs attached to a scraped post (schedule flyers are usually images, not text). */
+function postImages(it: Item): string[] {
+  const out: string[] = [];
+  const add = (v: unknown) => { if (typeof v === "string" && /^https:\/\//.test(v) && !out.includes(v)) out.push(v); };
+  for (const m of (Array.isArray(it["media"]) ? it["media"] : []) as { photo_image?: { uri?: string }; image?: { uri?: string }; thumbnail?: string }[]) { add(m?.photo_image?.uri); add(m?.image?.uri); add(m?.thumbnail); }
+  add(it["displayUrl"]); for (const u of (Array.isArray(it["images"]) ? it["images"] : [])) add(u);
+  return out.slice(0, 3);
+}
 
 function normalizeItem(kind: Kind, it: Item): Post | null {
   if (kind === "reddit") {
@@ -158,13 +167,15 @@ function normalizeItem(kind: Kind, it: Item): Post | null {
   if (kind === "instagram") {
     const text = (it.caption ?? "").trim();
     const url = it.url ?? it.postUrl;
-    if (!url || !text) return null;
-    return { url, text, time: it.timestamp ?? "", author: it.ownerUsername ?? "", inputUrl: it.inputUrl ?? "" };
+    const images = postImages(it);
+    if (!url || (!text && !images.length)) return null;
+    return { url, text, time: it.timestamp ?? "", author: it.ownerUsername ?? "", inputUrl: it.inputUrl ?? "", images };
   }
   const url = it.url ?? it.postUrl ?? it.topLevelUrl;
   const text = (it.text ?? "").trim();
-  if (!url || !text) return null;
-  return { url, text, time: it.time ?? "", author: it.user?.name ?? it.pageName ?? "", inputUrl: it.inputUrl ?? it.facebookUrl ?? "" };
+  const images = postImages(it);
+  if (!url || (!text && !images.length)) return null;
+  return { url, text, time: it.time ?? "", author: it.user?.name ?? it.pageName ?? "", inputUrl: it.inputUrl ?? it.facebookUrl ?? "", images };
 }
 
 type Extracted = ExtractedStop;
@@ -194,29 +205,54 @@ truck_name = the truck the post is about (the poster when they write in first pe
 If the post announces no specific stop, return an empty list. is_food_truck = clearly a mobile food truck/trailer/cart.
 menu = dishes/items the post says will be served (with prices if written), grouped in sections; empty list when the post lists no menu items. Never invent items.`;
 
+async function inlineImages(urls: string[]): Promise<string[]> {
+  const out: string[] = [];
+  for (const url of urls.slice(0, 3)) {
+    try {
+      const r = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      const type = r.headers.get("content-type") ?? "";
+      if (!r.ok || !type.startsWith("image/")) continue;
+      const buf = new Uint8Array(await r.arrayBuffer());
+      if (buf.byteLength > 4_000_000) continue;
+      let bin = ""; for (let k = 0; k < buf.length; k += 0x8000) bin += String.fromCharCode(...buf.subarray(k, k + 0x8000));
+      out.push(`data:${type.split(";")[0]};base64,${btoa(bin)}`);
+    } catch { /* skip unreadable photo */ }
+  }
+  return out;
+}
+
+/** Text plus up to 3 post photos as a multimodal message (flyers often hold the whole schedule). */
+function withImages(text: string, images: string[]) {
+  return images.length ? [{ type: "text", text }, ...images.map((url) => ({ type: "image_url", image_url: { url } }))] : text;
+}
+
 /** Central-time date of a post timestamp (falls back to today). */
 function postDay(time: string, today: string): string {
   const t = Date.parse(time);
   return Number.isFinite(t) ? chicagoDate(new Date(t)) : today;
 }
 
-async function extract(text: string, postTime: string, url: string, pageOwner: string | null, today: string): Promise<{ stops: Extracted[]; menu: PostMenu }> {
+async function extract(text: string, postTime: string, url: string, pageOwner: string | null, today: string, images: string[] = []): Promise<{ stops: Extracted[]; menu: PostMenu }> {
   const key = process.env["LOVABLE_API_KEY"];
   if (!key) throw new AiStop("LOVABLE_API_KEY is not configured");
   const day = postDay(postTime, today);
   const hints = splitVenues(text);
   const date = resolvePostDate(text, day);
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  const ask = (imgs: string[]) => fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       model: MODEL,
       response_format: { type: "json_schema", json_schema: { name: "stops", strict: true, schema: SCHEMA } },
       messages: [
         { role: "system", content: SYSTEM },
-        { role: "user", content: `Today: ${today}\nPost date: ${day}\nPost URL: ${url}\n${pageOwner ? `Posted by the truck: ${pageOwner}\n` : ""}${hints.length ? `Venue/time pairs found: ${hints.map((h) => `${h.venue} ${h.start}-${h.end}`).join("; ")}\n` : ""}Post:\n${text.slice(0, 4000)}` },
+        { role: "user", content: withImages(`Today: ${today}\nPost date: ${day}\nPost URL: ${url}\n${pageOwner ? `Posted by the truck: ${pageOwner}\n` : ""}${hints.length ? `Venue/time pairs found: ${hints.map((h) => `${h.venue} ${h.start}-${h.end}`).join("; ")}\n` : ""}Post:\n${text.slice(0, 4000)}${images.length ? "\n(The attached images belong to this post — read any schedule, venues, dates, times or menu written in them.)" : ""}`, imgs) },
       ],
     }),
   });
+  // Flyer photos are inlined (the AI can't open Facebook image links); if the AI rejects them, read the text alone.
+  const inline = await inlineImages(images);
+  let res = await ask(inline);
+  if (res.status === 400 && inline.length) { console.error(`[facebook] AI rejected post images: ${(await res.text()).slice(0, 200)}`); res = await ask([]); }
   if (res.status === 402 || res.status === 403) throw new AiStop(`AI paused [${res.status}]: ${(await res.text()).slice(0, 200)}`);
   if (!res.ok) throw new Error(`AI failed [${res.status}]`);
   const j = (await res.json()) as { choices?: { message?: { content?: string } }[] };
@@ -250,7 +286,7 @@ export async function ingestPost(ctx: IngestCtx, kind: Kind | "paste", p: Post, 
   const handlesOf = (t: TruckLite) => ownerHandles(t, t.claimed_by ? ctx.bizByOwner.get(t.claimed_by) : null);
   const sameBusiness = (a: TruckLite, b: TruckLite) => a.id === b.id || (!!a.claimed_by && a.claimed_by === b.claimed_by);
   const out: StopResult[] = [];
-  const { stops: ex, menu } = await extract(p.text, p.time, p.url, owner?.name ?? null, today);
+  const { stops: ex, menu } = await extract(p.text, p.time, p.url, owner?.name ?? null, today, p.images ?? []);
   let menuTruck: TruckLite | null = null;
   for (const e of ex) {
     const base = { venue: e.venue, address: e.address || null, city: e.city, date: e.date, start: e.start, end: e.end, own: false, checkAddress: false, newTruck: false };
@@ -361,6 +397,7 @@ export async function processFacebookRun(db: DB, runId: string, budgetMs = 20_00
   const today = chicagoDate();
   const ctx: IngestCtx = { db, trucks, bizByOwner, today, runId };
 
+  let fallbacks = 0;
   for (const kind of KINDS) {
     const kindSources = sources.filter((s) => s.kind === kind);
     if (!kindSources.length || kindSources.every((s) => done.has(s.id))) continue;
@@ -392,14 +429,20 @@ export async function processFacebookRun(db: DB, runId: string, budgetMs = 20_00
     const urls = allPosts.map((p) => p.post.url);
     const seen = new Set<string>();
     for (let i = 0; i < urls.length; i += 200) {
-      const { data } = await db.from("social_posts").select("url").in("url", urls.slice(i, i + 200));
-      (data ?? []).forEach((r) => seen.add(r.url));
+      const { data } = await db.from("social_posts").select("url, stops_created").in("url", urls.slice(i, i + 200));
+      // A truck's own recent post that gave no stop is read again (photos/edits may now reveal the location).
+      (data ?? []).forEach((r) => { if (kind === "group" || r.stops_created > 0) seen.add(r.url); });
     }
 
     for (const src of kindSources) {
       if (done.has(src.id)) continue;
       const posts = bySource.get(src.id) ?? [];
       if (!posts.length) {
+        if (kind === "page" && fallbacks < 3 && Date.now() - t0 < budgetMs) {
+          fallbacks++;
+          const fb = await contextDevPage(ctx, src, trucks);
+          if (fb.ok) { found++; created += fb.stops; done.add(src.id); errors.push(`${src.name}: Apify returned no posts — read with context.dev (${fb.stops} stops)`); continue; }
+        }
         const reason = blockedReason(kind, items, src.url);
         if (kind === "group") errors.push(`Group skipped (${reason}): ${src.url}`);
         done.add(src.id);
@@ -436,6 +479,12 @@ export async function processFacebookRun(db: DB, runId: string, budgetMs = 20_00
           else errors.push(`${p.url}: ${e instanceof Error ? e.message : String(e)}`);
         }
       }
+      if (!left && kind === "page" && srcStops === 0 && fallbacks < 3 && Date.now() - t0 < budgetMs) {
+        // Apify saw posts but no stop came out of them: read the public page directly as a second opinion.
+        fallbacks++;
+        const fb = await contextDevPage(ctx, src, trucks);
+        if (fb.ok) { created += fb.stops; srcStops += fb.stops; }
+      }
       if (left) remaining += left;
       else {
         done.add(src.id);
@@ -453,4 +502,20 @@ export async function processFacebookRun(db: DB, runId: string, budgetMs = 20_00
     ...(finished ? { status: errs.length ? "partial" : "success", finished_at: new Date().toISOString() } : {}),
   }).eq("id", runId);
   return { done: finished, remaining, pending, sourcesDone: done.size, total };
+}
+
+/**
+ * Second scraper for a truck's own public Facebook page: context.dev reads the page (latest posts at the top)
+ * and the text goes through the same ingestPost rules as an Apify post. Used when Apify returns nothing usable.
+ */
+export async function contextDevPage(ctx: IngestCtx, src: Source, trucks: TruckLite[]): Promise<{ ok: boolean; stops: number; error?: string }> {
+  const { scrapeMarkdown } = await import("./context-dev.server");
+  const page = await scrapeMarkdown(src.url);
+  if ("error" in page) return { ok: false, stops: 0, error: page.error };
+  const owner = trucks.find((t) => t.id === src.truck_id) ?? null;
+  // Keep only the first part of the page — the three most recent posts sit there.
+  const res = await ingestPost(ctx, "page", { url: src.url, text: page.markdown.slice(0, 9000), time: new Date().toISOString(), author: owner?.name ?? page.title, inputUrl: src.url }, owner);
+  const stops = res.filter((r) => r.status === "published" || r.status === "suggested").length;
+  await ctx.db.from("social_sources").update({ last_run_at: new Date().toISOString(), last_status: "ok", last_posts: 1, last_stops: stops, last_reason: `Read with context.dev · ${stops} stops` }).eq("id", src.id);
+  return { ok: true, stops };
 }
