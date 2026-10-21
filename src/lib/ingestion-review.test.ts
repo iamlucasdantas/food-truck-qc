@@ -5,20 +5,24 @@ vi.mock('./venues.server', () => ({ resolveVenue: venue }));
 vi.mock('./owner-webhook.server', () => ({ postOwnerWebhook: webhook }));
 describe('scraper listing creation', () => {
   let inserted: Record<string, unknown>[];
+  let existingStops: Record<string, unknown>[];
   let ctx: IngestCtx;
   const post = { url: 'https://www.facebook.com/mexies/posts/123', inputUrl: 'https://www.facebook.com/mexies', text: 'Our food truck is serving tacos at Market on October 21, 11am–2pm', time: '2026-10-18T18:00:00Z', author: 'Mexies Food Truck' };
   beforeEach(() => {
     inserted = [];
+    existingStops = [];
     process.env['LOVABLE_API_KEY'] = 'test-only';
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify({ menu: [], stops: [{ truck_name: 'Mexies Food Truck', is_food_truck: true, date: '2026-10-21', start: '11:00', end: '14:00', venue: 'Market', address: '', city: 'DeWitt', confidence: 0.95 }] }) } }] }))));
     venue.mockResolvedValue({ name: 'Market', address: '911 11th St, DeWitt IA', city: 'DeWitt', lat: 41.8258374, lng: -90.5442848, check: false });
     webhook.mockReset();
     const db = { from: (table: string) => {
       const q: Record<string, any> = {};
-      for (const method of ['select', 'eq', 'neq', 'lt', 'gt', 'limit', 'is']) q[method] = () => q;
+      let projection = '';
+      q['select'] = (value: string) => { projection = value; return q; };
+      for (const method of ['eq', 'neq', 'lt', 'gt', 'limit', 'is']) q[method] = () => q;
       q['upsert'] = (row: Record<string, unknown>) => { inserted.push({table, ...row}); return q; };
       q['insert'] = (row: Record<string, unknown>) => { inserted.push({table, ...row}); return q; };
-      q['then'] = (resolve: (v: unknown) => unknown) => Promise.resolve({data:table === 'trucks' ? [{id:'social-mexiesfoodtruck'}] : [],count:0,error:null}).then(resolve);
+      q['then'] = (resolve: (v: unknown) => unknown) => Promise.resolve({data:table === 'trucks' ? [{id:'social-mexiesfoodtruck'}] : table === 'stops' && projection.startsWith('truck_id,') ? existingStops : [],count:0,error:null}).then(resolve);
       return q;
     } };
     ctx = { db: db as unknown as IngestCtx['db'], trucks: [], bizByOwner: new Map(), today: '2026-10-18', runId: null };
@@ -46,6 +50,7 @@ describe('scraper listing creation', () => {
   it('publishes an own Facebook post when another feed already covers the same outing', async () => {
     const truck = { id: 'existing-mexies', name: 'Mexies Food Truck', claimed_by: null, phone: null, facebook: post.inputUrl, instagram: null, reddit: null };
     ctx.trucks.push(truck);
+    existingStops = [{ truck_id: truck.id, venue_name: 'Market', starts_at: '2026-10-21T16:00:00Z', ends_at: '2026-10-21T19:00:00Z', created_at: '2026-10-20T13:00:00Z' }];
     const result = await ingestPost(ctx, 'page', post, truck);
     expect(result[0]?.status).toBe('published');
     expect(inserted.find(r => r['table'] === 'stops')).toMatchObject({ source: 'own_post', source_url: post.url, starts_at: '2026-10-21T16:00:00.000Z', ends_at: '2026-10-21T19:00:00.000Z' });
