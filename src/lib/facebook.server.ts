@@ -81,7 +81,7 @@ async function startActor(kind: Kind, all: Source[]): Promise<string> {
   const sources = all.flatMap((s) => { const url = socialSourceUrl(s.url, kind); return url ? [{ ...s, url }] : []; });
   if (!sources.length) throw new Error(`No valid ${kind} source URLs. Correct the source links in Admin.`);
   const input =
-    kind === "page" ? { startUrls: sources.map((s) => ({ url: s.url })), resultsLimit: 5, onlyPostsNewerThan: "14 days" }
+    kind === "page" ? { startUrls: sources.map((s) => ({ url: s.url })), resultsLimit: 3 }
     : kind === "group" ? { startUrls: sources.map((s) => ({ url: s.url })), resultsLimit: 40, viewOption: "CHRONOLOGICAL", onlyPostsNewerThan: "7 days" }
     : kind === "reddit" ? { startUrls: sources.map((s) => ({ url: s.url })), maxItems: 30, sort: "new" }
     : { directUrls: sources.map((s) => s.url), resultsType: "posts", resultsLimit: 10 };

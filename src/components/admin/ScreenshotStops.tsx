@@ -69,22 +69,31 @@ export function ScreenshotStops({ truckId }: { truckId: string }) {
 
   const save = async () => {
     setBusy("Saving stops…");
-    let ok = 0; const failed: string[] = [];
+    let ok = 0, review = 0; const failed: string[] = [];
     for (const r of rows) {
-      const resolved = r.location && !r.locationIssue ? r : r.locationIssue ? r : await locate(r);
-      const g = resolved.location;
-      if (!g || resolved.locationIssue) { failed.push(r.venue); continue; }
-      const { error } = await supabase.from("stops").insert({
-        truck_id: truckId, venue_name: r.venue, address: g.address, city: resolved.city || g.city, lat: g.lat, lng: g.lng,
-        starts_at: centralToUtc(r.date, r.start).toISOString(), ends_at: centralToUtc(r.date, r.end).toISOString(), source: "owner",
+      const g = r.location;
+      const times = { starts_at: centralToUtc(r.date, r.start).toISOString(), ends_at: centralToUtc(r.date, r.end).toISOString() };
+      if (g && !r.locationIssue) {
+        const { error } = await supabase.from("stops").insert({
+          truck_id: truckId, venue_name: r.venue, address: g.address, city: r.city || g.city, lat: g.lat, lng: g.lng, ...times, source: "owner",
+        });
+        if (error) failed.push(`${r.venue}: ${error.message}`); else ok++;
+        continue;
+      }
+      // Unconfirmed address: save anyway as a Pending trucks review item (goes live after the address is confirmed).
+      const { error } = await supabase.from("suggested_stops").insert({
+        truck_id: truckId, venue_name: r.venue, address: g?.address || r.address || "", city: r.city || g?.city || "",
+        lat: g?.lat ?? null, lng: g?.lng ?? null, ...times, source: "screenshot", status: "pending", needs_address_check: true,
+        excerpt: r.locationIssue ? `Screenshot upload · ${r.locationIssue}`.slice(0, 500) : "Screenshot upload",
       });
-      if (error) failed.push(`${r.venue}: ${error.message}`); else ok++;
+      if (error) failed.push(`${r.venue}: ${error.message}`); else review++;
     }
     setBusy("");
     if (ok) toast.success(`${ok} stop${ok === 1 ? "" : "s"} added`);
-    if (failed.length) toast.error(`Address not found or not saved: ${failed.join(", ")} — fix the address and save again.`);
+    if (review) toast(`${review} stop${review === 1 ? "" : "s"} saved without a confirmed address — confirm them in Pending trucks to go live.`);
+    if (failed.length) toast.error(`Not saved: ${failed.join(", ")}`);
     setRows((rs) => rs.filter((r) => failed.some((f) => f.startsWith(r.venue))));
-    void qc.invalidateQueries({ queryKey: ["stops"] }); void qc.invalidateQueries({ queryKey: ["admin", "truck-stops", truckId] });
+    void qc.invalidateQueries({ queryKey: ["stops"] }); void qc.invalidateQueries({ queryKey: ["admin"] });
   };
 
   return (
