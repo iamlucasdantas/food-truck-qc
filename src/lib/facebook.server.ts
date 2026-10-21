@@ -152,7 +152,7 @@ export type Post = { url: string; text: string; time: string; author: string; in
 function postImages(it: Item): string[] {
   const out: string[] = [];
   const add = (v: unknown) => { if (typeof v === "string" && /^https:\/\//.test(v) && !out.includes(v)) out.push(v); };
-  for (const m of (Array.isArray(it["media"]) ? it["media"] : []) as Record<string, any>[]) { add(m?.photo_image?.uri); add(m?.image?.uri); add(m?.thumbnail); }
+  for (const m of (Array.isArray(it["media"]) ? it["media"] : []) as { photo_image?: { uri?: string }; image?: { uri?: string }; thumbnail?: string }[]) { add(m?.photo_image?.uri); add(m?.image?.uri); add(m?.thumbnail); }
   add(it["displayUrl"]); for (const u of (Array.isArray(it["images"]) ? it["images"] : [])) add(u);
   return out.slice(0, 3);
 }
