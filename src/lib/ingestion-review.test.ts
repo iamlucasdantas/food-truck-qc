@@ -43,4 +43,11 @@ describe('scraper listing creation', () => {
     expect((await ingestPost(ctx, 'page', post, null))[0]?.truckId).toBe('existing-mexies');
     expect(inserted.some(r => r['table'] === 'trucks')).toBe(false);
   });
+  it('publishes an own Facebook post when another feed already covers the same outing', async () => {
+    const truck = { id: 'existing-mexies', name: 'Mexies Food Truck', claimed_by: null, phone: null, facebook: post.inputUrl, instagram: null, reddit: null };
+    ctx.trucks.push(truck);
+    const result = await ingestPost(ctx, 'page', post, truck);
+    expect(result[0]?.status).toBe('published');
+    expect(inserted.find(r => r['table'] === 'stops')).toMatchObject({ source: 'own_post', source_url: post.url, starts_at: '2026-10-21T16:00:00.000Z', ends_at: '2026-10-21T19:00:00.000Z' });
+  });
 });
