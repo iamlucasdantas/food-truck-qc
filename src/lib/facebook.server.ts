@@ -215,7 +215,7 @@ async function extract(text: string, postTime: string, url: string, pageOwner: s
   const ask = (imgs: string[]) => fetch(aiUrl, {
     method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: gkey ? "gemini-2.5-flash" : MODEL,
+      model: gkey ? "gemini-3.8-flash" : MODEL,
       response_format: { type: "json_schema", json_schema: { name: "stops", strict: true, schema: SCHEMA } },
       messages: [
         { role: "system", content: SYSTEM },

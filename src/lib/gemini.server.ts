@@ -1,7 +1,7 @@
 // Direct Google Gemini calls using the owner's own GOOGLE_API_KEY. When the key is missing,
 // callers fall back to the built-in AI path, so nothing breaks if the key is removed.
 const BASE = "https://generativelanguage.googleapis.com/v1beta/models";
-export const GEMINI_MODEL = "gemini-2.5-flash";
+export const GEMINI_MODEL = "gemini-3.8-flash";
 
 export class GeminiError extends Error {
   constructor(public status: number, message: string) { super(message); }
