@@ -1,6 +1,7 @@
 import { defineTool, ToolError } from "@lovable.dev/mcp-js";
 import { z } from "zod";
-import { centralToUtc, chicagoDate, fmtCentral } from "@/data/trucks";
+import { centralToUtc, chicagoDate } from "@/data/trucks";
+const fmtCentral = (iso: string) => new Date(iso).toLocaleString("en-US", { timeZone: "America/Chicago", dateStyle: "medium", timeStyle: "short" });
 import { geocode } from "@/lib/geocode";
 import { adminClient, json } from "../admin";
 

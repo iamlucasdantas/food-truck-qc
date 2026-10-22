@@ -20,7 +20,7 @@ export async function ownerIdFor(sb: Awaited<ReturnType<typeof adminClient>>, in
   return data;
 }
 
-export const json = (text: string, data: Record<string, unknown>) => ({ content: [{ type: "text" as const, text }], structuredContent: data });
+export const json = <T,>(text: string, data: T) => ({ content: [{ type: "text" as const, text }], structuredContent: data });
 
 /** Drops undefined keys so updates only touch the fields the caller sent. */
 export function defined<T extends Record<string, unknown>>(o: T): Partial<T> {
