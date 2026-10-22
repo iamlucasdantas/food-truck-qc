@@ -205,15 +205,17 @@ function postDay(time: string, today: string): string {
 }
 
 async function extract(text: string, postTime: string, url: string, pageOwner: string | null, today: string, images: string[] = []): Promise<{ stops: Extracted[]; menu: PostMenu }> {
-  const key = process.env["LOVABLE_API_KEY"];
-  if (!key) throw new AiStop("LOVABLE_API_KEY is not configured");
+  const gkey = process.env["GOOGLE_API_KEY"];
+  const key = gkey || process.env["LOVABLE_API_KEY"];
+  if (!key) throw new AiStop("No AI key is configured");
+  const aiUrl = gkey ? "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions" : "https://ai.gateway.lovable.dev/v1/chat/completions";
   const day = postDay(postTime, today);
   const hints = splitVenues(text);
   const date = resolvePostDate(text, day);
-  const ask = (imgs: string[]) => fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  const ask = (imgs: string[]) => fetch(aiUrl, {
     method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: MODEL,
+      model: gkey ? "gemini-3.8-flash" : MODEL,
       response_format: { type: "json_schema", json_schema: { name: "stops", strict: true, schema: SCHEMA } },
       messages: [
         { role: "system", content: SYSTEM },

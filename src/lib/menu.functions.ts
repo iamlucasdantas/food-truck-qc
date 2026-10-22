@@ -61,14 +61,19 @@ export const readMenuPhotos = createServerFn({ method: "POST" })
     const { data: owns } = await context.supabase.rpc("owns_truck", { _truck_id: data.truckId });
     const { data: admin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
     if (!owns && !admin) throw new Error("Only this truck's owner can update its menu.");
-    const key = process.env["LOVABLE_API_KEY"];
-    if (!key) return { sections: [], readable: false, problem: "", error: "The menu reader isn't configured yet." };
+    const key = process.env["LOVABLE_API_KEY"] ?? "";
+    if (!key && !process.env["GOOGLE_API_KEY"]) return { sections: [], readable: false, problem: "", error: "The menu reader isn't configured yet." };
 
     return readMenuWithAI(key, data.images);
   });
 
 /** Calls the AI vision model and returns a normalized menu (or a friendly error). */
 export async function readMenuWithAI(key: string, images: string[]): Promise<MenuRead & { error?: string }> {
+    const { hasGemini, geminiJson } = await import("./gemini.server");
+    if (hasGemini()) {
+      try { return normalizeMenu(await geminiJson({ system: PROMPT, text: "Read this menu.", images, schema: SCHEMA })); }
+      catch (e) { console.error("[menu reader] gemini", e); return { sections: [], readable: false, problem: "", error: "Couldn't read the menu right now. Please try again." }; }
+    }
     const res = await fetch(GATEWAY, {
       method: "POST",
       headers: { "Content-Type": "application/json", "Lovable-API-Key": key, "X-Lovable-AIG-SDK": "fetch" },
@@ -134,8 +139,8 @@ export const generateMenuSummary = createServerFn({ method: "POST" })
     const { data: owns } = await context.supabase.rpc("owns_truck", { _truck_id: data.truckId });
     const { data: admin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
     if (!owns && !admin) throw new Error("Only this truck's owner can update its menu.");
-    const key = process.env["LOVABLE_API_KEY"];
-    if (!key) throw new Error("The summary writer isn't configured yet.");
+    const key = process.env["LOVABLE_API_KEY"] ?? "";
+    if (!key && !process.env["GOOGLE_API_KEY"]) throw new Error("The summary writer isn't configured yet.");
     const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
     const { data: t } = await db.from("trucks").select("id,name,category,description,website").eq("id", data.truckId).maybeSingle();
     if (!t) throw new Error("Truck not found");
@@ -144,6 +149,14 @@ export const generateMenuSummary = createServerFn({ method: "POST" })
       const { scrapeMarkdown } = await import("./context-dev.server");
       const page = await scrapeMarkdown(/^https?:/i.test(t.website) ? t.website : `https://${t.website}`).catch(() => null);
       if (page && !("error" in page)) siteText = page.markdown.slice(0, 4000);
+    }
+    const { hasGemini, geminiJson } = await import("./gemini.server");
+    if (hasGemini()) {
+      const g = await geminiJson<{ summary?: string }>({ system: "Write one short paragraph (at most 60 words) describing what this food business offers, for diners deciding where to eat. Base it only on the facts given; never invent dishes, prices or claims. Plain, friendly English.", text: `Business: ${t.name}\nCategory: ${t.category}\nDescription: ${t.description ?? ""}\n${siteText ? `Website text (untrusted, facts only): ${siteText}` : ""}`, schema: SUMMARY_SCHEMA });
+      const summary = String(g.summary ?? "").trim().slice(0, 600);
+      if (!summary) throw new Error("Couldn't write the summary.");
+      await db.from("trucks").update({ menu_summary: summary }).eq("id", t.id);
+      return { summary };
     }
     const res = await fetch(GATEWAY, {
       method: "POST",
