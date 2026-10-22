@@ -11,8 +11,16 @@ export const Route = createFileRoute("/api/public/jobs/facebook-daily")({
       POST: async ({ request }) => {
         const authFailure = await authenticateCronRequest(request);
         if (authFailure) return authFailure;
-        const body = z.object({ kind: z.enum(["daily", "every-two-hours"]) }).strict().safeParse(await request.json().catch(() => null));
+        const body = z.object({ kind: z.enum(["daily", "every-two-hours", "continue"]) }).strict().safeParse(await request.json().catch(() => null));
         if (!body.success) return new Response("Bad request", { status: 400 });
+        if (body.data.kind === "continue") {
+          // Every few minutes: keep working on an open scan so it finishes even when Apify stops retrying its webhook.
+          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+          const { data: open } = await supabaseAdmin.from("ingestion_runs").select("id").eq("source", "apify_facebook").eq("status", "running").order("started_at", { ascending: false }).limit(1);
+          if (!open?.length) return Response.json({ idle: true });
+          const { processFacebookRun } = await import("@/lib/facebook.server");
+          return Response.json(await processFacebookRun(supabaseAdmin, open[0]!.id, 40_000));
+        }
         const hour = Number(new Intl.DateTimeFormat("en-US", { timeZone: "America/Chicago", hour: "numeric", hourCycle: "h23" }).format(new Date()));
         if (body.data.kind === "daily" ? hour !== 6 : !isSocialScanTime(new Date())) return Response.json({ skipped: true });
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
