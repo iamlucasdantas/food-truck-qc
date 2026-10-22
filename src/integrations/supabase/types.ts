@@ -1171,6 +1171,7 @@ export type Database = {
         Args: { _approve: boolean; _id: string }
         Returns: undefined
       }
+      admin_user_id_by_email: { Args: { _email: string }; Returns: string }
       confirm_truck_location: {
         Args: { _google_verified?: boolean; _truck_id: string }
         Returns: undefined
