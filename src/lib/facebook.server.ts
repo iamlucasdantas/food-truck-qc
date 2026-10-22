@@ -7,12 +7,16 @@ import { completeAddress, discoveredTruckId, profileCategory } from "@/data/inge
 import { socialSourceUrl } from "@/data/social-source-url";
 import { authorIsTruck, ownerHandles, centralToUtc, chicagoDate, keepExtraction, matchTruckByName, slugify, groupStops } from "@/data/trucks";
 import { isFacebookFeed } from '@/data/feed-priority';
+import { normalizeSocialItem, chunk, type Post, type RawItem } from "@/data/social-read";
 
 type DB = SupabaseClient<Database>;
 type Kind = "page" | "group" | "reddit" | "instagram";
 type Source = Database["public"]["Tables"]["social_sources"]["Row"];
 type TruckRow = Database["public"]["Tables"]["trucks"]["Row"];
-type Meta = { runs?: Partial<Record<Kind, string>>; total?: number; aiPaused?: string };
+/** runs: one Apify job per key — "page" or chunk keys "page_2", "page_3"…; chunks lists each key's source ids. */
+type Meta = { runs?: Record<string, string>; chunks?: Record<string, string[]>; total?: number; aiPaused?: string };
+/** Facebook answers "content isn't available" for many pages when one job asks for dozens at once; small jobs read them fine. */
+const CHUNK = 8;
 
 /** Webhooks must reach the published app. */
 export const PUBLIC_ORIGIN = "https://app.foodtruckqc.com";
@@ -27,7 +31,7 @@ const KINDS: Kind[] = ["page", "group", "reddit", "instagram"];
 
 const normUrl = (u: string) => u.trim().toLowerCase().replace(/^https?:\/\/(www\.|m\.|web\.)?/, "").replace(/[?#].*$/, "").replace(/\/+$/, "");
 
-function apifyHeaders() {
+export function apifyHeaders() {
   const t = process.env['APIFY_API_KEY'], lovable = process.env['LOVABLE_API_KEY'];
   if (!t || !lovable) throw new Error('Apify connection is not configured');
   return { Authorization:`Bearer ${lovable}`, 'X-Connection-Api-Key':t };
@@ -69,7 +73,7 @@ async function syncTruckSources(db: DB) {
 }
 
 /** Facebook session cookies (JSON array exported from a dedicated account) or null when the secret is unset/invalid. */
-function facebookCookies(): unknown[] | null {
+export function facebookCookies(): unknown[] | null {
   const raw = process.env["FACEBOOK_COOKIES_JSON"];
   if (!raw) return null;
   try { const v = JSON.parse(raw); return Array.isArray(v) && v.length ? v : null; } catch { console.error("[facebook] FACEBOOK_COOKIES_JSON is not valid JSON"); return null; }
@@ -137,46 +141,9 @@ export async function startFacebookRun(db: DB, onlyIds?: string[]) {
   return run;
 }
 
-/** Raw dataset item from any of the four actors. */
-type Item = Record<string, unknown> & {
-  url?: string; postUrl?: string; topLevelUrl?: string; text?: string; time?: string; inputUrl?: string; facebookUrl?: string;
-  pageName?: string; groupTitle?: string; user?: { name?: string }; phone?: string; instagram?: string;
-  title?: string; body?: string; createdAt?: string; username?: string; author?: string; communityName?: string;
-  caption?: string; timestamp?: string; ownerUsername?: string;
-};
-
-/** Normalized post across Facebook, Reddit and Instagram items. */
-export type Post = { url: string; text: string; time: string; author: string; inputUrl: string; images?: string[] };
-
-/** Photo URLs attached to a scraped post (schedule flyers are usually images, not text). */
-function postImages(it: Item): string[] {
-  const out: string[] = [];
-  const add = (v: unknown) => { if (typeof v === "string" && /^https:\/\//.test(v) && !out.includes(v)) out.push(v); };
-  for (const m of (Array.isArray(it["media"]) ? it["media"] : []) as { photo_image?: { uri?: string }; image?: { uri?: string }; thumbnail?: string }[]) { add(m?.photo_image?.uri); add(m?.image?.uri); add(m?.thumbnail); }
-  add(it["displayUrl"]); for (const u of (Array.isArray(it["images"]) ? it["images"] : [])) add(u);
-  return out.slice(0, 3);
-}
-
-function normalizeItem(kind: Kind, it: Item): Post | null {
-  if (kind === "reddit") {
-    const text = [it.title, it.body].filter(Boolean).join("\n").trim();
-    const url = it.url ?? it.postUrl;
-    if (!url || !text) return null;
-    return { url, text, time: it.createdAt ?? "", author: String(it.username ?? it.author ?? ""), inputUrl: it.inputUrl ?? "" };
-  }
-  if (kind === "instagram") {
-    const text = (it.caption ?? "").trim();
-    const url = it.url ?? it.postUrl;
-    const images = postImages(it);
-    if (!url || (!text && !images.length)) return null;
-    return { url, text, time: it.timestamp ?? "", author: it.ownerUsername ?? "", inputUrl: it.inputUrl ?? "", images };
-  }
-  const url = it.url ?? it.postUrl ?? it.topLevelUrl;
-  const text = (it.text ?? "").trim();
-  const images = postImages(it);
-  if (!url || (!text && !images.length)) return null;
-  return { url, text, time: it.time ?? "", author: it.user?.name ?? it.pageName ?? "", inputUrl: it.inputUrl ?? it.facebookUrl ?? "", images };
-}
+type Item = RawItem & { url?: string; postUrl?: string; topLevelUrl?: string; phone?: string; instagram?: string; inputUrl?: string };
+export type { Post };
+const normalizeItem = (kind: Kind, it: Item) => normalizeSocialItem(kind, it);
 
 type Extracted = ExtractedStop;
 
