@@ -12,7 +12,7 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { startEnrich, runEnrich } from "@/lib/enrich.functions";
+import { startEnrich } from "@/lib/enrich.functions";
 import { listTruckSources, addTruckSource, removeTruckSource } from "@/lib/truck-sources.functions";
 import { generateMenuSummary } from "@/lib/menu.functions";
 import { TRUCK_SOURCE_KINDS, truckTypeLabel, type TruckSourceKind } from "@/data/truck-sources";
@@ -313,7 +313,6 @@ function ActivityTab({ id, created, source }: { id: string; created: string; sou
 
 function EnrichDialog({ open, onOpenChange, truckId, name, onStarted }: { open: boolean; onOpenChange: (o: boolean) => void; truckId: string; name: string; onStarted?: ((runId: string, name: string) => void) | undefined }) {
   const start = useServerFn(startEnrich);
-  const run = useServerFn(runEnrich);
   const [links, setLinks] = useState<string[]>([]);
   const [url, setUrl] = useState("");
   const [busy, setBusy] = useState(false);
@@ -329,8 +328,6 @@ function EnrichDialog({ open, onOpenChange, truckId, name, onStarted }: { open: 
       onOpenChange(false); setLinks([]); setUrl("");
       onStarted?.(runId, name);
       toast.success(`Enriching ${name} — watch the progress bar at the bottom`);
-      // The run executes in the background; the progress bar polls the step log.
-      void run({ data: { runId } }).catch((err) => console.error("[enrich]", err));
     } catch (err) { toast.error(err instanceof Error ? err.message : "Enrich failed"); }
     finally { setBusy(false); }
   }
@@ -345,7 +342,7 @@ function EnrichDialog({ open, onOpenChange, truckId, name, onStarted }: { open: 
           <div className="space-y-2">
             <label className="block text-sm font-medium">Extra links (optional, up to 5)</label>
             <div className="flex gap-2">
-              <input className="field flex-1" placeholder="https://… event page, directory, website" value={url} onChange={(e) => setUrl(e.target.value)}
+              <input className="field flex-1" placeholder="https://… Facebook/Instagram post or page, website" value={url} onChange={(e) => setUrl(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addLink(); } }} />
               <button type="button" onClick={addLink} disabled={!url.trim() || links.length >= 5} className="chip h-10 shrink-0 text-sm disabled:opacity-60"><Plus className="h-4 w-4" />Add</button>
             </div>

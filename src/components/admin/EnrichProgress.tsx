@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import { CheckCircle, ChevronDown, ChevronUp, Loader2, X, XCircle } from "lucide-react";
-import { getEnrichRun, type EnrichRunState } from "@/lib/enrich.functions";
+import { getEnrichRun, runEnrich, type EnrichRunState } from "@/lib/enrich.functions";
 
 export type ActiveEnrichRun = { id: string; name: string };
 
@@ -18,32 +18,41 @@ export function EnrichProgress({ runs, onRemove }: { runs: ActiveEnrichRun[]; on
 
 function RunCard({ run, onRemove }: { run: ActiveEnrichRun; onRemove: (id: string) => void }) {
   const get = useServerFn(getEnrichRun);
+  const step = useServerFn(runEnrich);
+  const startedRef = useRef(false);
   const qc = useQueryClient();
   const [state, setState] = useState<EnrichRunState | null>(null);
   const [open, setOpen] = useState(false);
   const doneRef = useRef(false);
 
+  // The card drives the run: one task per request until the queue is empty (short requests can't be cut off mid-run).
   useEffect(() => {
     let stop = false;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const tick = async () => {
-      try {
-        const s = await get({ data: { runId: run.id } });
-        if (stop) return;
-        setState(s);
-        if (s.status === "running") {
-          timer = setTimeout(() => void tick(), 2500);
-        } else if (!doneRef.current) {
-          doneRef.current = true;
-          void qc.invalidateQueries({ queryKey: ["admin"] });
-          void qc.invalidateQueries({ queryKey: ["stops"] });
+    const drive = async () => {
+      try { const s = await get({ data: { runId: run.id } }); if (!stop) setState(s); } catch { /* keep going */ }
+      let failures = 0;
+      while (!stop) {
+        try {
+          const r = await step({ data: { runId: run.id } });
+          if (stop) return;
+          failures = 0;
+          setState((s) => ({ ...(s ?? { id: run.id, truck_id: "", created_at: "" }), status: r.done ? "done" : "running", steps: r.steps }));
+          if (r.done) break;
+        } catch {
+          if (++failures >= 3) { if (!stop) setState((s) => s ? { ...s, status: "error" } : s); return; }
+          await new Promise((res) => setTimeout(res, 3000));
         }
-      } catch {
-        if (!stop) timer = setTimeout(() => void tick(), 5000);
+      }
+      if (!stop && !doneRef.current) {
+        doneRef.current = true;
+        void qc.invalidateQueries({ queryKey: ["admin"] });
+        void qc.invalidateQueries({ queryKey: ["stops"] });
       }
     };
-    void tick();
-    return () => { stop = true; if (timer) clearTimeout(timer); };
+    if (startedRef.current) return;
+    startedRef.current = true;
+    void drive();
+    return () => { stop = true; startedRef.current = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [run.id]);
 
@@ -81,7 +90,7 @@ function RunCard({ run, onRemove }: { run: ActiveEnrichRun; onRemove: (id: strin
           {steps.map((s, i) => (
             <li key={i} className="flex gap-2">
               {s.ok ? <CheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-primary" /> : <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />}
-              <span><b>{s.source}:</b> {s.detail}</span>
+              <span className="break-words"><b>{s.source}:</b> {s.detail}</span>
             </li>
           ))}
           {running && <li className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3.5 w-3.5 animate-spin" />Working on the next source…</li>}
