@@ -186,3 +186,11 @@
 - [x] Enrich accepts up to 5 custom links (or none); links become truck sources
 - [x] Enrich runs in background (enrich_runs table, migration 0039); dialog+drawer close and a bottom progress bar polls the step log; clicking it expands found/not-found per source
 - [x] Primary-source-first priority kept, shared groups as fallback; browser-tested as admin (Rural Rumps, 6 steps)
+
+## Enrich social reading fix (2026-10-22, not published)
+- [x] Enrich reads Facebook/Instagram pages and pasted post links immediately, logs each post's outcome; one task per request
+- [x] Photo/reel links followed to the full post; share links and profile.php ids verified live
+- [x] Scheduled scans: Apify jobs of 8 pages, 3 posts in parallel, context.dev login-wall counted as failure; no-address stops of known trucks go to Pending trucks
+- [x] Facebook-vs-Facebook same outing no longer duplicated (2 Rural Rumps + 1 Schaab's duplicates removed)
+- [ ] Publish (needs Lucas's approval) — background scans and webhooks run the published version
+- [ ] After publish: add 10-minute "continue" schedule for facebook-daily ({"kind":"continue"})
