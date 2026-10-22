@@ -329,12 +329,16 @@ export async function ingestPost(ctx: IngestCtx, kind: Kind | "paste", p: Post, 
       const { data: dupe } = await db.from("stops").select("id").eq("truck_id", truck.id).eq("source_url", p.url).eq("starts_at", starts.toISOString()).limit(1);
       if (dupe?.length) { out.push({ ...r, status: "duplicate" }); continue; }
       // Same outing announced in another post (same venue, overlapping time): don't add a second row.
-      const { data: near } = await db.from("stops").select("truck_id, venue_name, starts_at, ends_at, created_at").eq("truck_id", truck.id)
+      const { data: near } = await db.from("stops").select("truck_id, venue_name, starts_at, ends_at, created_at, source_url").eq("truck_id", truck.id)
         .eq("cancelled", false).lt("starts_at", ends.toISOString()).gt("ends_at", starts.toISOString());
       const probe = { truck_id: truck.id, venue_name: venueName, starts_at: starts.toISOString(), ends_at: ends.toISOString(), created_at: "" };
-      // A Facebook correction must be saved even when another feed announced the same outing.
-      // The shared read resolver picks it over calendar/Google/Instagram occurrences.
-      if (!isFacebookFeed({ source_url: p.url }) && (near ?? []).some((n) => groupStops([n, probe]).length === 1)) { out.push({ ...r, status: "duplicate" }); continue; }
+      // A Facebook correction must be saved even when another feed announced the same outing
+      // (the shared read resolver picks it over calendar/Google/Instagram occurrences) — but the same outing
+      // already saved from Facebook (same venue and times, e.g. via a photo link of the same post) is a duplicate.
+      const fb = isFacebookFeed({ source_url: p.url });
+      const sameOuting = (n: NonNullable<typeof near>[number]) => groupStops([n, probe]).length === 1
+        && (!fb || (isFacebookFeed(n) && Date.parse(n.starts_at) === starts.getTime() && Date.parse(n.ends_at) === ends.getTime()));
+      if ((near ?? []).some(sameOuting)) { out.push({ ...r, status: "duplicate" }); continue; }
       const { error } = await db.from("stops").insert({
         truck_id: truck.id, venue_name: venueName, address: geo.address, city: geo.city || e.city || "",
         lat: geo.lat, lng: geo.lng, starts_at: starts.toISOString(), ends_at: ends.toISOString(), source: "own_post", confidence: e.confidence, source_url: p.url || null,
