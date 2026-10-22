@@ -373,27 +373,42 @@ export async function processFacebookRun(db: DB, runId: string, budgetMs = 20_00
   for (const kind of KINDS) {
     const kindSources = sources.filter((s) => s.kind === kind);
     if (!kindSources.length || kindSources.every((s) => done.has(s.id))) continue;
-    const apifyId = meta.runs?.[kind];
-    const ar = apifyId ? await fetchRun(apifyId) : null;
-    if (!ar || ["FAILED", "TIMED-OUT", "ABORTED"].includes(ar.status)) {
+    // Each kind may have several small jobs (chunk keys); old runs have one job covering every source of the kind.
+    const keys = Object.keys(meta.runs ?? {}).filter((k) => k === kind || k.startsWith(`${kind}_`));
+    const idsOf = (key: string) => meta.chunks?.[key] ?? kindSources.map((s) => s.id);
+    const items: Item[] = [];
+    const ready = new Set<string>();
+    if (!keys.length) {
       const todo = kindSources.filter((s) => !done.has(s.id));
-      try { meta.runs = { ...meta.runs, [kind]: await startActor(kind, todo) }; errors.push(`${kind} scrape ${ar?.status ?? "missing"} — restarted for ${todo.length} sources`); }
+      try { meta.runs = { ...meta.runs, [kind]: await startActor(kind, todo) }; meta.chunks = { ...meta.chunks, [kind]: todo.map((s) => s.id) }; errors.push(`${kind} scrape missing — restarted for ${todo.length} sources`); }
       catch (e) { errors.push(String(e instanceof Error ? e.message : e)); }
       pending = true; continue;
     }
-    if (ar.status !== "SUCCEEDED") { pending = true; continue; }
-
-    const itemsRes = await fetch(`https://connector-gateway.lovable.dev/apify/datasets/${ar.defaultDatasetId}/items?clean=true&limit=2000`, { headers: apifyHeaders() });
-    if (!itemsRes.ok) throw Error(`Apify dataset read failed [${itemsRes.status}]: ${await itemsRes.text()}`);
-    const items = (await itemsRes.json()) as Item[];
+    for (const key of keys) {
+      const ids = idsOf(key);
+      if (ids.every((id) => done.has(id))) continue;
+      const ar = await fetchRun(meta.runs![key]!);
+      if (["FAILED", "TIMED-OUT", "ABORTED"].includes(ar.status)) {
+        const todo = kindSources.filter((s) => ids.includes(s.id) && !done.has(s.id));
+        try { meta.runs = { ...meta.runs, [key]: await startActor(kind, todo) }; meta.chunks = { ...meta.chunks, [key]: todo.map((s) => s.id) }; errors.push(`${key} scrape ${ar.status} — restarted for ${todo.length} sources`); }
+        catch (e) { errors.push(String(e instanceof Error ? e.message : e)); }
+        pending = true; continue;
+      }
+      if (ar.status !== "SUCCEEDED") { pending = true; continue; }
+      const itemsRes = await fetch(`https://connector-gateway.lovable.dev/apify/datasets/${ar.defaultDatasetId}/items?clean=true&limit=2000`, { headers: apifyHeaders() });
+      if (!itemsRes.ok) throw Error(`Apify dataset read failed [${itemsRes.status}]: ${await itemsRes.text()}`);
+      items.push(...((await itemsRes.json()) as Item[]));
+      ids.forEach((id) => ready.add(id));
+    }
+    const readySources = kindSources.filter((s) => ready.has(s.id));
     const bySource = new Map<string, Post[]>();
     const allPosts: { src: Source; post: Post }[] = [];
     for (const it of items) {
       const post = normalizeItem(kind, it);
       if (!post) continue;
       const u = normUrl(post.inputUrl);
-      const s = kindSources.find((x) => u && (normUrl(x.url) === u || u.startsWith(normUrl(x.url)) || normUrl(x.url).startsWith(u)));
-      const src = s ?? (kindSources.length === 1 ? kindSources[0] : undefined);
+      const s = readySources.find((x) => u && (normUrl(x.url) === u || u.startsWith(normUrl(x.url)) || normUrl(x.url).startsWith(u)));
+      const src = s ?? (readySources.length === 1 ? readySources[0] : undefined);
       if (!src) continue;
       bySource.set(src.id, [...(bySource.get(src.id) ?? []), post]);
       allPosts.push({ src, post });
@@ -406,7 +421,7 @@ export async function processFacebookRun(db: DB, runId: string, budgetMs = 20_00
       (data ?? []).forEach((r) => { if (kind === "group" || r.stops_created > 0) seen.add(r.url); });
     }
 
-    for (const src of kindSources) {
+    for (const src of readySources) {
       if (done.has(src.id)) continue;
       const posts = bySource.get(src.id) ?? [];
       if (!posts.length) {
@@ -433,23 +448,25 @@ export async function processFacebookRun(db: DB, runId: string, budgetMs = 20_00
         if (Object.keys(fill).length) { await db.from("trucks").update(fill).eq("id", owner.id); Object.assign(owner, fill); }
       }
       let left = 0, srcStops = 0, srcPosts = 0;
-      for (const p of posts) {
-        if (seen.has(p.url)) continue;
-        if (Date.now() - t0 > budgetMs || meta.aiPaused) { left++; continue; }
-        found++;
-        let stopsMade = 0;
-        try {
-          const res = await ingestPost(ctx, kind, p, owner);
-          for (const r of res.filter(r => r.status === 'no-address' || r.status === 'no-category')) errors.push(`${r.truckName}: ${r.status === 'no-address' ? 'Address missing' : 'Google/Facebook category missing'} — original post: ${p.url}`);
-          stopsMade = res.filter((r) => r.status === "published" || r.status === "suggested").length;
-          created += stopsMade;
-          srcPosts++; srcStops += stopsMade;
-          await db.from("social_posts").upsert({ url: p.url, source_id: src.id, run_id: runId, stops_created: stopsMade });
-          seen.add(p.url);
-        } catch (e) {
-          if (e instanceof AiStop) { meta.aiPaused = e.message; errors.push(e.message); left++; }
-          else errors.push(`${p.url}: ${e instanceof Error ? e.message : String(e)}`);
-        }
+      const todo = posts.filter((p) => !seen.has(p.url));
+      // Three posts at a time: each needs one AI read (often with flyer photos), so serial reads exhausted the budget.
+      for (const batch of chunk(todo, 3)) {
+        if (Date.now() - t0 > budgetMs || meta.aiPaused) { left += batch.length; continue; }
+        await Promise.all(batch.map(async (p) => {
+          found++;
+          try {
+            const res = await ingestPost(ctx, kind, p, owner);
+            for (const r of res.filter(r => r.status === 'no-address' || r.status === 'no-category')) errors.push(`${r.truckName}: ${r.status === 'no-address' ? 'Address missing' : 'Google/Facebook category missing'} — original post: ${p.url}`);
+            const stopsMade = res.filter((r) => r.status === "published" || r.status === "suggested").length;
+            created += stopsMade;
+            srcPosts++; srcStops += stopsMade;
+            await db.from("social_posts").upsert({ url: p.url, source_id: src.id, run_id: runId, stops_created: stopsMade });
+            seen.add(p.url);
+          } catch (e) {
+            if (e instanceof AiStop) { meta.aiPaused = e.message; errors.push(e.message); left++; }
+            else errors.push(`${p.url}: ${e instanceof Error ? e.message : String(e)}`);
+          }
+        }));
       }
       if (!left && kind === "page" && srcStops === 0 && fallbacks < 3 && Date.now() - t0 < budgetMs) {
         // Apify saw posts but no stop came out of them: read the public page directly as a second opinion.
