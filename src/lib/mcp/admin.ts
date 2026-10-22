@@ -11,7 +11,7 @@ export async function adminClient(ctx: ToolContext) {
   return sb;
 }
 
-export async function ownerIdFor(sb: Awaited<ReturnType<typeof adminClient>>, input: { owner_id?: string; owner_email?: string }) {
+export async function ownerIdFor(sb: Awaited<ReturnType<typeof adminClient>>, input: { owner_id?: string | undefined; owner_email?: string | undefined }) {
   if (input.owner_id) return input.owner_id;
   if (!input.owner_email) throw new ToolError("Give owner_id or owner_email.");
   const { data, error } = await sb.rpc("admin_user_id_by_email", { _email: input.owner_email });
@@ -23,6 +23,6 @@ export async function ownerIdFor(sb: Awaited<ReturnType<typeof adminClient>>, in
 export const json = <T,>(text: string, data: T) => ({ content: [{ type: "text" as const, text }], structuredContent: data });
 
 /** Drops undefined keys so updates only touch the fields the caller sent. */
-export function defined<T extends Record<string, unknown>>(o: T): Partial<T> {
-  return Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) as Partial<T>;
+export function defined(o: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined));
 }

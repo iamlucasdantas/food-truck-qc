@@ -44,11 +44,11 @@ export const adminSaveBusiness = defineTool({
     const { data: existing } = await sb.from("businesses").select("owner_id").eq("owner_id", owner).maybeSingle();
     const patch = defined(fields);
     if (existing) {
-      const { error } = await sb.from("businesses").update({ ...patch, updated_at: new Date().toISOString() }).eq("owner_id", owner);
+      const { error } = await sb.from("businesses").update({ ...patch, updated_at: new Date().toISOString() } as never).eq("owner_id", owner);
       if (error) throw new ToolError(error.message);
     } else {
       if (!fields.name) throw new ToolError("name is required to create a business.");
-      const { error } = await sb.from("businesses").insert({ description: "", ...patch, name: fields.name, owner_id: owner });
+      const { error } = await sb.from("businesses").insert({ description: "", ...patch, name: fields.name, owner_id: owner } as never);
       if (error) throw new ToolError(error.message);
     }
     const { data } = await sb.from("businesses").select(BIZ).eq("owner_id", owner).single();
@@ -67,6 +67,6 @@ export const adminDeleteBusiness = defineTool({
     const { data, error } = await sb.from("businesses").delete().eq("owner_id", owner_id).select("name");
     if (error) throw new ToolError(error.message);
     if (!data?.length) throw new ToolError("Business not found.");
-    return json(`Deleted business ${data[0].name}.`, { deleted: true });
+    return json(`Deleted business ${data[0]?.name ?? ""}.`, { deleted: true });
   },
 });

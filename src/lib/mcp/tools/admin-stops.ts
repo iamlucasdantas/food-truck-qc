@@ -44,9 +44,9 @@ export const adminSaveStop = defineTool({
   handler: async (a, ctx) => {
     const sb = await adminClient(ctx);
     const patch: Record<string, unknown> = {};
-    if (a.venue_name !== undefined) patch.venue_name = a.venue_name;
-    if (a.note !== undefined) patch.note = a.note;
-    if (a.cancelled !== undefined) patch.cancelled = a.cancelled;
+    if (a.venue_name !== undefined) patch["venue_name"] = a.venue_name;
+    if (a.note !== undefined) patch["note"] = a.note;
+    if (a.cancelled !== undefined) patch["cancelled"] = a.cancelled;
     if (a.address) {
       const g = await geocode(a.address).catch(() => null);
       if (!g) throw new ToolError("Couldn't find that address on the map. Try adding city and state.");
@@ -60,12 +60,12 @@ export const adminSaveStop = defineTool({
     }
     let row;
     if (a.id) {
-      const { data, error } = await sb.from("stops").update(patch).eq("id", a.id).select(STOP);
+      const { data, error } = await sb.from("stops").update(patch as never).eq("id", a.id).select(STOP);
       if (error) throw new ToolError(error.message);
       if (!data?.length) throw new ToolError("Stop not found.");
-      row = data[0];
+      row = data[0]!;
     } else {
-      if (!a.truck_id || !a.venue_name || !a.address || !patch.starts_at) throw new ToolError("To create: truck_id, venue_name, address, date, start, end.");
+      if (!a.truck_id || !a.venue_name || !a.address || !patch["starts_at"]) throw new ToolError("To create: truck_id, venue_name, address, date, start, end.");
       const { data, error } = await sb.from("stops").insert({ ...patch, truck_id: a.truck_id, source: "owner", confidence: 1 } as never).select(STOP).single();
       if (error) throw new ToolError(error.message);
       row = data;

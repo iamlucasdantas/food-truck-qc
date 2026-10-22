@@ -47,24 +47,24 @@ export const adminSaveTruck = defineTool({
   handler: async ({ id, owner_id, base_address, ...fields }, ctx) => {
     const sb = await adminClient(ctx);
     const patch: Record<string, unknown> = defined(fields);
-    if (owner_id !== undefined) patch.claimed_by = owner_id;
+    if (owner_id !== undefined) patch["claimed_by"] = owner_id;
     if (base_address !== undefined) {
-      patch.base_address = base_address;
+      patch["base_address"] = base_address;
       if (base_address) {
         const g = await geocode(base_address).catch(() => null);
         if (!g) throw new ToolError("Couldn't find that address on the map. Try adding city and state.");
-        patch.base_lat = g.lat; patch.base_lng = g.lng;
-      } else { patch.base_lat = null; patch.base_lng = null; }
+        patch["base_lat"] = g.lat; patch["base_lng"] = g.lng;
+      } else { patch["base_lat"] = null; patch["base_lng"] = null; }
     }
     let truckId = id;
     if (id) {
-      const { data, error } = await sb.from("trucks").update(patch).eq("id", id).select("id");
+      const { data, error } = await sb.from("trucks").update(patch as never).eq("id", id).select("id");
       if (error) throw new ToolError(error.message);
       if (!data?.length) throw new ToolError("Truck not found.");
     } else {
       if (!fields.name) throw new ToolError("name is required to create a truck.");
       truckId = `${slugify(fields.name)}-${crypto.randomUUID().slice(0, 5)}`;
-      const { error } = await sb.from("trucks").insert({ category: "", description: "", source: "admin", is_food_truck: true, status: "pending", ...patch, name: fields.name, id: truckId });
+      const { error } = await sb.from("trucks").insert({ category: "", description: "", source: "admin", is_food_truck: true, status: "pending", ...patch, name: fields.name, id: truckId } as never);
       if (error) throw new ToolError(error.message);
     }
     const { data } = await sb.from("trucks").select(TRUCK).eq("id", truckId!).single();
