@@ -32,11 +32,16 @@ export const readStopsScreenshot = createServerFn({ method: "POST" })
       context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" }),
     ]);
     if (!owns && !admin) throw new Error("Only this truck's owner or an admin can add stops.");
-    const key = process.env["LOVABLE_API_KEY"];
-    if (!key) return { stops: [], skipped: 0, error: "The AI reader isn't configured." };
+    const key = process.env["LOVABLE_API_KEY"] ?? "";
+    if (!key && !process.env["GOOGLE_API_KEY"]) return { stops: [], skipped: 0, error: "The AI reader isn't configured." };
     const { data: truck } = await context.supabase.from("trucks").select("name").eq("id", data.truckId).maybeSingle();
     const { chicagoDate } = await import("@/data/trucks");
     const today = chicagoDate();
+    const { hasGemini, geminiJson } = await import("./gemini.server");
+    if (hasGemini()) {
+      try { const j = await geminiJson<{ stops?: unknown }>({ text: PROMPT(today, truck?.name ?? "this truck"), images: [data.image], schema: SCHEMA }); return parseStopDrafts(j.stops ?? [], today); }
+      catch (e) { console.error("[stop reader] gemini", e); return { stops: [], skipped: 0, error: "Couldn't read the screenshot." }; }
+    }
     const res = await fetch(GATEWAY, {
       method: "POST",
       headers: { "Content-Type": "application/json", "Lovable-API-Key": key, "X-Lovable-AIG-SDK": "fetch" },

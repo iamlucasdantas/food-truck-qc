@@ -20,6 +20,11 @@ If the image is not a readable post, return readable=false and empty strings.`;
 export type ReadPost = { readable: boolean; author: string; posted: string; text: string; error?: string };
 
 export async function readPostScreenshot(image: string): Promise<ReadPost> {
+  const { hasGemini, geminiJson } = await import("./gemini.server");
+  if (hasGemini()) {
+    try { return await geminiJson<ReadPost>({ system: PROMPT, text: "Read this post.", images: [image], schema: SCHEMA }); }
+    catch (e) { console.error("[post reader] gemini", e); return { readable: false, author: "", posted: "", text: "", error: "Couldn't read the screenshot. Try again or paste the text." }; }
+  }
   const key = process.env["LOVABLE_API_KEY"];
   if (!key) return { readable: false, author: "", posted: "", text: "", error: "The AI reader isn't configured." };
   const res = await fetch(GATEWAY, {
