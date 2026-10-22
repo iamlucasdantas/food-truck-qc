@@ -7,7 +7,7 @@ import { completeAddress, discoveredTruckId, profileCategory } from "@/data/inge
 import { socialSourceUrl } from "@/data/social-source-url";
 import { authorIsTruck, ownerHandles, centralToUtc, chicagoDate, keepExtraction, matchTruckByName, slugify, groupStops } from "@/data/trucks";
 import { isFacebookFeed } from '@/data/feed-priority';
-import { normalizeSocialItem, chunk, type Post, type RawItem } from "@/data/social-read";
+import { normalizeSocialItem, chunk, isLoginWallText, type Post, type RawItem } from "@/data/social-read";
 
 type DB = SupabaseClient<Database>;
 type Kind = "page" | "group" | "reddit" | "instagram";
@@ -274,7 +274,25 @@ export async function ingestPost(ctx: IngestCtx, kind: Kind | "paste", p: Post, 
     const r = { ...base, truckName: truck?.name ?? e.truck_name, truckId: truck?.id ?? null, own, venue: geo?.name ?? e.venue, address: geo?.address ?? base.address, city: geo?.city || e.city, checkAddress: geo?.check ?? true };
     if (/^\d{4}-\d{2}-\d{2}$/.test(e.date) && e.date < today) { out.push({ ...r, status: "history" }); continue; }
     if (!keepExtraction(e, today)) { out.push({ ...r, status: "low-confidence" }); continue; }
-    if (!geo || !completeAddress(geo.address, geo.lat, geo.lng)) { out.push({ ...r, status: "no-address" }); continue; }
+    if (!geo || !completeAddress(geo.address, geo.lat, geo.lng)) {
+      // Known truck, upcoming date, place not found: keep it as a review item (Pending trucks) instead of losing it.
+      if (truck && !ctx.dryRun) {
+        const starts = centralToUtc(e.date, e.start || "11:00");
+        let ends = centralToUtc(e.date, e.end || "14:00");
+        if (ends <= starts) ends = new Date(starts.getTime() + 3 * 3_600_000);
+        const venueName = geo?.name || e.venue || e.address || "Location not found";
+        const { data: dup } = await db.from("suggested_stops").select("id").eq("truck_id", truck.id).eq("starts_at", starts.toISOString()).eq("venue_name", venueName).neq("status", "rejected").limit(1);
+        if (dup?.length) { out.push({ ...r, status: "duplicate" }); continue; }
+        const { error } = await db.from("suggested_stops").insert({
+          truck_id: truck.id, source: kind, source_url: p.url || null, author: p.author || null, excerpt: p.text.slice(0, 500),
+          venue_name: venueName, address: geo?.address ?? (e.address || null), city: geo?.city || e.city || "", needs_address_check: true,
+          lat: geo?.lat ?? null, lng: geo?.lng ?? null, starts_at: starts.toISOString(), ends_at: ends.toISOString(),
+        });
+        out.push({ ...r, checkAddress: true, status: error ? "no-address" : "suggested" });
+        continue;
+      }
+      out.push({ ...r, status: "no-address" }); continue;
+    }
     // A dated venue is evidence of a stop location, not a stationary base.
     const facebookProfile = (() => { try { const u = new URL(p.inputUrl); return /^(www\.|m\.|web\.)?facebook\.com$/.test(u.hostname) && !u.pathname.startsWith('/groups/') ? u.toString() : null; } catch { return null; } })();
     const category = kind === 'page' || (kind === 'paste' && facebookProfile) ? profileCategory([], p.text) : null;
@@ -501,6 +519,8 @@ export async function contextDevPage(ctx: IngestCtx, src: Source, trucks: TruckL
   const { scrapeMarkdown } = await import("./context-dev.server");
   const page = await scrapeMarkdown(src.url);
   if ("error" in page) return { ok: false, stops: 0, error: page.error };
+  // Without login Facebook shows only the page header (name, followers): nothing to read, so it is not a success.
+  if (isLoginWallText(page.markdown)) return { ok: false, stops: 0, error: "Facebook showed only the public page header (login wall) — no posts readable" };
   const owner = trucks.find((t) => t.id === src.truck_id) ?? null;
   // Keep only the first part of the page — the three most recent posts sit there.
   const res = await ingestPost(ctx, "page", { url: src.url, text: page.markdown.slice(0, 9000), time: new Date().toISOString(), author: owner?.name ?? page.title, inputUrl: src.url }, owner);
