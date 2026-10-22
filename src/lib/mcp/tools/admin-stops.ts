@@ -85,6 +85,6 @@ export const adminDeleteStop = defineTool({
     const { data, error } = await sb.from("stops").delete().eq("id", id).select("venue_name");
     if (error) throw new ToolError(error.message);
     if (!data?.length) throw new ToolError("Stop not found.");
-    return json(`Deleted stop ${data[0].venue_name}.`, { deleted: true });
+    return json(`Deleted stop ${data[0]?.venue_name ?? ""}.`, { deleted: true });
   },
 });
