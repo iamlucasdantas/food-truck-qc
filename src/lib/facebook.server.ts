@@ -121,14 +121,19 @@ export async function startFacebookRun(db: DB, onlyIds?: string[]) {
         await db.from("social_sources").update({ last_run_at: new Date().toISOString(), last_status: "blocked", last_reason: reason, last_posts: 0, last_stops: 0 }).eq("id", source.id);
       }
     }
-    if (valid.length) {
-      try { meta.runs = { ...meta.runs, [kind]: await startActor(kind, valid) }; }
-      catch (error) {
+    // Pages/profiles go in small jobs; groups and Reddit stay one job per kind.
+    const parts = kind === "page" || kind === "instagram" ? chunk(valid, CHUNK) : valid.length ? [valid] : [];
+    for (const [i, part] of parts.entries()) {
+      const key = i === 0 ? kind : `${kind}_${i + 1}`;
+      try {
+        meta.runs = { ...meta.runs, [key]: await startActor(kind, part) };
+        meta.chunks = { ...meta.chunks, [key]: part.map((p) => p.id) };
+      } catch (error) {
         const reason = error instanceof Error ? error.message : String(error);
         errors.push(reason);
         // One rejected actor must not orphan jobs already started or block context.dev.
-        completed.push(...valid.map(source => source.id));
-        await db.from("social_sources").update({ last_run_at: new Date().toISOString(), last_status: "blocked", last_reason: reason.slice(0, 300) }).in("id", valid.map(source => source.id));
+        completed.push(...part.map(source => source.id));
+        await db.from("social_sources").update({ last_run_at: new Date().toISOString(), last_status: "blocked", last_reason: reason.slice(0, 300) }).in("id", part.map(source => source.id));
       }
     }
   }
