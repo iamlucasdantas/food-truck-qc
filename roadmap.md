@@ -1,9 +1,9 @@
 # Roadmap
 
 ## MCP geocoding repair (2026-10-23)
-- [ ] Reproduce provider failure; repair shared address-only geocoding with explicit diagnostics and fallback.
-- [ ] Verify three supplied addresses and real API-key MCP stop creation/readback; keep existing keys/auth unchanged.
-- [ ] Report evidence and publication status; do not publish without approval.
+- [x] Reproduced MCP failure: Nominatim HTTP 403 Access denied; repaired shared address-only geocoding using server Google connector → identified Nominatim, bounded timeouts, success cache, deduplication and explicit provider diagnostics.
+- [x] Three addresses returned coordinates through authenticated server lookup; API-key MCP created Credit Island Park Oct 24 12:00–22:00 Central and admin_list_stops/public profile read it back. Removed temporary test key only; 70 focused tests passed, manifest retains 13 tools, automatic build OK.
+- [x] Reported evidence and publication status. No services enabled, no auth/schema/tool argument changes. Not published; hosted correction awaits approval.
 
 ## Facebook priority and Schaab’s SSAB map stop (2026-10-21)
 - [x] Apply Facebook-over-other-feed stop conflict precedence across map, profiles and API/MCP; direct manual confirmations and unapproved suggestion safeguards remain protected.
