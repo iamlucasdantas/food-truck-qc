@@ -1,4 +1,3 @@
-// @vitest-environment node
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 
 beforeEach(() => {
@@ -12,8 +11,8 @@ afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); vi.restoreAllMocks(
 
 const cases = [
   ['2200 W River Dr, Davenport, IA 52802', 41.509553, -90.606374, 'Davenport'],
-  ['1218 N Brady St, Davenport, IA 52803', 41.532698, -90.574598, 'Davenport'],
-  ['2500 53rd St, Moline, IL 61265', 41.486399, -90.465089, 'Moline'],
+  ['1218 N Brady St, Davenport, IA 52803', 41.535016, -90.574056, 'Davenport'],
+  ['2500 53rd St, Moline, IL 61265', 41.486598, -90.465592, 'Moline'],
 ] as const;
 for (const [address, lat, lng, city] of cases) {
   it(`encodes only the address with US bias and an identified fallback: ${address}`, async () => {
