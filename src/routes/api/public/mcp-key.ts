@@ -24,8 +24,17 @@ export const Route = createFileRoute("/api/public/mcp-key")({
           title: "Food Truck QC",
           version: "0.1.0",
           instructions: mcpInstructions,
-          tools: mcpTools,
-          createAppContext: (() => identity) as never,
+          // Each call runs as the key owner: getToken/getUserId return the minted session.
+          tools: mcpTools.map((t) => ({
+            ...t,
+            handler: (args: never, ctx: object) => {
+              const asOwner = Object.create(ctx, {
+                getToken: { value: () => identity.token },
+                getUserId: { value: () => identity.userId },
+              });
+              return (t.handler as (a: never, c: unknown) => unknown)(args, asOwner);
+            },
+          })) as typeof mcpTools,
         });
         return createTanStackMcpHandler(mcp, { resourcePath: "/api/public/mcp-key" })({ request });
       },
