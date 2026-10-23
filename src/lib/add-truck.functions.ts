@@ -4,7 +4,6 @@ import { mapApifyCategory, slugify } from "@/data/trucks";
 import { profileCategory, approvalIssue } from "@/data/ingestion-review";
 import { findDuplicates, normLink, type DupMatch } from "@/data/duplicates";
 import { inServiceRegion } from "@/data/coverage";
-import { addressVariants } from "@/data/ingestion-review";
 
 export type TruckDraft = {
   name: string; category: string; description: string; base_address: string; phone: string; website: string;
@@ -98,10 +97,10 @@ export const createTruckFromDraft = createServerFn({ method: "POST" })
     const duplicates = findDuplicates(d, await existingTrucks(supabase));
     if (duplicates.length && !data.allowDuplicate) return { duplicates };
     let lat: number | null = null, lng: number | null = null;
-    for (const q of addressVariants(str(d.base_address))) {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=us&q=${encodeURIComponent(q)}`, { headers: { Accept: "application/json", "User-Agent": "FoodTruckQC/1.0 (app.foodtruckqc.com)" } }).catch(() => null);
-      const [hit] = res?.ok ? ((await res.json()) as { lat: string; lon: string }[]) : [];
-      if (hit) { lat = Number(hit.lat); lng = Number(hit.lon); break; }
+    if (str(d.base_address)) {
+      const { geocodeAddress } = await import('./geocode.server');
+      const hit = await geocodeAddress(str(d.base_address));
+      lat = hit.lat; lng = hit.lng;
     }
     const category = str(d.category);
     const fields = {

@@ -1,5 +1,10 @@
 # Roadmap
 
+## MCP geocoding repair (2026-10-23)
+- [x] Reproduced MCP failure: Nominatim HTTP 403 Access denied; repaired shared address-only geocoding using server Google connector → identified Nominatim, bounded timeouts, success cache, deduplication and explicit provider diagnostics.
+- [x] Three addresses returned coordinates through authenticated server lookup; API-key MCP created Credit Island Park Oct 24 12:00–22:00 Central and admin_list_stops/public profile read it back. Removed temporary test key only; 70 focused tests passed, manifest retains 13 tools, automatic build OK.
+- [x] Reported evidence and publication status. No services enabled, no auth/schema/tool argument changes. Not published; hosted correction awaits approval.
+
 ## Facebook priority and Schaab’s SSAB map stop (2026-10-21)
 - [x] Apply Facebook-over-other-feed stop conflict precedence across map, profiles and API/MCP; direct manual confirmations and unapproved suggestion safeguards remain protected.
 - [x] Schaab’s SSAB stop is today 11–2 Central, 13.0 miles from the default pin (outside 10-mile default, not yet open). Fixed uncertain venue cache overriding the already-confirmed owner pin, filled Muscatine and published the matching own Facebook confirmation. Browser verified one SSAB outing/profile entry and map marker at 20-mile radius with Open now off; no runtime errors.

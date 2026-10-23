@@ -2,7 +2,6 @@ import { defineTool, ToolError } from "@lovable.dev/mcp-js";
 import { z } from "zod";
 import { centralToUtc, chicagoDate } from "@/data/trucks";
 const fmtCentral = (iso: string) => new Date(iso).toLocaleString("en-US", { timeZone: "America/Chicago", dateStyle: "medium", timeStyle: "short" });
-import { geocode } from "@/lib/geocode";
 import { adminClient, json } from "../admin";
 
 const date = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).describe("YYYY-MM-DD (Central time).");
@@ -48,8 +47,8 @@ export const adminSaveStop = defineTool({
     if (a.note !== undefined) patch["note"] = a.note;
     if (a.cancelled !== undefined) patch["cancelled"] = a.cancelled;
     if (a.address) {
-      const g = await geocode(a.address).catch(() => null);
-      if (!g) throw new ToolError("Couldn't find that address on the map. Try adding city and state.");
+      const { geocodeAddress } = await import('@/lib/geocode.server');
+      const g = await geocodeAddress(a.address).catch((e: unknown) => { throw new ToolError(e instanceof Error ? e.message : 'Address lookup failed'); });
       Object.assign(patch, { address: a.address, lat: g.lat, lng: g.lng, city: g.city || "Quad Cities" });
     }
     if (a.date || a.start || a.end) {
@@ -63,7 +62,8 @@ export const adminSaveStop = defineTool({
       const { data, error } = await sb.from("stops").update(patch as never).eq("id", a.id).select(STOP);
       if (error) throw new ToolError(error.message);
       if (!data?.length) throw new ToolError("Stop not found.");
-      row = data[0]!;
+      row = data[0];
+      if (!row) throw new ToolError("Stop not found.");
     } else {
       if (!a.truck_id || !a.venue_name || !a.address || !patch["starts_at"]) throw new ToolError("To create: truck_id, venue_name, address, date, start, end.");
       const { data, error } = await sb.from("stops").insert({ ...patch, truck_id: a.truck_id, source: "owner", confidence: 1 } as never).select(STOP).single();

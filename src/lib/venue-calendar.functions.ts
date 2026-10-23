@@ -11,8 +11,8 @@ export const saveVenueCalendar = createServerFn({ method: 'POST' }).middleware([
     new Intl.DateTimeFormat('en-US', { timeZone: data.timezone });
     const { validateProviderLink } = await import('./safe-link-fetch.server');
     const url = validateProviderLink(data.url, 'calendar').toString();
-    const { geocode } = await import('./geocode');
-    const geo = await geocode(data.address);
+    const { geocodeAddress } = await import('./geocode.server');
+    const geo = await geocodeAddress(data.address);
     if (!geo || !geo.city || !Number.isFinite(geo.lat) || !Number.isFinite(geo.lng)) throw Error('Venue address could not be geocoded. Use a complete street address.');
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
     const { data: source, error } = await supabaseAdmin.from('venue_calendar_sources').insert({ ...data, url, city: geo.city, lat: geo.lat, lng: geo.lng }).select('id').single();
