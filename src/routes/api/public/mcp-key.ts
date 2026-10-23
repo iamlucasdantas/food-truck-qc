@@ -27,7 +27,7 @@ export const Route = createFileRoute("/api/public/mcp-key")({
           version: "0.1.0",
           instructions: mcpInstructions,
           tools: mcpTools,
-          createAppContext: () => identity,
+          createAppContext: (() => identity) as never,
         });
         return createTanStackMcpHandler(mcp, { resourcePath: "/api/public/mcp-key" })({ request });
       },
