@@ -67,6 +67,18 @@ describe("public link reader security", () => {
     await expect(readPublicLink(page, PAGE_FETCH_LIMITS, {})).rejects.toThrow();
     expect(fetcher.mock.calls).toHaveLength(2);
   });
+  it("uses the edge-supported manual redirect for DNS lookups and rejects DNS redirects", async () => {
+    const fetcher = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (new URL(String(input)).hostname === "cloudflare-dns.com") {
+        expect(init?.redirect).toBe("manual");
+        return new Response(null, { status: 302, headers: { location: "https://evil.example/" } });
+      }
+      return new Response("no");
+    });
+    vi.stubGlobal("fetch", fetcher);
+    await expect(readPublicLink(page, PAGE_FETCH_LIMITS, {})).rejects.toThrow("verify");
+    expect(fetcher.mock.calls.filter(([, init]) => init?.redirect === "error")).toHaveLength(0);
+  });
   it("checks the DNS destination of every redirect before contacting it", async () => {
     const target = vi.fn(() => new Response(null, { status: 302, headers: { location: "https://m.facebook.com/" } }));
     const fetcher = mockNetwork(target, { "m.facebook.com": ["169.254.169.254"] });

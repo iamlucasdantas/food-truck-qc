@@ -74,7 +74,9 @@ async function validateDestination(url: URL, signal: AbortSignal): Promise<void>
     const resolver = new URL("https://cloudflare-dns.com/dns-query");
     resolver.searchParams.set("name", host);
     resolver.searchParams.set("type", type);
-    const response = await fetch(resolver, { headers: { Accept: "application/dns-json" }, redirect: "error", signal });
+    // "error" is unsupported in the edge runtime; manual + explicit 3xx rejection is the equivalent.
+    const response = await fetch(resolver, { headers: { Accept: "application/dns-json" }, redirect: "manual", signal });
+    if (response.status >= 300 && response.status < 400) throw new Error("Couldn't verify that link's destination");
     if (!response.ok) throw new Error("Couldn't verify that link's destination");
     const result = JSON.parse(await boundedText(response, 64_000, signal)) as { Status?: number; Answer?: { type: number; data: string }[] };
     if (result.Status !== 0) throw new Error("Couldn't verify that link's destination");
