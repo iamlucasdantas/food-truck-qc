@@ -1,7 +1,6 @@
 import { defineTool, ToolError } from "@lovable.dev/mcp-js";
 import { z } from "zod";
 import { slugify } from "@/data/trucks";
-import { geocode } from "@/lib/geocode";
 import { adminClient, defined, json } from "../admin";
 
 const TRUCK = "id,name,business_name,category,truck_type,status,description,menu_summary,phone,website,instagram,facebook,base_address,base_lat,base_lng,claimed_by,is_food_truck";
@@ -51,8 +50,8 @@ export const adminSaveTruck = defineTool({
     if (base_address !== undefined) {
       patch["base_address"] = base_address;
       if (base_address) {
-        const g = await geocode(base_address).catch(() => null);
-        if (!g) throw new ToolError("Couldn't find that address on the map. Try adding city and state.");
+        const { geocodeAddress } = await import('@/lib/geocode.server');
+        const g = await geocodeAddress(base_address).catch((e: unknown) => { throw new ToolError(e instanceof Error ? e.message : 'Address lookup failed'); });
         patch["base_lat"] = g.lat; patch["base_lng"] = g.lng;
       } else { patch["base_lat"] = null; patch["base_lng"] = null; }
     }
@@ -67,7 +66,8 @@ export const adminSaveTruck = defineTool({
       const { error } = await sb.from("trucks").insert({ category: "", description: "", source: "admin", is_food_truck: true, status: "pending", ...patch, name: fields.name, id: truckId } as never);
       if (error) throw new ToolError(error.message);
     }
-    const { data } = await sb.from("trucks").select(TRUCK).eq("id", truckId!).single();
+    if (!truckId) throw new ToolError('Truck id missing.');
+    const { data } = await sb.from("trucks").select(TRUCK).eq("id", truckId).single();
     return json(`${id ? "Updated" : "Created"} truck ${data?.name} (${truckId}), status ${data?.status}.`, { truck: data });
   },
 });

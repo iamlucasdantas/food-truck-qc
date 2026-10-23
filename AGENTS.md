@@ -10,6 +10,7 @@
 <!-- LOVABLE:END -->
 
 ## Rules
+- Address-only manual geocoding uses geocode.server.ts (Google server connector then identified Nominatim fallback); UI uses authenticated geocode.functions.ts and MCP calls the helper after admin authorization, so credentials stay server-only and provider failures remain diagnosable.
 - Managed social scans use the stable facebook-daily callback with a validated versioned body and Chicago-local timing rules in src/data/social-schedule.ts; preserve the old body until deployment and schedule replacement so live callbacks remain compatible.
 - Read src/lib/AGENTS.md and src/data/AGENTS.md before edits there; subdirectories may have their own AGENTS.md.
 - Shared agent search ranks names/classification; public-schedule handles profiles. data/coverage.ts defines Davenport coverage for map/API/ingestion to agree.
