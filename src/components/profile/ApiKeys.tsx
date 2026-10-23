@@ -57,7 +57,7 @@ export function ApiKeys() {
   return (
     <Section
       title="API keys"
-      subtitle="Connect apps that can't sign in. Send the key as 'Authorization: Bearer ftqc_…' to /api/public/v1/trucks, /stops and /favorites."
+      subtitle="Connect apps that can't sign in. Send the key as 'Authorization: Bearer ftqc_…' to /api/public/v1/trucks, /stops, /favorites, or the MCP connector at /api/public/mcp-key."
     >
       {newKey && (
         <div className="rounded-lg border border-primary/40 bg-accent p-4">

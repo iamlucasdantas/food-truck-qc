@@ -1,6 +1,7 @@
 import { defineTool, ToolError } from "@lovable.dev/mcp-js";
 import { z } from "zod";
 import { supabaseForUser } from "../supabase";
+import { callerUserId } from "../identity";
 
 export default defineTool({
   name: "set_favorite",
@@ -12,7 +13,7 @@ export default defineTool({
   },
   annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
   handler: async ({ truck_id, favorite }, ctx) => {
-    const uid = ctx.getUserId();
+    const uid = callerUserId(ctx);
     if (!uid) throw new ToolError("Not signed in.");
     const sb = supabaseForUser(ctx);
     const { error } = favorite

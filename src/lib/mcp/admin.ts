@@ -1,9 +1,10 @@
 import { ToolError, type ToolContext } from "@lovable.dev/mcp-js";
 import { supabaseForUser } from "./supabase";
+import { callerUserId } from "./identity";
 
 /** Admin tools run as the caller (RLS applies); this only fails fast for non-admins. */
 export async function adminClient(ctx: ToolContext) {
-  const uid = ctx.getUserId();
+  const uid = callerUserId(ctx);
   if (!uid) throw new ToolError("Not signed in.");
   const sb = supabaseForUser(ctx);
   const { data } = await sb.rpc("has_role", { _user_id: uid, _role: "admin" });
