@@ -12,11 +12,9 @@ export const Route = createFileRoute("/api/public/mcp-key")({
     handlers: {
       ANY: async ({ request }) => {
         const { apiKeyUserId, unauthorized } = await import("@/lib/api-key-auth.server");
-        const xKey = request.headers.get("x-api-key");
-        const authReq = xKey && !request.headers.get("authorization")
-          ? new Request(request, { headers: { ...Object.fromEntries(request.headers), authorization: `Bearer ${xKey}` } })
-          : request;
-        const userId = await apiKeyUserId(authReq);
+        const xKey = request.headers.get("x-api-key")?.trim();
+        const authHeader = request.headers.get("authorization") ?? (xKey ? `Bearer ${xKey}` : "");
+        const userId = await apiKeyUserId(new Request("https://key.check/", { headers: { authorization: authHeader } }));
         if (!userId) return unauthorized();
         const { sessionForUser } = await import("@/lib/mcp/key-session.server");
         const identity = await sessionForUser(userId);
