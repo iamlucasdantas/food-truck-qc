@@ -19,7 +19,7 @@
 - Roles only come from `user_roles` + `has_role()`; never from profile/user metadata.
 - Truck logos are stored as small data URLs on the truck row because the workspace blocks public storage buckets.
 - Guest hearts live in localStorage and merge into favorites on sign-in (FavoritesSync); signed-in-only pages go under src/routes/_authenticated (client-side gate), so public pages stay crawlable.
-- MCP: src/lib/mcp, managed OAuth, caller RLS; never edit generated routes. Admin tools (business → trucks → stops CRUD) check has_role via mcp/admin.ts and still write as the caller so RLS and DB approval triggers apply.
+- MCP: src/lib/mcp, managed OAuth at /mcp plus API-key MCP at /api/public/mcp-key (key owner gets a minted real session so RLS/has_role apply identically); never edit generated routes. Admin tools (business → trucks → stops CRUD) check has_role via mcp/admin.ts and still write as the caller so RLS and DB approval triggers apply.
 - Sitemap is router-derived (src/lib/sitemap.ts + sitemap[.]xml route); every route must set staticData.sitemap, and truck pages come from active trucks — keeps Google's page list in sync automatically.
 - Only auth emails come from Lovable Cloud; every other email is sent by the owner's HighLevel CRM. App code only POSTs flat snake_case JSON to one inbound-webhook URL per flow (HIGHLEVEL_USER_WEBHOOK_URL, HIGHLEVEL_OWNER_WEBHOOK_URL, HIGHLEVEL_ALERT_WEBHOOK_URL secrets) and fails quietly when unset.
 - Owner recurrence uses stop_series expanded on read; one-date edits use skip_dates + stops. Venue calendars use ICAL.js and atomic source/UID/date reconciliation of calendar-owned stops; admin title links never create trucks.

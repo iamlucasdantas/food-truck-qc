@@ -85,6 +85,7 @@ function Developers() {
         <li>Restaurants and chains are excluded; Admin can change the food truck classification. Zero results include the next matching stop within 7 days when known.</li>
         <li>Results sort open now, soonest stop, then distance; an exact truck-name search takes priority.</li>
         <li>CORS is enabled on the chat agent endpoints. An MCP server is also available at <code>{BASE}/mcp</code> (sign-in required).</li>
+        <li>MCP without sign-in: connect to <code>{BASE}/api/public/mcp-key</code> with the header <code>Authorization: Bearer ftqc_…</code> (or <code>x-api-key</code>). Create keys in Profile → API keys. Same tools as <code>/mcp</code>; they run as the key owner, so admin tools work only with an admin's key.</li>
       </ul>
     </main>
   );

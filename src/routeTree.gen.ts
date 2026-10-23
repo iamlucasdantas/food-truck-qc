@@ -33,6 +33,7 @@ import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.
 import { Route as ApiPublicApifyWebhookRouteImport } from './routes/api/public/apify-webhook'
 import { Route as ApiPublicChatSearchTrucksRouteImport } from './routes/api/public/chat-search-trucks'
 import { Route as ApiPublicChatUpcomingStopsRouteImport } from './routes/api/public/chat-upcoming-stops'
+import { Route as ApiPublicMcpKeyRouteImport } from './routes/api/public/mcp-key'
 import { Route as ApiPublicCalendarIdRouteImport } from './routes/api/public/calendar.$id'
 import { Route as ApiPublicJobsFacebookDailyRouteImport } from './routes/api/public/jobs/facebook-daily'
 import { Route as ApiPublicJobsVenueCalendarsRouteImport } from './routes/api/public/jobs/venue-calendars'
@@ -164,6 +165,11 @@ const ApiPublicChatUpcomingStopsRoute =
     path: '/api/public/chat-upcoming-stops',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicMcpKeyRoute = ApiPublicMcpKeyRouteImport.update({
+  id: '/api/public/mcp-key',
+  path: '/api/public/mcp-key',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicCalendarIdRoute = ApiPublicCalendarIdRouteImport.update({
   id: '/api/public/calendar/$id',
   path: '/api/public/calendar/$id',
@@ -231,6 +237,7 @@ export interface FileRoutesByFullPath {
   '/api/public/apify-webhook': typeof ApiPublicApifyWebhookRoute
   '/api/public/chat-search-trucks': typeof ApiPublicChatSearchTrucksRoute
   '/api/public/chat-upcoming-stops': typeof ApiPublicChatUpcomingStopsRoute
+  '/api/public/mcp-key': typeof ApiPublicMcpKeyRoute
   '/api/public/calendar/$id': typeof ApiPublicCalendarIdRoute
   '/api/public/jobs/facebook-daily': typeof ApiPublicJobsFacebookDailyRoute
   '/api/public/jobs/venue-calendars': typeof ApiPublicJobsVenueCalendarsRoute
@@ -264,6 +271,7 @@ export interface FileRoutesByTo {
   '/api/public/apify-webhook': typeof ApiPublicApifyWebhookRoute
   '/api/public/chat-search-trucks': typeof ApiPublicChatSearchTrucksRoute
   '/api/public/chat-upcoming-stops': typeof ApiPublicChatUpcomingStopsRoute
+  '/api/public/mcp-key': typeof ApiPublicMcpKeyRoute
   '/api/public/calendar/$id': typeof ApiPublicCalendarIdRoute
   '/api/public/jobs/facebook-daily': typeof ApiPublicJobsFacebookDailyRoute
   '/api/public/jobs/venue-calendars': typeof ApiPublicJobsVenueCalendarsRoute
@@ -299,6 +307,7 @@ export interface FileRoutesById {
   '/api/public/apify-webhook': typeof ApiPublicApifyWebhookRoute
   '/api/public/chat-search-trucks': typeof ApiPublicChatSearchTrucksRoute
   '/api/public/chat-upcoming-stops': typeof ApiPublicChatUpcomingStopsRoute
+  '/api/public/mcp-key': typeof ApiPublicMcpKeyRoute
   '/api/public/calendar/$id': typeof ApiPublicCalendarIdRoute
   '/api/public/jobs/facebook-daily': typeof ApiPublicJobsFacebookDailyRoute
   '/api/public/jobs/venue-calendars': typeof ApiPublicJobsVenueCalendarsRoute
@@ -334,6 +343,7 @@ export interface FileRouteTypes {
     | '/api/public/apify-webhook'
     | '/api/public/chat-search-trucks'
     | '/api/public/chat-upcoming-stops'
+    | '/api/public/mcp-key'
     | '/api/public/calendar/$id'
     | '/api/public/jobs/facebook-daily'
     | '/api/public/jobs/venue-calendars'
@@ -367,6 +377,7 @@ export interface FileRouteTypes {
     | '/api/public/apify-webhook'
     | '/api/public/chat-search-trucks'
     | '/api/public/chat-upcoming-stops'
+    | '/api/public/mcp-key'
     | '/api/public/calendar/$id'
     | '/api/public/jobs/facebook-daily'
     | '/api/public/jobs/venue-calendars'
@@ -401,6 +412,7 @@ export interface FileRouteTypes {
     | '/api/public/apify-webhook'
     | '/api/public/chat-search-trucks'
     | '/api/public/chat-upcoming-stops'
+    | '/api/public/mcp-key'
     | '/api/public/calendar/$id'
     | '/api/public/jobs/facebook-daily'
     | '/api/public/jobs/venue-calendars'
@@ -432,6 +444,7 @@ export interface RootRouteChildren {
   ApiPublicApifyWebhookRoute: typeof ApiPublicApifyWebhookRoute
   ApiPublicChatSearchTrucksRoute: typeof ApiPublicChatSearchTrucksRoute
   ApiPublicChatUpcomingStopsRoute: typeof ApiPublicChatUpcomingStopsRoute
+  ApiPublicMcpKeyRoute: typeof ApiPublicMcpKeyRoute
   ApiPublicCalendarIdRoute: typeof ApiPublicCalendarIdRoute
   ApiPublicJobsFacebookDailyRoute: typeof ApiPublicJobsFacebookDailyRoute
   ApiPublicJobsVenueCalendarsRoute: typeof ApiPublicJobsVenueCalendarsRoute
@@ -612,6 +625,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicChatUpcomingStopsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/mcp-key': {
+      id: '/api/public/mcp-key'
+      path: '/api/public/mcp-key'
+      fullPath: '/api/public/mcp-key'
+      preLoaderRoute: typeof ApiPublicMcpKeyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/calendar/$id': {
       id: '/api/public/calendar/$id'
       path: '/api/public/calendar/$id'
@@ -718,6 +738,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicApifyWebhookRoute: ApiPublicApifyWebhookRoute,
   ApiPublicChatSearchTrucksRoute: ApiPublicChatSearchTrucksRoute,
   ApiPublicChatUpcomingStopsRoute: ApiPublicChatUpcomingStopsRoute,
+  ApiPublicMcpKeyRoute: ApiPublicMcpKeyRoute,
   ApiPublicCalendarIdRoute: ApiPublicCalendarIdRoute,
   ApiPublicJobsFacebookDailyRoute: ApiPublicJobsFacebookDailyRoute,
   ApiPublicJobsVenueCalendarsRoute: ApiPublicJobsVenueCalendarsRoute,
