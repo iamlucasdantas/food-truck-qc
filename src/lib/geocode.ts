@@ -2,6 +2,7 @@
 export async function geocode(address: string): Promise<{ lat: number; lng: number; label: string; city: string } | null> {
   const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&addressdetails=1&countrycodes=us&q=${encodeURIComponent(address)}`;
   const res = await fetch(url, { headers: { Accept: "application/json" } });
+  if (!res.ok) console.error(`[geocode] Nominatim HTTP ${res.status}: ${await res.clone().text()}`);
   if (!res.ok) return null;
   const [hit] = (await res.json()) as { lat: string; lon: string; display_name: string; address?: Record<string, string> }[];
   if (!hit) return null;
