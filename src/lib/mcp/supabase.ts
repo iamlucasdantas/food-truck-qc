@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import type { ToolContext } from "@lovable.dev/mcp-js";
 import type { Database } from "@/integrations/supabase/types";
+import { callerToken } from "./identity";
 
 type RuntimeGlobals = typeof globalThis & { process?: { env?: Record<string, string | undefined> } };
 
@@ -21,10 +22,10 @@ function key() {
   return k;
 }
 
-/** Caller-scoped client: RLS applies as the signed-in user behind the OAuth token. */
+/** Caller-scoped client: RLS applies as the signed-in user (OAuth token or API-key session). */
 export function supabaseForUser(ctx: ToolContext) {
-  const token = ctx.getToken();
-  if (!token) throw new Error("supabaseForUser requires a verified OAuth token");
+  const token = callerToken(ctx);
+  if (!token) throw new Error("supabaseForUser requires a verified token");
   return createClient<Database>(url(), key(), {
     global: { headers: { Authorization: `Bearer ${token}` } },
     auth: { persistSession: false, autoRefreshToken: false },
