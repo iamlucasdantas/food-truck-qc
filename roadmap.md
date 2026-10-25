@@ -1,5 +1,9 @@
 # Roadmap
 
+## Radius adjustment (2026-10-25)
+- [x] Make slider updates immediate for map/list and persist to the URL only after adjustment; correct maximum label to 100 miles, preserve open-only filtering.
+- [ ] Verify drag, results, saved links and reset in the public UI; run focused regression tests.
+
 ## Online presence and offline default (2026-10-25)
 - [x] Excluded base placeholders before feed conflict resolution, kept map/list open-only with zero open trucks, added opt-in home markers and refresh at stop boundaries.
 - [x] 75 focused tests passed (Bonbon Sunday, real venue, split/unsplit overnight, exact end and offline opt-in); browser verified Sunday 12:45 hidden by default, offline home marker and toggle back, plus real Saturday hours continuing Sunday 01:59 and disappearing at 02:00 without reload. No runtime errors; automatic build OK. Not published.
