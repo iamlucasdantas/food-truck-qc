@@ -11,7 +11,7 @@ it('returns null for an unrecognized address instead of rejecting form saves', a
 });
 
 it('returns null for RPC failures so busy forms reach their existing error handling', async () => {
-  lookup.mockRejectedValue(new Error('Network unavailable'));
+  lookup.mockImplementation(async () => { throw new Error('Network unavailable'); });
   await expect(geocode('2500 53rd St, Moline, IL')).resolves.toBeNull();
 });
 
