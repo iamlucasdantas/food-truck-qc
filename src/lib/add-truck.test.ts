@@ -1,4 +1,4 @@
-import { beforeEach, expect, it, vi } from 'vitest';
+import { expect, it, vi } from 'vitest';
 
 vi.mock('./geocode.server', () => ({ geocodeAddress: async () => { throw new Error('Address lookup failed. ZERO_RESULTS'); } }));
 vi.mock('@/integrations/supabase/auth-middleware', () => ({ requireSupabaseAuth: {} }));
