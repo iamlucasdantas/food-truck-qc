@@ -1,6 +1,6 @@
 import { CUISINES, cityOf, matchesFilters, openNowApplied, parseFilters, filtersToSearch, type CuisineKey, type Filters } from "@/data/filters";
 import { truckByline } from "@/data/onboarding";
-import { DAVENPORT_CENTER, DEFAULT_RADIUS_MILES, REGION_RADIUS_MILES, mapRadius } from '@/data/coverage';
+import { DAVENPORT_CENTER, DEFAULT_RADIUS_MILES, REGION_RADIUS_MILES } from '@/data/coverage';
 import { Logo } from "@/components/Logo";
 import { SiteFooter } from "@/components/SiteFooter";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -15,6 +15,7 @@ import { useFavorites } from "@/hooks/use-favorites";
 import { useTrucks, useStops, groupBy, dayBounds, useStopsRealtime } from "@/lib/queries";
 import { AccountButton } from "@/components/AccountButton";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useMapRadius } from "@/hooks/use-map-radius";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Slider } from "@/components/ui/slider";
@@ -68,7 +69,6 @@ function Index() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const f = parseFilters(search);
-  const urlRadius = Number(search["radius"]);
   const setF = (next: Partial<Filters>, extra: Record<string, string | undefined> = {}) =>
     void navigate({ search: (prev: Record<string, string | undefined>) => ({ ...prev, ...filtersToSearch({ ...f, ...next, status: [] }), ...extra }), replace: true });
   const q = f.q, cuisines = f.cuisines, onlyOpen = f.open;
@@ -81,8 +81,8 @@ function Index() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
-  const radius = mapRadius(urlRadius);
-  const setRadius = (r: number) => setF({}, { radius: r === RADIUS_DEFAULT ? undefined : String(r) });
+  const { radius, setRadius, commitRadius } = useMapRadius(search["radius"],
+    (r) => setF({}, { radius: r === RADIUS_DEFAULT ? undefined : String(r) }));
   const [mapFailed, setMapFailed] = useState(false);
   const [sheetH, setSheetH] = useState<number | null>(null);
   const drag = useRef<{ y: number; h: number } | null>(null);
@@ -158,14 +158,14 @@ function Index() {
   const active: { key: string; label: string; clear: () => void }[] = [];
   if (dayIdx !== 0) active.push({ key: "day", label: date ? dayLabel(date, dayIdx) : "", clear: () => setDayIdx(0) });
   if (effWin !== "now" && !(dayIdx > 0 && effWin === "all")) active.push({ key: "win", label: WIN_LABEL[effWin], clear: () => setWin("now") });
-  if (radius !== RADIUS_DEFAULT) active.push({ key: "r", label: `${radius} mi`, clear: () => setRadius(RADIUS_DEFAULT) });
+  if (radius !== RADIUS_DEFAULT) active.push({ key: "r", label: `${radius} mi`, clear: () => commitRadius(RADIUS_DEFAULT) });
   for (const c of cuisines) { const m = CUISINES.find((x) => x.key === c)!; active.push({ key: c, label: `${m.emoji} ${m.label}`, clear: () => setCuisines((xs) => xs.filter((x) => x !== c)) }); }
   if (f.dish) active.push({ key: "dish", label: `Dish: ${f.dish}`, clear: () => setF({ dish: "" }) });
   if (f.city) active.push({ key: "city", label: f.city, clear: () => setF({ city: "" }) });
   if (f.type) active.push({ key: "type", label: f.type === "fixed" ? "Fixed location" : "Mobile", clear: () => setF({ type: "" }) });
   if (card) active.push({ key: "card", label: "Takes card", clear: () => setCard(false) });
   if (onlyFav) active.push({ key: "fav", label: "Favorites only", clear: () => setOnlyFav(false) });
-  const clearAll = () => { setDayIdx(0); setWin("now"); setCard(false); setOnlyFav(false); setShowClosed(false); void navigate({ search: {}, replace: true }); };
+  const clearAll = () => { setRadius(RADIUS_DEFAULT); setDayIdx(0); setWin("now"); setCard(false); setOnlyFav(false); setShowClosed(false); void navigate({ search: {}, replace: true }); };
   const toggleCuisine = (k: CuisineKey) => setCuisines((xs) => xs.includes(k) ? xs.filter((x) => x !== k) : [...xs, k]);
 
   const snaps = () => { const vh = window.innerHeight; return [148, Math.round(vh * 0.45), Math.round(vh * 0.88)]; };
@@ -314,8 +314,8 @@ function Index() {
         )}
       </Section>
       <Section title="Distance" aside={<span className="text-sm font-semibold text-primary">{radius} mi</span>}>
-        <Slider min={1} max={REGION_RADIUS_MILES} step={1} value={[radius]} onValueChange={(v) => setRadius(v[0] ?? RADIUS_DEFAULT)} aria-label="Distance in miles" className="py-3" />
-        <div className="flex justify-between text-xs text-muted-foreground"><span>1 mi</span><span>75 mi</span></div>
+        <Slider min={1} max={REGION_RADIUS_MILES} step={1} value={[radius]} onValueChange={(v) => setRadius(v[0] ?? RADIUS_DEFAULT)} onValueCommit={(v) => commitRadius(v[0] ?? RADIUS_DEFAULT)} aria-label="Distance in miles" className="py-3" />
+        <div className="flex justify-between text-xs text-muted-foreground"><span>1 mi</span><span>{REGION_RADIUS_MILES} mi</span></div>
       </Section>
       <Section title="Food">
         <div className="grid gap-2 sm:grid-cols-2">
