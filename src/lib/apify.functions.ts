@@ -115,20 +115,9 @@ export const seedCity = createServerFn({ method: "POST" })
         const rows = [...(p.facebooks ?? []).map(url=>({kind:'page',url})), ...(p.instagrams ?? []).map(url=>({kind:'instagram',url}))].filter(s=>{try{const u=new URL(s.url);return ['facebook.com','www.facebook.com','instagram.com','www.instagram.com'].includes(u.hostname)&&u.pathname!=='/';}catch{return false;}}).map(s=>({...s,name:p.title ?? truckId,truck_id:truckId}));
         if(rows.length) { const {error} = await supabase.from('social_sources').upsert(rows,{onConflict:'url',ignoreDuplicates:true}); if(error) errors.push(`${p.title} sources: ${error.message}`); }
       }
-      // Replace future base-location stops (only apify_maps rows; owner stops untouched).
-      const now = new Date();
-      await supabase.from("stops").delete().eq("truck_id", truckId).eq("source", "apify_maps").gte("starts_at", now.toISOString());
-      const rows = Array.from({ length: 30 }, (_, i) => {
-        const day = new Date(now); day.setUTCDate(day.getUTCDate() + i);
-        const d = day.toISOString().slice(0, 10);
-        return {
-          truck_id: truckId, venue_name: "Base location (Google Maps)", address: p.address ?? null, city: p.city ?? data.city.split(",")[0]!,
-          lat: p.location!.lat, lng: p.location!.lng, starts_at: `${d}T05:00:00Z`, ends_at: new Date(Date.parse(`${d}T05:00:00Z`) + 86_340_000).toISOString(), // all day, Central
-          source: "apify_maps" as const, confidence: 0.3,
-        };
-      });
-      const { error } = await supabase.from("stops").insert(rows);
-      if (error) errors.push(`${p.title} stops: ${error.message}`);
+      // Google Maps hours live on the truck (google_regular_hours), never as stops:
+      // base presence is derived from stored hours at read time, so imports never
+      // create or recreate "Base location (Google Maps)" all-day stops.
     }
     // Record per-city progress server-side so a page reload never loses finished cities.
     if (data.runId) {
