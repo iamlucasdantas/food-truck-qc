@@ -288,6 +288,13 @@
       "when": 1792630795847,
       "tag": "0040_admin_mcp_helpers",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1792968484596,
+      "tag": "0041_remove_google_maps_base_stops",
+      "breakpoints": true
     }
   ]
 }
