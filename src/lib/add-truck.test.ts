@@ -18,7 +18,7 @@ import { createTruckFromDraft, type TruckDraft } from './add-truck.functions';
 beforeEach(() => geocodeAddress.mockReset());
 
 it('saves an Admin truck draft with its original address and null coordinates when lookup fails', async () => {
-  geocodeAddress.mockImplementation(async () => { throw new Error('Address lookup failed. ZERO_RESULTS'); });
+  geocodeAddress.mockImplementation(() => { throw new Error('Address lookup failed. ZERO_RESULTS'); });
   const insert = vi.fn(async () => ({ error: null }));
   const supabase = {
     rpc: vi.fn(async () => ({ data: true })),
