@@ -1,7 +1,6 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 
-const { geocodeAddress } = vi.hoisted(() => ({ geocodeAddress: vi.fn() }));
-vi.mock('./geocode.server', () => ({ geocodeAddress }));
+vi.mock('./geocode.server', () => ({ geocodeAddress: async () => { throw new Error('Address lookup failed. ZERO_RESULTS'); } }));
 vi.mock('@/integrations/supabase/auth-middleware', () => ({ requireSupabaseAuth: {} }));
 vi.mock('@tanstack/react-start', () => ({
   createServerFn: () => {
@@ -15,10 +14,7 @@ vi.mock('@tanstack/react-start', () => ({
 }));
 import { createTruckFromDraft, type TruckDraft } from './add-truck.functions';
 
-beforeEach(() => geocodeAddress.mockReset());
-
 it('saves an Admin truck draft with its original address and null coordinates when lookup fails', async () => {
-  geocodeAddress.mockImplementation(() => { throw new Error('Address lookup failed. ZERO_RESULTS'); });
   const insert = vi.fn(async () => ({ error: null }));
   const supabase = {
     rpc: vi.fn(async () => ({ data: true })),

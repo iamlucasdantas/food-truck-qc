@@ -1,9 +1,12 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 import { geocode } from './geocode';
 
-const { lookup } = vi.hoisted(() => ({ lookup: vi.fn() }));
-vi.mock('./geocode.functions', () => ({ lookupAddress: lookup }));
-beforeEach(() => lookup.mockReset());
+const { lookup, failure } = vi.hoisted(() => ({ lookup: vi.fn(), failure: { enabled: false } }));
+vi.mock('./geocode.functions', () => ({ lookupAddress: (...args: unknown[]) => {
+  if (failure.enabled) throw new Error('Network unavailable');
+  return lookup(...args);
+} }));
+beforeEach(() => { lookup.mockReset(); failure.enabled = false; });
 
 it('returns null for an unrecognized address instead of rejecting form saves', async () => {
   lookup.mockResolvedValue({ result: null, error: 'Address lookup failed. ZERO_RESULTS' });
@@ -11,7 +14,7 @@ it('returns null for an unrecognized address instead of rejecting form saves', a
 });
 
 it('returns null for RPC failures so busy forms reach their existing error handling', async () => {
-  lookup.mockImplementation(() => { throw new Error('Network unavailable'); });
+  failure.enabled = true;
   await expect(geocode('2500 53rd St, Moline, IL')).resolves.toBeNull();
 });
 
