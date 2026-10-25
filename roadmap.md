@@ -1,5 +1,10 @@
 # Roadmap
 
+## Unrecognized-address saving regression (2026-10-25)
+- [x] Confirmed optional UI lookups and Admin draft creation incorrectly propagated strict geocoding errors; restored null handling and preserved unresolved draft addresses without invented coordinates. Strict MCP lookup and approval rules unchanged.
+- [x] All 33 focused tests passed: optional lookups return null for provider/RPC/validation failures, CSV-style processing continues, Admin drafts retain addresses with null coordinates, strict server diagnostics and approval/schedule rules remain intact. Automatic build OK; not published.
+- [ ] Authenticated UI save/readback: self-session mint failed because no app account matches the requesting user's verified email; requires sign-in in preview.
+
 ## MCP geocoding repair (2026-10-23)
 - [x] Reproduced MCP failure: Nominatim HTTP 403 Access denied; repaired shared address-only geocoding using server Google connector → identified Nominatim, bounded timeouts, success cache, deduplication and explicit provider diagnostics.
 - [x] Three addresses returned coordinates through authenticated server lookup; API-key MCP created Credit Island Park Oct 24 12:00–22:00 Central and admin_list_stops/public profile read it back. Removed temporary test key only; 70 focused tests passed, manifest retains 13 tools, automatic build OK.

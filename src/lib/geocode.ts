@@ -1,11 +1,16 @@
 import { lookupAddress } from './geocode.functions';
 
-/** Browser-compatible wrapper; credentials and provider calls stay on the server. */
+/** Optional form lookup: unresolved addresses return null; strict diagnostics stay server-side. */
 export async function geocode(address: string): Promise<{ lat: number; lng: number; label: string; city: string } | null> {
-  if (!address.trim()) return null;
-  const response = await lookupAddress({ data: { address } });
-  if (response.error) throw Error(response.error);
-  return response.result;
+  const trimmed = address.trim();
+  if (trimmed.length < 3 || trimmed.length > 500) return null;
+  try {
+    const response = await lookupAddress({ data: { address: trimmed } });
+    return response.error ? null : response.result;
+  } catch {
+    // Validation, RPC and network failures must reach callers' existing null handling.
+    return null;
+  }
 }
 
 /** Resize an image file to a small data URL (truck logos). */

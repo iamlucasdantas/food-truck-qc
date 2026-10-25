@@ -99,8 +99,13 @@ export const createTruckFromDraft = createServerFn({ method: "POST" })
     let lat: number | null = null, lng: number | null = null;
     if (str(d.base_address)) {
       const { geocodeAddress } = await import('./geocode.server');
-      const hit = await geocodeAddress(str(d.base_address));
-      lat = hit.lat; lng = hit.lng;
+      try {
+        const hit = await geocodeAddress(str(d.base_address));
+        lat = hit.lat; lng = hit.lng;
+      } catch {
+        // The strict helper logs provider diagnostics; save the draft without inventing a pin.
+        console.info('[add-truck] address unresolved; saving without coordinates');
+      }
     }
     const category = str(d.category);
     const fields = {
