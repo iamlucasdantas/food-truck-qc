@@ -5,7 +5,7 @@ import "leaflet.markercluster/dist/MarkerCluster.css";
 import type { Status } from "@/data/trucks";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-export interface MapPin { id: string; lat: number; lng: number; status: Status; emoji: string; name: string }
+export interface MapPin { id: string; lat: number; lng: number; status: Status; emoji: string; name: string; homeBase?: boolean }
 
 interface Props {
   pins: MapPin[];
@@ -45,9 +45,11 @@ export default function TruckMap({ pins, center, radiusMi, onSelect, onCenterCha
       const icon = L.divIcon({
         className: "",
         iconSize: [w, h], iconAnchor: [w / 2, h - 2],
-        html: `<div style="width:${w}px;height:${h}px;position:relative;filter:drop-shadow(0 2px 4px rgb(0 0 0 / .25));transition:all .15s"><svg width="${w}" height="${h}" viewBox="0 0 44 52" style="position:absolute;inset:0"><path d="M22 50 C22 50 4 30 4 19 A18 18 0 0 1 40 19 C40 30 22 50 22 50Z" style="fill:${PIN_VAR[p.status]};stroke:#fff;stroke-width:${hi ? 4 : 2.5}"/></svg><span style="position:absolute;top:${hi ? 9 : 7}px;left:0;right:0;text-align:center;font-size:${hi ? 22 : 17}px">${p.emoji}</span></div>`,
+        html: p.homeBase
+          ? `<div style="width:${w}px;height:${w}px;display:grid;place-items:center;border-radius:6px;background:var(--muted);color:var(--muted-foreground);border:2px dashed var(--pin-none);font-size:${hi ? 24 : 20}px">⌂</div>`
+          : `<div style="width:${w}px;height:${h}px;position:relative;filter:drop-shadow(0 2px 4px rgb(0 0 0 / .25));transition:all .15s"><svg width="${w}" height="${h}" viewBox="0 0 44 52" style="position:absolute;inset:0"><path d="M22 50 C22 50 4 30 4 19 A18 18 0 0 1 40 19 C40 30 22 50 22 50Z" style="fill:${PIN_VAR[p.status]};stroke:#fff;stroke-width:${hi ? 4 : 2.5}"/></svg><span style="position:absolute;top:${hi ? 9 : 7}px;left:0;right:0;text-align:center;font-size:${hi ? 22 : 17}px">${p.emoji}</span></div>`,
       });
-      const m = L.marker([p.lat, p.lng], { icon, title: p.name, zIndexOffset: hi ? 2000 : p.status === "open" ? 200 : p.status === "today" ? 100 : 0 });
+      const m = L.marker([p.lat, p.lng], { icon, title: p.homeBase ? `${p.name} — Home base (offline)` : p.name, zIndexOffset: hi ? 2000 : p.status === "open" ? 200 : p.status === "today" ? 100 : 0 });
       m.on("click", () => cbs.current.onSelect(p.id));
       return m;
     }));

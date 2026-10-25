@@ -52,13 +52,18 @@ export function authorIsTruck(author: string | null | undefined, truck: { facebo
 const hours = (d: Date) => d.getHours() + d.getMinutes() / 60;
 const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
 
+/** Maps placeholders are locations, not presence; actual weekly opening-hour windows are schedules. */
+export function isBaseLocationStop(s: { source: string; venue_name?: string; note?: string | null }) {
+  return /^base location\b/i.test(s.venue_name?.trim() ?? "")
+    || (s.source === "apify_maps" && s.note !== "Google opening hours");
+}
+
 /** Best stop for one truck on a date/time window, with status relative to now. */
 /** Google Maps base-location stops are low-confidence: shown gray ("none"), only when no real stop matches. */
 export function pickStop(stops: Stop[], date: Date, win: Window, now: Date): { stop: Stop | null; status: Status } {
-  stops = resolveFeedConflicts(stops);
-  const real = pickReal(stops.filter((s) => s.source !== "apify_maps" || s.note === "Google opening hours"), date, win, now);
+  const real = pickReal(resolveFeedConflicts(stops.filter((s) => !isBaseLocationStop(s))), date, win, now);
   if (real.stop) return real;
-  const base = stops.find((s) => !s.cancelled && s.source === "apify_maps" && sameDay(new Date(s.starts_at), date));
+  const base = stops.find((s) => !s.cancelled && isBaseLocationStop(s) && sameDay(new Date(s.starts_at), date));
   return base ? { stop: base, status: "none" } : real;
 }
 
