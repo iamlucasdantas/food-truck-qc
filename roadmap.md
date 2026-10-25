@@ -1,5 +1,9 @@
 # Roadmap
 
+## Online presence and offline default (2026-10-25)
+- [x] Excluded base placeholders before feed conflict resolution, kept map/list open-only with zero open trucks, added opt-in home markers and refresh at stop boundaries.
+- [x] 75 focused tests passed (Bonbon Sunday, real venue, split/unsplit overnight, exact end and offline opt-in); browser verified Sunday 12:45 hidden by default, offline home marker and toggle back, plus real Saturday hours continuing Sunday 01:59 and disappearing at 02:00 without reload. No runtime errors; automatic build OK. Not published.
+
 ## Unrecognized-address saving regression (2026-10-25)
 - [x] Confirmed optional UI lookups and Admin draft creation incorrectly propagated strict geocoding errors; restored null handling and preserved unresolved draft addresses without invented coordinates. Strict MCP lookup and approval rules unchanged.
 - [x] All 33 focused tests passed: optional lookups return null for provider/RPC/validation failures, CSV-style processing continues, Admin drafts retain addresses with null coordinates, strict server diagnostics and approval/schedule rules remain intact. Automatic build OK; not published.

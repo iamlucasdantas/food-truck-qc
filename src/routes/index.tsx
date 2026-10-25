@@ -108,6 +108,15 @@ function Index() {
   const { data: trucks = [], isLoading } = useTrucks();
   const { data: stops = [] } = useStops(from, to);
   useStopsRealtime();
+  useEffect(() => {
+    if (!now) return;
+    // Re-evaluate at the next boundary, not up to a minute after a stop ends.
+    const next = stops.flatMap(s => s.cancelled ? [] : [Date.parse(s.starts_at), Date.parse(s.ends_at)])
+      .filter(time => time > now.getTime()).sort((a, b) => a - b)[0];
+    if (next == null) return;
+    const timer = setTimeout(() => setNow(new Date()), Math.min(next - now.getTime(), 60_000));
+    return () => clearTimeout(timer);
+  }, [now, stops]);
   const byTruck = useMemo(() => groupBy(stops, (s) => s.truck_id), [stops]);
   const effWin: Window = dayIdx > 0 && win === "now" ? "all" : win;
 
@@ -140,7 +149,7 @@ function Index() {
 
   const cityList = useMemo(() => Array.from(new Set(trucks.map((t) => cityOf(t.base_address)).filter(Boolean))).sort(), [trucks]);
   const pins = useMemo(() => results.map((r) => ({
-    id: r.t.id, lat: r.lat, lng: r.lng, status: r.status, emoji: r.t.emoji, name: r.t.name,
+    id: r.t.id, lat: r.lat, lng: r.lng, status: r.status, emoji: r.t.emoji, name: r.t.name, homeBase: !r.stop && r.status === "none",
   })), [results]);
 
   const sel = results.find((r) => r.t.id === selected);
@@ -238,7 +247,7 @@ function Index() {
   );
 
   const statusText = (r: (typeof results)[number]) =>
-    !r.stop || r.status === "none" ? "Closed now"
+    !r.stop || r.status === "none" ? "Home base · offline"
       : r.status === "open" ? (r.stop.is_live ? `Here until ${fmtCentral(r.stop.ends_at)}` : `Open now · until ${fmtTime(r.stop.ends_at)}`)
         : `${dayIdx === 0 ? "Today" : dayIdx === 1 ? "Tomorrow" : "Scheduled"} ${fmtRange(r.stop)}`;
 

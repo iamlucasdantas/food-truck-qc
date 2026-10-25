@@ -84,7 +84,7 @@ export function matchesFilters(r: FilterRow, f: Filters): boolean {
 export function openNowApplied(f: { explicitOpen: boolean; showAll: boolean; inNowView: boolean; openCount: number }): boolean {
   if (f.showAll) return false;
   if (f.explicitOpen) return true;
-  return f.inNowView && f.openCount > 0;
+  return f.inNowView;
 }
 
 /** Admin trucks default view: with no status filter selected, only approved (active) trucks are listed. */

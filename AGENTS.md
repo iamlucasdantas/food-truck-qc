@@ -15,6 +15,7 @@
 - Read src/lib/AGENTS.md and src/data/AGENTS.md before edits there; subdirectories may have their own AGENTS.md.
 - Shared agent search ranks names/classification; public-schedule handles profiles. data/coverage.ts defines Davenport coverage for map/API/ingestion to agree.
 - Truck/stop data lives in Lovable Cloud; UI and tests share pure status/time rules in `src/data/trucks.ts`.
+- Public map/list use the shared base-stop predicate and strict open-only live filtering even for empty results; static home markers appear only on offline opt-in, and the map clock refreshes at stop boundaries to avoid stale online presence.
 - Public discovery filters is_food_truck; Admin keeps classification edits for review.
 - Auth is a modal opened via `useAuth().openAuth()`; pages stay public and RLS protects data — no route-level gate.
 - Roles only come from `user_roles` + `has_role()`; never from profile/user metadata.

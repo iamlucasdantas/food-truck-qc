@@ -55,8 +55,13 @@ describe("filters", () => {
     expect(openNowApplied({ explicitOpen: false, showAll: true, inNowView: true, openCount: 3 })).toBe(false);
     expect(openNowApplied({ explicitOpen: true, showAll: false, inNowView: true, openCount: 3 })).toBe(true);
   });
-  it("open now never empties the map or hides a future day", () => {
-    expect(openNowApplied({ explicitOpen: false, showAll: false, inNowView: true, openCount: 0 })).toBe(false);
+  it("default live view stays open-only even when zero trucks are open", () => {
+    expect(openNowApplied({ explicitOpen: false, showAll: false, inNowView: true, openCount: 0 })).toBe(true);
+  });
+  it("offline trucks require explicit opt-in even when none are open", () => {
+    expect(openNowApplied({ explicitOpen: false, showAll: true, inNowView: true, openCount: 0 })).toBe(false);
+  });
+  it("does not hide a future day's schedule by default", () => {
     expect(openNowApplied({ explicitOpen: false, showAll: false, inNowView: false, openCount: 3 })).toBe(false);
   });
 });
