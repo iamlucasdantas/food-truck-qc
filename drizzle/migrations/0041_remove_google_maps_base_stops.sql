@@ -1,0 +1,1 @@
+DELETE FROM public.stops WHERE source = 'apify_maps' AND venue_name = 'Base location (Google Maps)';
