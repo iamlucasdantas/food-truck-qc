@@ -1,0 +1,39 @@
+name: Build Android AAB
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['mobile/**']
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - name: Install Capacitor dependencies
+        working-directory: mobile
+        run: npm install
+      - name: Add and sync Android project
+        working-directory: mobile
+        run: |
+          npx cap add android || true
+          npx cap sync android
+      - name: Decode keystore
+        working-directory: mobile/android/app
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > upload.keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+      - name: Build signed AAB
+        working-directory: mobile/android
+        run: ./gradlew bundleRelease -Pandroid.injected.signing.store.file=app/upload.keystore -Pandroid.injected.signing.store.password=${{ secrets.KEYSTORE_PASSWORD }} -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }}
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: foodtruckqc-aab
+          path: mobile/android/app/build/outputs/bundle/release/app-release.aab
