@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['mobile/**']
+    paths: ['mobile/**', '.github/workflows/android.yml']
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -24,6 +24,15 @@ jobs:
         run: |
           npx cap add android || true
           npx cap sync android
+      - name: Generate brand icons and splash screens
+        working-directory: mobile
+        run: npx capacitor-assets generate --android --iconBackgroundColor '#EF4F18' --iconBackgroundColorDark '#EF4F18' --splashBackgroundColor '#EF4F18' --splashBackgroundColorDark '#EF4F18'
+      - name: Set version from run number
+        working-directory: mobile/android/app
+        run: |
+          sed -i "s/versionCode 1$/versionCode ${{ github.run_number }}/" build.gradle
+          sed -i "s/versionName \"1.0\"$/versionName \"1.0.${{ github.run_number }}\"/" build.gradle
+          grep -E 'versionCode|versionName' build.gradle
       - name: Decode keystore
         working-directory: mobile/android/app
         run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > upload.keystore
