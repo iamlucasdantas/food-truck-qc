@@ -87,6 +87,16 @@ function Developers() {
         <li>CORS is enabled on the chat agent endpoints. An MCP server is also available at <code>{BASE}/mcp</code> (sign-in required).</li>
         <li>MCP without sign-in: connect to <code>{BASE}/api/public/mcp-key</code> with the header <code>Authorization: Bearer ftqc_…</code> (or <code>x-api-key</code>). Create keys in Profile → API keys. Same tools as <code>/mcp</code>; they run as the key owner, so admin tools work only with an admin's key.</li>
       </ul>
+      <h2 className="text-xl font-bold">Owner tools over MCP (connect your AI)</h2>
+      <p className="text-sm">A truck owner can connect Claude, ChatGPT or any MCP client with their personal key and manage their own truck by talking to it. Tools run as the key owner, so they only ever see or change trucks that account claimed or created.</p>
+      <ul className="list-disc space-y-1 pl-5 text-sm">
+        <li><code>my_truck</code> — business, truck(s), status (pending / live), photo and stop counts, what's still missing.</li>
+        <li><code>register_my_truck</code> — truck name, cuisine, mobile/fixed, home address or city, phone, optional description and links → creates the business if needed and submits the truck for approval (same flow and notification as the setup wizard).</li>
+        <li><code>update_my_truck</code> — name, cuisine, type, description, phone, website, Instagram, Facebook, menu summary, home address (re-geocoded).</li>
+        <li><code>add_my_stop</code> — dated stop (date, start, end in Central time, address, venue, note) or <code>repeat_weekly</code> with weekdays and an optional end date.</li>
+        <li><code>check_in</code> / <code>check_out</code> — the “I'm here” button: address or lat/lng (home base by default), 15 min to 12 h or until a Central time; check_out ends it.</li>
+      </ul>
+      <p className="text-sm text-muted-foreground">Setup for owners: Profile → Connected accounts → API keys → Create key, then in Claude (Settings → Connectors → Add custom connector) or ChatGPT (Settings → Connectors) add <code>{BASE}/api/public/mcp-key</code> with header <code>Authorization: Bearer ftqc_…</code>. Example requests: “Put my truck on the map: Taco One, tacos, based in Davenport, phone 563-555-0142”, “I'm at Bass Street Landing until 2”, “Add a stop Friday 11–2 at Marketplace at 2500, Moline, every week”. The step-by-step owner guide is at <code>{BASE}/help#connect-ai</code>.</p>
     </main>
   );
 }

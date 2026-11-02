@@ -50,6 +50,27 @@ function HelpPage() {
           ))}
         </ol>
 
+        <section id="connect-ai" className="panel space-y-3 p-4 text-sm sm:p-5">
+          <h2 className="text-lg font-bold">Connect your AI (optional)</h2>
+          <p>Already talk to Claude or ChatGPT on your phone? Connect it to FoodTruckQC once and you can run your truck by voice: register it, add stops, update your phone or menu, and tap “I'm here” just by saying it.</p>
+          <ol className="list-decimal space-y-1 pl-5">
+            <li>In the app, open <Link to="/profile" search={{ section: "connections", view: undefined }} className="font-semibold text-primary underline">Profile &amp; settings → Connected accounts → API keys</Link> and tap <b>Create key</b>. Copy it — it starts with <code>ftqc_</code> and is shown once.</li>
+            <li><b>Claude</b> (phone app): Settings → Connectors → Add custom connector. Name: <code>FoodTruckQC</code>. URL: <code>https://app.foodtruckqc.com/api/public/mcp-key</code>. Header: <code>Authorization: Bearer ftqc_…</code> (your key).</li>
+            <li><b>ChatGPT</b>: Settings → Connectors (or Apps) → Add MCP server with the same URL and header.</li>
+            <li>Then hold the mic and talk. Your AI only sees and changes <em>your</em> truck.</li>
+          </ol>
+          <div className="space-y-1 rounded-xl bg-muted p-3">
+            <p className="font-semibold">Things you can say</p>
+            <ul className="list-disc space-y-0.5 pl-5">
+              <li>“Put my truck on the map: Taco One, tacos, based in Davenport, phone 563-555-0142.”</li>
+              <li>“I'm at Bass Street Landing until 2.”</li>
+              <li>“Add a stop Friday 11 to 2 at Marketplace at 2500, Moline — every week.”</li>
+              <li>“Change my phone number to …” · “What's still missing on my truck?” · “I'm done for today.”</li>
+            </ul>
+          </div>
+          <p className="text-muted-foreground">New trucks still go through the same quick review before they show on the map. You can delete the key any time in the same screen.</p>
+        </section>
+
         <section className="panel space-y-2 p-4 text-sm sm:p-5">
           <h2 className="text-lg font-bold">Still stuck?</h2>
           <p>A real person will help you get on the map. <a href="https://foodtruckqc.com" target="_blank" rel="noopener noreferrer" className="font-semibold text-primary underline">Contact FoodTruckQC</a>, or open <Link to="/profile" search={{ section: "help", view: undefined }} className="underline">Profile &amp; settings → Help</Link>.</p>
