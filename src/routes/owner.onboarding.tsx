@@ -1,3 +1,4 @@
+import { WatchHow } from "@/components/tutorials/WatchHow";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -223,6 +224,7 @@ function Welcome({ onStart }: { onStart: () => void }) {
           <p className="inline-flex items-center gap-1.5 rounded-full bg-accent px-3 py-1 text-xs font-bold"><Sparkles className="h-3.5 w-3.5" aria-hidden />Free forever</p>
           <h1 className="text-3xl font-extrabold leading-tight">Get your truck on the map in about {TOTAL_MINUTES} minutes</h1>
           <p className="text-muted-foreground">Answer a few quick questions and hungry people across the Quad Cities can find you, see your menu and know where you'll be.</p>
+          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">Not sure where to tap? <WatchHow k="truck" label="Watch the 3-minute walkthrough" /></div>
         </div>
         <ol className="space-y-2">
           {ONBOARDING_STEPS.map((s) => (
@@ -488,6 +490,7 @@ function Finish({ p, truck, onOpen }: { p: Progress; truck: Truck | null; onOpen
         <Link to="/owner" className="inline-flex min-h-11 items-center rounded-full bg-primary px-5 font-bold text-primary-foreground">Open owner dashboard</Link>
         {truck && <Link to="/owner" search={{ tab: "schedule" }} className="inline-flex min-h-11 items-center rounded-full border border-input bg-card px-5 font-semibold">Add your first stop</Link>}
         {truck && <Link to="/truck/$id" params={{ id: truck.id }} className="inline-flex min-h-11 items-center rounded-full border border-input bg-card px-5 font-semibold">View public page</Link>}
+        <WatchHow k="live" label="Watch: go live" className="min-h-11" />
       </div>
     </section>
   );

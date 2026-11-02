@@ -17,6 +17,7 @@ export function AccountButton() {
       </button>
     );
   }
+  const owner = roles.includes("owner") || isAdmin;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger aria-label="Account menu" className={`grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-primary text-sm font-bold text-primary-foreground shadow-pop transition-colors duration-150 hover:bg-primary/90 ${ring}`}>
@@ -34,7 +35,10 @@ export function AccountButton() {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild className="min-h-11"><Link to="/profile" search={{section:"home",view:undefined}}>Profile & settings</Link></DropdownMenuItem>
-        {(roles.includes("owner") || isAdmin) && <DropdownMenuItem asChild className="min-h-11"><Link to="/owner">Owner dashboard</Link></DropdownMenuItem>}
+        {owner && <DropdownMenuItem asChild className="min-h-11"><Link to="/owner">Owner dashboard</Link></DropdownMenuItem>}
+        {/* New owners had no way into setup from inside the app (the Android shell has no address bar). */}
+        {!owner && <DropdownMenuItem asChild className="min-h-11"><Link to="/owner/onboarding">Own a food truck? Set it up</Link></DropdownMenuItem>}
+        <DropdownMenuItem asChild className="min-h-11"><Link to="/help">Help & tutorials</Link></DropdownMenuItem>
         {isAdmin && <DropdownMenuItem asChild className="min-h-11"><Link to="/admin">Admin</Link></DropdownMenuItem>}
         <DropdownMenuItem asChild className="min-h-11"><a href="https://foodtruckqc.com" target="_blank" rel="noopener noreferrer">About FoodTruckQC</a></DropdownMenuItem>
         <DropdownMenuSeparator />
