@@ -239,6 +239,403 @@
         "outputSchema": null
       },
       {
+        "name": "my_truck",
+        "title": "My truck",
+        "description": "The signed-in owner's business and food truck(s): status (pending review / live), contact details, photo and schedule counts, and what is still missing. Call this first to get truck_id for the other owner tools.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "register_my_truck",
+        "title": "Put my truck on the map",
+        "description": "Register the signed-in owner's food truck on FoodTruckQC: creates their business profile if needed and submits the truck for approval (it appears on the public map once the FoodTruckQC team approves it, usually within a day). Ask the owner for anything you don't know instead of guessing: truck name, kind of food, mobile or fixed, home city or address, phone.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "truck_name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 150,
+              "description": "Name painted on the truck, e.g. \"Taco One\"."
+            },
+            "category": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 60,
+              "description": "Kind of food, e.g. Tacos, BBQ, Pizza, Coffee."
+            },
+            "truck_type": {
+              "default": "mobile",
+              "description": "mobile = moves between stops; fixed = always at one address; hybrid = both.",
+              "type": "string",
+              "enum": [
+                "mobile",
+                "fixed",
+                "hybrid"
+              ]
+            },
+            "base_address": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 300,
+              "description": "Home base: a street address, or just the city, e.g. \"Davenport, IA\". Fixed trucks need the full address."
+            },
+            "business_name": {
+              "description": "Business/LLC name if different from the truck; defaults to the truck name or the existing business.",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 150
+            },
+            "phone": {
+              "description": "Public phone customers can call.",
+              "type": "string",
+              "maxLength": 40
+            },
+            "description": {
+              "description": "One or two sentences for the public page.",
+              "type": "string",
+              "maxLength": 1500
+            },
+            "website": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 300
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "instagram": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 300
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "facebook": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 300
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "owner_name": {
+              "description": "Owner's name for the FoodTruckQC team (not public).",
+              "type": "string",
+              "maxLength": 120
+            }
+          },
+          "required": [
+            "truck_name",
+            "category",
+            "base_address"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "update_my_truck",
+        "title": "Update my truck",
+        "description": "Change details of the signed-in owner's own truck: name, kind of food, mobile/fixed, description, phone, website, Instagram, Facebook, short menu summary, or home address (re-pinned on the map). Only sent fields change. Owners can't change approval status.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "truck_id": {
+              "description": "From my_truck; optional when the owner has one truck.",
+              "type": "string",
+              "maxLength": 150
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 150
+            },
+            "category": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 60
+            },
+            "truck_type": {
+              "type": "string",
+              "enum": [
+                "mobile",
+                "fixed",
+                "hybrid"
+              ]
+            },
+            "description": {
+              "type": "string",
+              "maxLength": 3000
+            },
+            "menu_summary": {
+              "description": "Short text menu shown on the page, e.g. \"Street tacos $3 · Burrito $9 · Horchata $2\".",
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 1500
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "phone": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 40
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "website": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 300
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "instagram": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 300
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "facebook": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 300
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "base_address": {
+              "description": "Home base / fixed location; geocoded to the map pin.",
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 300
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "add_my_stop",
+        "title": "Add a stop to my schedule",
+        "description": "Add where the signed-in owner's truck will be: a dated stop (date, start, end in Central time, venue and/or street address) or a weekly repeating stop. Shows on the public map and the truck page. Ask for the address if the owner only gave a venue name you can't place.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "truck_id": {
+              "description": "From my_truck; optional when the owner has one truck.",
+              "type": "string",
+              "maxLength": 150
+            },
+            "date": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "description": "YYYY-MM-DD, Central time. For a weekly stop: the first date."
+            },
+            "start": {
+              "type": "string",
+              "pattern": "^\\d{1,2}:\\d{2}$",
+              "description": "HH:MM 24h Central, e.g. 11:00."
+            },
+            "end": {
+              "type": "string",
+              "pattern": "^\\d{1,2}:\\d{2}$",
+              "description": "HH:MM 24h Central, e.g. 14:00 (an end before the start means past midnight)."
+            },
+            "address": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 300,
+              "description": "Street address with city, e.g. \"2500 53rd St, Moline, IL\"."
+            },
+            "venue_name": {
+              "description": "Place name shown to customers, e.g. \"Marketplace at 2500\"; defaults to the address.",
+              "type": "string",
+              "maxLength": 150
+            },
+            "note": {
+              "description": "Short public note, e.g. \"Cash only today\".",
+              "type": "string",
+              "maxLength": 500
+            },
+            "repeat_weekly": {
+              "default": false,
+              "description": "true = every week on the same weekday(s) until cancelled.",
+              "type": "boolean"
+            },
+            "weekdays": {
+              "description": "With repeat_weekly: 0=Sun … 6=Sat; defaults to the weekday of date.",
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 6
+              }
+            },
+            "until": {
+              "description": "With repeat_weekly: last date (YYYY-MM-DD), optional.",
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            }
+          },
+          "required": [
+            "date",
+            "start",
+            "end",
+            "address"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "check_in",
+        "title": "I'm here (go live)",
+        "description": "Mark the signed-in owner's truck as open right now at a place — the same as the big “I'm here” button. Give a street address (or lat/lng); with no location the truck's home base is used. Lasts 2 hours by default, 15 min to 12 h, or until a Central time. Replaces any earlier live check-in.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "truck_id": {
+              "description": "From my_truck; optional when the owner has one truck.",
+              "type": "string",
+              "maxLength": 150
+            },
+            "address": {
+              "description": "Where the truck is parked, e.g. \"1601 River Dr, Moline, IL\".",
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 300
+            },
+            "lat": {
+              "type": "number",
+              "minimum": -90,
+              "maximum": 90
+            },
+            "lng": {
+              "type": "number",
+              "minimum": -180,
+              "maximum": 180
+            },
+            "venue_name": {
+              "description": "Label customers see, e.g. \"Bass Street Landing\"; defaults to \"Live location\".",
+              "type": "string",
+              "maxLength": 150
+            },
+            "minutes": {
+              "description": "How long you'll be there (default 120).",
+              "type": "integer",
+              "minimum": 15,
+              "maximum": 720
+            },
+            "until": {
+              "description": "Or an end time HH:MM Central.",
+              "type": "string",
+              "pattern": "^\\d{1,2}:\\d{2}$"
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "check_out",
+        "title": "End my live check-in",
+        "description": "End the signed-in owner's current “I'm here” check-in now (the truck stops showing as open). Does nothing if the truck isn't live.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "truck_id": {
+              "description": "From my_truck; optional when the owner has one truck.",
+              "type": "string",
+              "maxLength": 150
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
         "name": "admin_list_businesses",
         "title": "Admin: list businesses",
         "description": "Admin only. List businesses (optionally filtered by name) with the trucks each one owns.",
