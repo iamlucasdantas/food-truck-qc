@@ -2,7 +2,7 @@
 
 ## Radius adjustment (2026-10-25)
 - [x] Make slider updates immediate for map/list and persist to the URL only after adjustment; correct maximum label to 100 miles, preserve open-only filtering.
-- [ ] Verify drag, results, saved links and reset in the public UI; run focused regression tests.
+- [x] 18 focused tests passed; public UI verified at 440×807 and 1280×1800: dragging 10→100 updates results from 4 to 5 open trucks, commits the saved link, survives reload and resets to 10. No runtime errors; automatic build OK. Not published.
 
 ## Online presence and offline default (2026-10-25)
 - [x] Excluded base placeholders before feed conflict resolution, kept map/list open-only with zero open trucks, added opt-in home markers and refresh at stop boundaries.
