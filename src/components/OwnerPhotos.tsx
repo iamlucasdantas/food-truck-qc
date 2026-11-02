@@ -1,3 +1,4 @@
+import { WatchHow } from "@/components/tutorials/WatchHow";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, Star, Trash2 } from "lucide-react";
 import { useState } from "react";
@@ -64,7 +65,7 @@ export function OwnerPhotos({ truckId }: { truckId: string }) {
   return (
     <section className="panel space-y-3 p-5">
       <div className="flex items-baseline justify-between gap-2">
-        <h2 className="text-xl font-bold">Truck photos</h2>
+        <div className="flex items-center gap-2"><h2 className="text-xl font-bold">Truck photos</h2><WatchHow k="photos" /></div>
         <span className="text-sm text-muted-foreground">{photos.length} / {MAX_PHOTOS}</span>
       </div>
       <PhotoDrop label={busy || "Add photos"} hint="Drag photos here, or tap to choose or take one. JPG, PNG, WebP or HEIC, up to 5 MB." onFiles={upload} disabled={!!busy || photos.length >= MAX_PHOTOS} />

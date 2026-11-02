@@ -1,3 +1,4 @@
+import { WatchHow } from "@/components/tutorials/WatchHow";
 import { ClientOnly } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -56,7 +57,7 @@ export function OwnerSchedule({ truck }: { truck: Truck }) {
   return (
     <section className="panel space-y-3 p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-xl font-bold">Schedule</h2>
+        <div className="flex items-center gap-2"><h2 className="text-xl font-bold">Schedule</h2><WatchHow k="schedule" /></div>
         <div className="flex flex-wrap gap-2">
           <div className="flex rounded-full bg-muted p-1">
             {(["month", "week"] as const).map((v) => <button key={v} onClick={() => setView(v)} className={`h-9 rounded-full px-4 text-sm font-medium ${view === v ? "bg-card shadow-pop-sm" : "text-muted-foreground"}`}>{v === "month" ? "Month" : "Week"}</button>)}

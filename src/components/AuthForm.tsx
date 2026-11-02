@@ -1,3 +1,4 @@
+import { WatchHow } from "@/components/tutorials/WatchHow";
 import { useState, type FormEvent } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -62,7 +63,10 @@ export function AuthForm({ initialMode = "in" }: { initialMode?: "in" | "up" }) 
   return (
     <div className="space-y-4">
       {mode !== "forgot" ? (
-        <div role="tablist" className="grid grid-cols-2 gap-1 rounded-full bg-muted p-1">{tab("in", "Sign in")}{tab("up", "Create account")}</div>
+        <div className="space-y-2">
+          <div role="tablist" className="grid grid-cols-2 gap-1 rounded-full bg-muted p-1">{tab("in", "Sign in")}{tab("up", "Create account")}</div>
+          <p className="flex items-center justify-center gap-2 text-xs text-muted-foreground">New here? <WatchHow k="account" /></p>
+        </div>
       ) : (
         <div><p className="font-semibold">Reset your password</p><p className="text-sm text-muted-foreground">Get an email link to choose a new one.</p></div>
       )}

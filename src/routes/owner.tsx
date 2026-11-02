@@ -1,3 +1,4 @@
+import { WatchHow } from "@/components/tutorials/WatchHow";
 import { OwnerLiveCard as LiveCard } from "@/components/profile/OwnerLiveCard";
 import { Logo } from "@/components/Logo";
 import { OwnerSchedule } from "@/components/OwnerSchedule";
@@ -79,7 +80,7 @@ function Owner() {
       {user && data && mine.length === 0 && pending.length === 0 && (
         <div className="panel space-y-3 p-5 text-sm">
           <p>No trucks linked to your account yet. Set up your business and truck in a few short steps, or find your truck on the map and tap <b>"Claim it"</b>.</p>
-          <Link to="/owner/onboarding" className="inline-flex min-h-11 items-center rounded-full bg-primary px-5 font-bold text-primary-foreground">Start setup</Link>
+          <div className="flex flex-wrap items-center gap-2"><Link to="/owner/onboarding" className="inline-flex min-h-11 items-center rounded-full bg-primary px-5 font-bold text-primary-foreground">Start setup</Link><WatchHow k="truck" /></div>
         </div>
       )}
       {mine.length > 0 && (

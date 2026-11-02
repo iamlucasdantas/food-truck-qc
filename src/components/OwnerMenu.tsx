@@ -1,3 +1,4 @@
+import { WatchHow } from "@/components/tutorials/WatchHow";
 import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Plus, Trash2 } from "lucide-react";
@@ -62,7 +63,7 @@ export function OwnerMenu({ truck }: { truck: Truck }) {
   return (
     <section className="panel space-y-3 p-5">
       <div>
-        <h2 className="text-xl font-bold">Menu photos</h2>
+        <div className="flex items-center gap-2"><h2 className="text-xl font-bold">Menu photos</h2><WatchHow k="menu" /></div>
         <p className="text-sm text-muted-foreground">
           Upload photos of your menu board, paper menu or delivery-app screenshots. AI reads them, then you review before anything goes public.
           {truck.menu_updated_at && ` Current menu published ${new Date(truck.menu_updated_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}.`}

@@ -1,3 +1,4 @@
+import { WatchHow } from "@/components/tutorials/WatchHow";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -26,9 +27,12 @@ export function ClaimButton({ truckId }: { truckId: string }) {
   }
 
   if (!open) return (
-    <button onClick={() => (user ? setOpen(true) : openAuth("Sign in to claim your truck."))} className="chip">
-      Is this your truck? Claim it
-    </button>
+    <div className="flex flex-wrap items-center gap-2">
+      <button onClick={() => (user ? setOpen(true) : openAuth("Sign in to claim your truck."))} className="chip">
+        Is this your truck? Claim it
+      </button>
+      <WatchHow k="claim" />
+    </div>
   );
   return (
     <div className="panel space-y-2 p-4">

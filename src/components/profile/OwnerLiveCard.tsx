@@ -1,3 +1,4 @@
+import { WatchHow } from "@/components/tutorials/WatchHow";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { ClientOnly } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -79,6 +80,7 @@ export function OwnerLiveCard({ truck }: { truck: Truck }) {
 
   return (
     <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2"><p className="text-sm text-muted-foreground">Tap the big button when you open. Customers see you on the map right away.</p><WatchHow k="live" /></div>
       {live ? (
         <div className="rounded-xl bg-pin-open/30 p-3 text-sm">
           <p className="mb-2 text-2xl font-semibold">{now ? `${Math.max(0,Math.ceil((Date.parse(live.ends_at)-now.getTime())/60000))} min remaining` : "Live"}</p><p><b>You're live</b> at {live.venue_name} until {fmtCentral(live.ends_at)}.</p>
