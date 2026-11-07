@@ -9,8 +9,8 @@ async function runSync(service: "facebook" | "instagram", urls: string[]): Promi
     : { directUrls: urls, resultsType: "posts", resultsLimit: 3 };
   const cookies = service === "facebook" ? facebookCookies() : null;
   if (cookies) input["cookies"] = cookies;
-  // Gateway calls longer than ~90s fail, so Apify is asked to stop at 70s.
-  const res = await fetch(`https://connector-gateway.lovable.dev/apify/acts/${ACTOR[service]}/run-sync-get-dataset-items?timeout=70&clean=true`, {
+  // Serverless calls longer than ~90s fail, so Apify is asked to stop at 70s.
+  const res = await fetch(`https://api.apify.com/v2/acts/${ACTOR[service]}/run-sync-get-dataset-items?timeout=70&clean=true`, {
     method: "POST", headers: { ...apifyHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(input), signal: AbortSignal.timeout(85_000),
   }).catch((e: unknown) => ({ ok: false, status: 0, text: async () => (e instanceof Error ? e.message : String(e)) }) as const);
   if (!res.ok) {

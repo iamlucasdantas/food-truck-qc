@@ -2,7 +2,6 @@ import { WatchHow } from "@/components/tutorials/WatchHow";
 import { useState, type FormEvent } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 
 type Mode = "in" | "up" | "forgot";
 
@@ -44,8 +43,8 @@ export function AuthForm({ initialMode = "in" }: { initialMode?: "in" | "up" }) 
   async function google() {
     setError(null);
     try { sessionStorage.setItem("ftqc:returnTo", window.location.pathname + window.location.search); } catch { /* ignore */ }
-    const r = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
-    if (r.error) setError("Google sign-in failed. Please try again.");
+    const { error } = await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin } });
+    if (error) setError("Google sign-in failed. Please try again.");
   }
 
   if (notice) return (

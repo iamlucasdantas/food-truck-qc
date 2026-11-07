@@ -30,7 +30,6 @@ import { Route as FoodieIdRouteImport } from './routes/foodie.$id'
 import { Route as OwnerNewRouteImport } from './routes/owner.new'
 import { Route as OwnerOnboardingRouteImport } from './routes/owner.onboarding'
 import { Route as TruckIdRouteImport } from './routes/truck.$id'
-import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as ApiPublicApifyWebhookRouteImport } from './routes/api/public/apify-webhook'
 import { Route as ApiPublicChatSearchTrucksRouteImport } from './routes/api/public/chat-search-trucks'
 import { Route as ApiPublicChatUpcomingStopsRouteImport } from './routes/api/public/chat-upcoming-stops'
@@ -41,8 +40,6 @@ import { Route as ApiPublicJobsVenueCalendarsRouteImport } from './routes/api/pu
 import { Route as ApiPublicV1FavoritesRouteImport } from './routes/api/public/v1/favorites'
 import { Route as ApiPublicV1StopsRouteImport } from './routes/api/public/v1/stops'
 import { Route as ApiPublicV1TrucksRouteImport } from './routes/api/public/v1/trucks'
-import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
-import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -149,11 +146,6 @@ const TruckIdRoute = TruckIdRouteImport.update({
   path: '/truck/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
-  id: '/.lovable/oauth/consent',
-  path: '/.lovable/oauth/consent',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiPublicApifyWebhookRoute = ApiPublicApifyWebhookRouteImport.update({
   id: '/api/public/apify-webhook',
   path: '/api/public/apify-webhook',
@@ -208,16 +200,6 @@ const ApiPublicV1TrucksRoute = ApiPublicV1TrucksRouteImport.update({
   path: '/api/public/v1/trucks',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
-  id: '/lovable/email/auth/preview',
-  path: '/lovable/email/auth/preview',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
-  id: '/lovable/email/auth/webhook',
-  path: '/lovable/email/auth/webhook',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -240,7 +222,6 @@ export interface FileRoutesByFullPath {
   '/owner/new': typeof OwnerNewRoute
   '/owner/onboarding': typeof OwnerOnboardingRoute
   '/truck/$id': typeof TruckIdRoute
-  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/api/public/apify-webhook': typeof ApiPublicApifyWebhookRoute
   '/api/public/chat-search-trucks': typeof ApiPublicChatSearchTrucksRoute
   '/api/public/chat-upcoming-stops': typeof ApiPublicChatUpcomingStopsRoute
@@ -251,8 +232,6 @@ export interface FileRoutesByFullPath {
   '/api/public/v1/favorites': typeof ApiPublicV1FavoritesRoute
   '/api/public/v1/stops': typeof ApiPublicV1StopsRoute
   '/api/public/v1/trucks': typeof ApiPublicV1TrucksRoute
-  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
-  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -275,7 +254,6 @@ export interface FileRoutesByTo {
   '/owner/new': typeof OwnerNewRoute
   '/owner/onboarding': typeof OwnerOnboardingRoute
   '/truck/$id': typeof TruckIdRoute
-  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/api/public/apify-webhook': typeof ApiPublicApifyWebhookRoute
   '/api/public/chat-search-trucks': typeof ApiPublicChatSearchTrucksRoute
   '/api/public/chat-upcoming-stops': typeof ApiPublicChatUpcomingStopsRoute
@@ -286,8 +264,6 @@ export interface FileRoutesByTo {
   '/api/public/v1/favorites': typeof ApiPublicV1FavoritesRoute
   '/api/public/v1/stops': typeof ApiPublicV1StopsRoute
   '/api/public/v1/trucks': typeof ApiPublicV1TrucksRoute
-  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
-  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -312,7 +288,6 @@ export interface FileRoutesById {
   '/owner/new': typeof OwnerNewRoute
   '/owner/onboarding': typeof OwnerOnboardingRoute
   '/truck/$id': typeof TruckIdRoute
-  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/api/public/apify-webhook': typeof ApiPublicApifyWebhookRoute
   '/api/public/chat-search-trucks': typeof ApiPublicChatSearchTrucksRoute
   '/api/public/chat-upcoming-stops': typeof ApiPublicChatUpcomingStopsRoute
@@ -323,8 +298,6 @@ export interface FileRoutesById {
   '/api/public/v1/favorites': typeof ApiPublicV1FavoritesRoute
   '/api/public/v1/stops': typeof ApiPublicV1StopsRoute
   '/api/public/v1/trucks': typeof ApiPublicV1TrucksRoute
-  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
-  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -349,7 +322,6 @@ export interface FileRouteTypes {
     | '/owner/new'
     | '/owner/onboarding'
     | '/truck/$id'
-    | '/.lovable/oauth/consent'
     | '/api/public/apify-webhook'
     | '/api/public/chat-search-trucks'
     | '/api/public/chat-upcoming-stops'
@@ -360,8 +332,6 @@ export interface FileRouteTypes {
     | '/api/public/v1/favorites'
     | '/api/public/v1/stops'
     | '/api/public/v1/trucks'
-    | '/lovable/email/auth/preview'
-    | '/lovable/email/auth/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -384,7 +354,6 @@ export interface FileRouteTypes {
     | '/owner/new'
     | '/owner/onboarding'
     | '/truck/$id'
-    | '/.lovable/oauth/consent'
     | '/api/public/apify-webhook'
     | '/api/public/chat-search-trucks'
     | '/api/public/chat-upcoming-stops'
@@ -395,8 +364,6 @@ export interface FileRouteTypes {
     | '/api/public/v1/favorites'
     | '/api/public/v1/stops'
     | '/api/public/v1/trucks'
-    | '/lovable/email/auth/preview'
-    | '/lovable/email/auth/webhook'
   id:
     | '__root__'
     | '/'
@@ -420,7 +387,6 @@ export interface FileRouteTypes {
     | '/owner/new'
     | '/owner/onboarding'
     | '/truck/$id'
-    | '/.lovable/oauth/consent'
     | '/api/public/apify-webhook'
     | '/api/public/chat-search-trucks'
     | '/api/public/chat-upcoming-stops'
@@ -431,8 +397,6 @@ export interface FileRouteTypes {
     | '/api/public/v1/favorites'
     | '/api/public/v1/stops'
     | '/api/public/v1/trucks'
-    | '/lovable/email/auth/preview'
-    | '/lovable/email/auth/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -453,7 +417,6 @@ export interface RootRouteChildren {
   EmbedRegisterTruckRoute: typeof EmbedRegisterTruckRoute
   FoodieIdRoute: typeof FoodieIdRoute
   TruckIdRoute: typeof TruckIdRoute
-  DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   ApiPublicApifyWebhookRoute: typeof ApiPublicApifyWebhookRoute
   ApiPublicChatSearchTrucksRoute: typeof ApiPublicChatSearchTrucksRoute
   ApiPublicChatUpcomingStopsRoute: typeof ApiPublicChatUpcomingStopsRoute
@@ -464,8 +427,6 @@ export interface RootRouteChildren {
   ApiPublicV1FavoritesRoute: typeof ApiPublicV1FavoritesRoute
   ApiPublicV1StopsRoute: typeof ApiPublicV1StopsRoute
   ApiPublicV1TrucksRoute: typeof ApiPublicV1TrucksRoute
-  LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
-  LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -617,13 +578,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TruckIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/.lovable/oauth/consent': {
-      id: '/.lovable/oauth/consent'
-      path: '/.lovable/oauth/consent'
-      fullPath: '/.lovable/oauth/consent'
-      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/apify-webhook': {
       id: '/api/public/apify-webhook'
       path: '/api/public/apify-webhook'
@@ -694,20 +648,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicV1TrucksRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/lovable/email/auth/preview': {
-      id: '/lovable/email/auth/preview'
-      path: '/lovable/email/auth/preview'
-      fullPath: '/lovable/email/auth/preview'
-      preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lovable/email/auth/webhook': {
-      id: '/lovable/email/auth/webhook'
-      path: '/lovable/email/auth/webhook'
-      fullPath: '/lovable/email/auth/webhook'
-      preLoaderRoute: typeof LovableEmailAuthWebhookRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -755,7 +695,6 @@ const rootRouteChildren: RootRouteChildren = {
   EmbedRegisterTruckRoute: EmbedRegisterTruckRoute,
   FoodieIdRoute: FoodieIdRoute,
   TruckIdRoute: TruckIdRoute,
-  DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   ApiPublicApifyWebhookRoute: ApiPublicApifyWebhookRoute,
   ApiPublicChatSearchTrucksRoute: ApiPublicChatSearchTrucksRoute,
   ApiPublicChatUpcomingStopsRoute: ApiPublicChatUpcomingStopsRoute,
@@ -766,8 +705,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicV1FavoritesRoute: ApiPublicV1FavoritesRoute,
   ApiPublicV1StopsRoute: ApiPublicV1StopsRoute,
   ApiPublicV1TrucksRoute: ApiPublicV1TrucksRoute,
-  LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
-  LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

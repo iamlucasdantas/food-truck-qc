@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    { "path": "/api/public/jobs/facebook-daily?kind=daily", "schedule": "0 11,12 * * *" },
+    { "path": "/api/public/jobs/facebook-daily?kind=every-two-hours", "schedule": "0 0,1,2,15,16,17,18,19,20,21,22,23 * * *" },
+    { "path": "/api/public/jobs/facebook-daily?kind=continue", "schedule": "*/5 * * * *" },
+    { "path": "/api/public/jobs/venue-calendars", "schedule": "30 */6 * * *" }
+  ]
+}

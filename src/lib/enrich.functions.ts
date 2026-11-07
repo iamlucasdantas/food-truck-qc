@@ -304,11 +304,11 @@ export const placeLocation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ placeId: z.string().min(3).max(300) }).parse(input))
   .handler(async ({ data }) => {
-    const lovable = process.env["LOVABLE_API_KEY"], maps = process.env["GOOGLE_MAPS_API_KEY"];
-    if (!lovable || !maps) throw new Error("Google Maps is not connected");
-    const res = await fetch(`https://connector-gateway.lovable.dev/google_maps/places/v1/places/${encodeURIComponent(data.placeId)}`, {
+    const maps = process.env["GOOGLE_MAPS_API_KEY"];
+    if (!maps) throw new Error("Google Maps is not connected (GOOGLE_MAPS_API_KEY)");
+    const res = await fetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(data.placeId)}`, {
       signal: AbortSignal.timeout(8000),
-      headers: { Authorization: `Bearer ${lovable}`, "X-Connection-Api-Key": maps, "X-Goog-FieldMask": "displayName,formattedAddress,location,addressComponents" },
+      headers: { "X-Goog-Api-Key": maps, "X-Goog-FieldMask": "displayName,formattedAddress,location,addressComponents" },
     });
     if (!res.ok) { const b = await res.text(); console.error(`[places] details [${res.status}]: ${b.slice(0, 300)}`); throw new Error(`Google place lookup failed [${res.status}]`); }
     const p = (await res.json()) as { displayName?: { text?: string }; formattedAddress?: string; location?: { latitude: number; longitude: number }; addressComponents?: { longText?: string; types?: string[] }[] };

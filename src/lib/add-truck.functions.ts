@@ -16,10 +16,10 @@ async function assertAdmin({ supabase, userId }: Ctx) {
   if (!data) throw new Error("Forbidden");
 }
 async function apify<T>(actor: string, input: unknown): Promise<T[]> {
-  const token = process.env["APIFY_API_KEY"], lovable = process.env["LOVABLE_API_KEY"];
-  if (!token || !lovable) throw new Error("Apify connection is not configured");
-  const res = await fetch(`https://connector-gateway.lovable.dev/apify/acts/${actor}/run-sync-get-dataset-items?timeout=90`, {
-    method: "POST", headers: { Authorization: `Bearer ${lovable}`, "X-Connection-Api-Key": token, "Content-Type": "application/json" }, body: JSON.stringify(input),
+  const token = process.env["APIFY_API_KEY"];
+  if (!token) throw new Error("APIFY_API_KEY is not set: Apify is not configured");
+  const res = await fetch(`https://api.apify.com/v2/acts/${actor}/run-sync-get-dataset-items?timeout=90`, {
+    method: "POST", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }, body: JSON.stringify(input),
   });
   if (!res.ok) throw new Error(`Apify ${actor} failed [${res.status}]: ${(await res.text()).slice(0, 200)}`);
   return (await res.json()) as T[];

@@ -2,8 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { parseStopDrafts, type StopDraft } from "@/data/stop-drafts";
 
-const MODEL = "openai/gpt-6-astra";
-const GATEWAY = "https://ai.gateway.lovable.dev/v1/responses";
 const str = { type: "string" };
 const SCHEMA = {
   type: "object", additionalProperties: false, required: ["stops"],
@@ -32,45 +30,11 @@ export const readStopsScreenshot = createServerFn({ method: "POST" })
       context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" }),
     ]);
     if (!owns && !admin) throw new Error("Only this truck's owner or an admin can add stops.");
-    const key = process.env["LOVABLE_API_KEY"] ?? "";
-    if (!key && !process.env["GOOGLE_API_KEY"]) return { stops: [], skipped: 0, error: "The AI reader isn't configured." };
+    const { hasGemini, geminiJson } = await import("./gemini.server");
+    if (!hasGemini()) return { stops: [], skipped: 0, error: "The AI reader isn't configured." };
     const { data: truck } = await context.supabase.from("trucks").select("name").eq("id", data.truckId).maybeSingle();
     const { chicagoDate } = await import("@/data/trucks");
     const today = chicagoDate();
-    const { hasGemini, geminiJson } = await import("./gemini.server");
-    if (hasGemini()) {
-      try { const j = await geminiJson<{ stops?: unknown }>({ text: PROMPT(today, truck?.name ?? "this truck"), images: [data.image], schema: SCHEMA }); return parseStopDrafts(j.stops ?? [], today); }
-      catch (e) { console.error("[stop reader] gemini", e); return { stops: [], skipped: 0, error: "Couldn't read the screenshot." }; }
-    }
-    const res = await fetch(GATEWAY, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Lovable-API-Key": key, "X-Lovable-AIG-SDK": "fetch" },
-      body: JSON.stringify({
-        model: MODEL, stream: true, store: false, reasoning: { effort: "low", summary: "auto" }, include: ["reasoning.encrypted_content"],
-        input: [{ role: "user", content: [{ type: "input_text", text: PROMPT(today, truck?.name ?? "this truck") }, { type: "input_image", image_url: data.image }] }],
-        text: { format: { type: "json_schema", name: "stops", strict: true, schema: SCHEMA } },
-      }),
-    });
-    if (!res.ok || !res.body) {
-      const body = await res.text().catch(() => "");
-      console.error(`[stop reader] gateway failed [${res.status}]: ${body.slice(0, 300)}`);
-      return { stops: [], skipped: 0, error: res.status === 429 ? "The AI reader is busy — try again in a minute." : res.status === 402 ? "AI credits are used up." : "Couldn't read the screenshot." };
-    }
-    const reader = res.body.getReader();
-    const dec = new TextDecoder();
-    let buf = "", text = "";
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += dec.decode(value, { stream: true });
-      let i: number;
-      while ((i = buf.indexOf("\n\n")) >= 0) {
-        const line = buf.slice(0, i).split("\n").find((l) => l.startsWith("data:")); buf = buf.slice(i + 2);
-        if (!line) continue;
-        try { const ev = JSON.parse(line.slice(5).trim()) as { type?: string; delta?: string }; if (ev.type === "response.output_text.delta" && ev.delta) text += ev.delta; } catch { /* keep-alive */ }
-      }
-    }
-    let raw: unknown = [];
-    try { raw = (JSON.parse(text || "{}") as { stops?: unknown }).stops ?? []; } catch { raw = []; }
-    return parseStopDrafts(raw, today);
+    try { const j = await geminiJson<{ stops?: unknown }>({ text: PROMPT(today, truck?.name ?? "this truck"), images: [data.image], schema: SCHEMA }); return parseStopDrafts(j.stops ?? [], today); }
+    catch (e) { console.error("[stop reader] gemini", e); return { stops: [], skipped: 0, error: "Couldn't read the screenshot." }; }
   });

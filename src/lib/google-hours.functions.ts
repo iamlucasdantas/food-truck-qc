@@ -13,15 +13,15 @@ export const refreshGoogleHours = createServerFn({ method: 'POST' })
   .handler(async ({ data, context }) => {
     const { data: admin } = await context.supabase.rpc('has_role', { _user_id: context.userId, _role: 'admin' });
     if (!admin) throw Error('Forbidden');
-    const lovable = process.env['LOVABLE_API_KEY'], maps = process.env['GOOGLE_MAPS_API_KEY'];
-    if (!lovable || !maps) throw Error('Google Maps connection is not configured');
+    const maps = process.env['GOOGLE_MAPS_API_KEY'];
+    if (!maps) throw Error('Google Maps connection is not configured (GOOGLE_MAPS_API_KEY)');
     const { data: trucks, error } = await context.supabase.from('trucks').select('id,name,description,is_food_truck,truck_type,google_place_id,base_address').in('id', [...new Set(data.truckIds)]).is('deleted_at', null);
     if (error) throw Error(error.message);
     const results: { id: string; name: string; hours: string[]; included: boolean; addressConfirmed?: boolean; businessStatus?: string | undefined; error?: string }[] = [];
     for (const t of trucks ?? []) {
       if (!t.google_place_id) { results.push({ id: t.id, name: t.name, hours: [], included: t.is_food_truck, error: 'No Google Place ID saved' }); continue; }
-      const response = await fetch(`https://connector-gateway.lovable.dev/google_maps/places/v1/places/${encodeURIComponent(t.google_place_id)}`, {
-        signal: AbortSignal.timeout(8000), headers: { Authorization: `Bearer ${lovable}`, 'X-Connection-Api-Key': maps, 'X-Goog-FieldMask': 'id,displayName,types,primaryType,regularOpeningHours,businessStatus,formattedAddress,location' },
+      const response = await fetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(t.google_place_id)}`, {
+        signal: AbortSignal.timeout(8000), headers: { 'X-Goog-Api-Key': maps, 'X-Goog-FieldMask': 'id,displayName,types,primaryType,regularOpeningHours,businessStatus,formattedAddress,location' },
       });
       if (!response.ok) {
         const body = await response.text();

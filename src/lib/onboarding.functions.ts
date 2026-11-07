@@ -51,17 +51,17 @@ export const prefillFromSocialLink = createServerFn({ method: "POST" })
 
 export interface AddressSuggestion { label: string; placeId: string }
 
-/** Signed-in address autocomplete, biased to the Quad Cities, via the Google Maps connector. */
+/** Signed-in address autocomplete, biased to the Quad Cities, via the Google Places API. */
 export const addressAutocomplete = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: unknown) => z.object({ input: z.string().trim().min(2).max(200) }).parse(input))
   .handler(async ({ data }): Promise<{ suggestions: AddressSuggestion[] }> => {
-    const lovable = process.env["LOVABLE_API_KEY"], maps = process.env["GOOGLE_MAPS_API_KEY"];
-    if (!lovable || !maps) return { suggestions: [] };
-    const res = await fetch("https://connector-gateway.lovable.dev/google_maps/places/v1/places:autocomplete", {
+    const maps = process.env["GOOGLE_MAPS_API_KEY"];
+    if (!maps) { console.error("[onboarding] GOOGLE_MAPS_API_KEY is not set"); return { suggestions: [] }; }
+    const res = await fetch("https://places.googleapis.com/v1/places:autocomplete", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${lovable}`, "X-Connection-Api-Key": maps, "Content-Type": "application/json",
+        "X-Goog-Api-Key": maps, "Content-Type": "application/json",
         "X-Goog-FieldMask": "suggestions.placePrediction.placeId,suggestions.placePrediction.text.text",
       },
       body: JSON.stringify({

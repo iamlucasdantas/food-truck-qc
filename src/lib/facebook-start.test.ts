@@ -3,7 +3,7 @@ import { startFacebookRun } from "./facebook.server";
 
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
 it("persists successful Facebook runs when Instagram startup is rejected", async () => {
-  vi.stubEnv("LOVABLE_API_KEY", "test-only");
+  vi.stubEnv("GOOGLE_API_KEY", "test-only");
   vi.stubEnv("APIFY_API_KEY", "test-only");
   const sources = [
     { id: "fb", name: "Coffee & Crumb", kind: "page", url: "https://www.facebook.com/coffeeandcrumbtruck" },

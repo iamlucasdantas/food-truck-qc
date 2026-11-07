@@ -14,11 +14,11 @@ type Place = {
   temporarilyClosed?: boolean; permanentlyClosed?: boolean;
 };
 
-const GATEWAY = "https://connector-gateway.lovable.dev/apify";
+const GATEWAY = "https://api.apify.com/v2";
 function apifyHeaders() {
-  const token = process.env['APIFY_API_KEY'], lovable = process.env['LOVABLE_API_KEY'];
-  if (!token || !lovable) throw new Error('Apify connection is not configured');
-  return { Authorization: `Bearer ${lovable}`, 'X-Connection-Api-Key': token, "Content-Type": "application/json" };
+  const token = process.env['APIFY_API_KEY'];
+  if (!token) throw new Error('APIFY_API_KEY is not set: Apify is not configured');
+  return { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
 }
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function requireAdmin(supabase: any, userId: string) {
@@ -26,7 +26,7 @@ async function requireAdmin(supabase: any, userId: string) {
   if (!isAdmin) throw new Error("Forbidden");
 }
 
-/** Admin-only: start one city's Google Maps scrape as a background Apify run (a waiting call times out at the gateway with 502). */
+/** Admin-only: start one city's Google Maps scrape as a background Apify run (a waiting call would exceed the serverless timeout). */
 export const startSeedCity = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { city: string }) => {

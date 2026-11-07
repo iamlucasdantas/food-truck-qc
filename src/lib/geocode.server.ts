@@ -10,7 +10,7 @@ function validPoint(lat: number, lng: number) {
 }
 function safeMessage(value: string) {
   let text = value;
-  for (const name of ['GOOGLE_MAPS_API_KEY', 'LOVABLE_API_KEY', 'GOOGLE_API_KEY']) {
+  for (const name of ['GOOGLE_MAPS_API_KEY', 'GOOGLE_API_KEY']) {
     const secret = process.env[name];
     if (secret) text = text.replaceAll(secret, '[redacted]');
   }
@@ -27,12 +27,10 @@ async function readResponse(provider: string, url: string, headers: HeadersInit)
 }
 
 async function google(address: string): Promise<GeocodedAddress> {
-  const key = process.env['GOOGLE_MAPS_API_KEY'], auth = process.env['LOVABLE_API_KEY'];
-  if (!key || !auth) throw Error('Google Geocoding: server connector credentials missing');
-  const query = new URLSearchParams({ address, components: 'country:US', region: 'us' });
-  const { status, data } = await readResponse('Google Geocoding', `https://connector-gateway.lovable.dev/google_maps/maps/api/geocode/json?${query}`, {
-    Authorization: `Bearer ${auth}`, 'X-Connection-Api-Key': key,
-  });
+  const key = process.env['GOOGLE_MAPS_API_KEY'];
+  if (!key) throw Error('Google Geocoding: GOOGLE_MAPS_API_KEY missing');
+  const query = new URLSearchParams({ address, components: 'country:US', region: 'us', key });
+  const { status, data } = await readResponse('Google Geocoding', `https://maps.googleapis.com/maps/api/geocode/json?${query}`, {});
   if (data.status !== 'OK') throw Error(`Google Geocoding HTTP ${status}, ${data.status ?? 'UNKNOWN'}: ${data.error_message ?? 'No matching address'}`);
   const hit = data.results?.[0], pos = hit?.geometry?.location;
   if (!pos || !validPoint(pos.lat, pos.lng)) throw Error('Google Geocoding: invalid or missing coordinates');
