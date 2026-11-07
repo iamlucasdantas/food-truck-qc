@@ -6,7 +6,7 @@ import { DAVENPORT_CENTER } from '@/data/coverage';
 type DB = SupabaseClient<Database>;
 export type ResolvedVenue = { name: string; address: string | null; city: string; lat: number; lng: number; check: boolean };
 
-const GATEWAY = "https://connector-gateway.lovable.dev/google_maps";
+const GATEWAY = "https://places.googleapis.com";
 const QC = { latitude: DAVENPORT_CENTER.lat, longitude: DAVENPORT_CENTER.lng };
 
 function cityFromAddress(a: string): string {
@@ -16,12 +16,12 @@ function cityFromAddress(a: string): string {
 
 /** Google Places text search, biased to the Quad Cities. Returns null when not configured or nothing found. */
 async function placesLookup(name: string, cityHint: string) {
-  const lovable = process.env["LOVABLE_API_KEY"], maps = process.env["GOOGLE_MAPS_API_KEY"];
-  if (!lovable || !maps) return null;
-  const res = await fetch(`${GATEWAY}/places/v1/places:searchText`, {
+  const maps = process.env["GOOGLE_MAPS_API_KEY"];
+  if (!maps) { console.error("[venues] GOOGLE_MAPS_API_KEY is not set"); return null; }
+  const res = await fetch(`${GATEWAY}/v1/places:searchText`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${lovable}`, "X-Connection-Api-Key": maps, "Content-Type": "application/json",
+      "X-Goog-Api-Key": maps, "Content-Type": "application/json",
       "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.location",
     },
     body: JSON.stringify({ textQuery: [name, cityHint || "Davenport Iowa region"].join(", "), pageSize: 3, locationBias: { circle: { center: QC, radius: 50000 } } }),

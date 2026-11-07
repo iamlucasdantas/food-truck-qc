@@ -1,0 +1,1124 @@
+{
+  "api_keys": {
+    "created_at": {
+      "nullable": false,
+      "family": "string"
+    },
+    "id": {
+      "nullable": false,
+      "family": "string"
+    },
+    "key_hash": {
+      "nullable": false,
+      "family": "string"
+    },
+    "key_prefix": {
+      "nullable": false,
+      "family": "string"
+    },
+    "label": {
+      "nullable": false,
+      "family": "string"
+    },
+    "last_used_at": {
+      "nullable": true,
+      "family": "string"
+    },
+    "revoked_at": {
+      "nullable": true,
+      "family": "string"
+    },
+    "user_id": {
+      "nullable": false,
+      "family": "string"
+    }
+  },
+  "app_events": {
+    "created_at": {
+      "nullable": false,
+      "family": "string"
+    },
+    "id": {
+      "nullable": false,
+      "family": "string"
+    },
+    "kind": {
+      "nullable": false,
+      "family": "string"
+    },
+    "path": {
+      "nullable": true,
+      "family": "string"
+    },
+    "truck_id": {
+      "nullable": true,
+      "family": "string"
+    },
+    "venue": {
+      "nullable": true,
+      "family": "string"
+    },
+    "visitor": {
+      "nullable": true,
+      "family": "string"
+    }
+  },
+  "businesses": {
+    "created_at": {
+      "nullable": false,
+      "family": "string"
+    },
+    "description": {
+      "nullable": false,
+      "family": "string"
+    },
+    "facebook": {
+      "nullable": true,
+      "family": "string"
+    },
+    "instagram": {
+      "nullable": true,
+      "family": "string"
+    },
+    "logo_url": {
+      "nullable": true,
+      "family": "string"
+    },
+    "name": {
+      "nullable": false,
+      "family": "string"
+    },
+    "owner_id": {
+      "nullable": false,
+      "family": "string"
+    },
+    "payment_methods": {
+      "nullable": false,
+      "family": "array"
+    },
+    "payment_other": {
+      "nullable": false,
+      "family": "string"
+    },
+    "reddit": {
+      "nullable": true,
+      "family": "string"
+    },
+    "updated_at": {
+      "nullable": false,
+      "family": "string"
+    },
+    "website": {
+      "nullable": true,
+      "family": "string"
+    }
+  },
+  "calendar_feeds": {
+    "created_at": {
+      "nullable": false,
+      "family": "string"
+    },
+    "created_by": {
+      "nullable": false,
+      "family": "string"
+    },
+    "id": {
+      "nullable": false,
+      "family": "string"
+    },
+    "kind": {
+      "nullable": false,
+      "family": "string"
+    },
+    "truck_id": {
+      "nullable": false,
+      "family": "string"
+    },
+    "url": {
+      "nullable": false,
+      "family": "string"
+    }
+  },
+  "chat_api_logs": {
+    "auth_detail": {
+      "nullable": true,
+      "family": "string"
+    },
+    "auth_ok": {
+      "nullable": false,
+      "family": "boolean"
+    },
+    "created_at": {
+      "nullable": false,
+      "family": "string"
+    },
+    "endpoint": {
+      "nullable": false,
+      "family": "string"
+    },
+    "error": {
+      "nullable": true,
+      "family": "string"
+    },
+    "id": {
+      "nullable": false,
+      "family": "string"
+    },
+    "method": {
+      "nullable": false,
+      "family": "string"
+    },
+    "params": {
+      "nullable": false,
+      "family": "json"
+    },
+    "status": {
+      "nullable": false,
+      "family": "number"
+    },
+    "user_agent": {
+      "nullable": true,
+      "family": "string"
+    }
+  },
+  "claims": {
+    "created_at": {
+      "nullable": false,
+      "family": "string"
+    },
+    "id": {
+      "nullable": false,
+      "family": "string"
+    },
+    "message": {
+      "nullable": false,
+      "family": "string"
+    },
+    "reject_reason": {
+      "nullable": true,
+      "family": "string"
+    },
+    "reviewed_at": {
+      "nullable": true,
+      "family": "string"
+    },
+    "status": {
+      "nullable": false,
+      "family": "string"
+    },
+    "truck_id": {
+      "nullable": false,
+      "family": "string"
+    },
+    "user_email": {
+      "nullable": true,
+      "family": "string"
+    },
+    "user_id": {
+      "nullable": false,
+      "family": "string"
+    }
+  },
+  "enrich_runs": {
+    "created_at": {
+      "nullable": false,
+      "family": "string"
+    },
+    "id": {
+      "nullable": false,
+      "family": "string"
+    },
+    "status": {
+      "nullable": false,
+      "family": "string"
+    },
+    "steps": {
+      "nullable": false,
+      "family": "json"
+    },
+    "truck_id": {
+      "nullable": false,
+      "family": "string"
+    },
+    "updated_at": {
+      "nullable": false,
+      "family": "string"
+    },
+    "user_id": {
+      "nullable": false,
+      "family": "string"
+    }
+  },
+  "favorites": {
+    "created_at": {
+      "nullable": false,
+      "family": "string"
+    },
+    "truck_id": {
+      "nullable": false,
+      "family": "string"
+    },
+    "user_id": {
+      "nullable": false,
+      "family": "string"
+    }
+  },
+  "geocode_cache": {
+    "city": {
+      "nullable": true,
+      "family": "string"
+    },
+    "created_at": {
+      "nullable": false,
+      "family": "string"
+    },
+    "lat": {
+      "nullable": true,
+      "family": "number"
+    },
+    "lng": {
+      "nullable": true,
+      "family": "number"
+    },
+    "query": {
+      "nullable": false,
+      "family": "string"
+    }
+  },
+  "ingestion_runs": {
+    "cities_done": {
+      "nullable": false,
+      "family": "array"
+    },
+    "cities_total": {
+      "nullable": false,
+      "family": "array"
+    },
+    "error": {
+      "nullable": true,
+      "family": "string"
+    },
+    "finished_at": {
+      "nullable": true,
+      "family": "string"
+    },
+    "id": {
+      "nullable": false,
+      "family": "string"
+    },
+    "items_created": {
+      "nullable": false,
+      "family": "number"
+    },
+    "items_found": {
+      "nullable": false,
+      "family": "number"
+    },
+    "meta": {
+      "nullable": false,
+      "family": "json"
+    },
+    "notes": {
+      "nullable": true,
+      "family": "string"
+    },
+    "source": {
+      "nullable": false,
+      "family": "string"
+    },
+    "started_at": {
+      "nullable": false,
+      "family": "string"
+    },
+    "status": {
+      "nullable": false,
+      "family": "string"
+    }
+  },
+  "profile_settings": {
+    "bio": {
+      "nullable": false,
+      "family": "string"
+    },
+    "cuisines": {
+      "nullable": false,
+      "family": "array"
+    },
+    "dietary": {
+      "nullable": false,
+      "family": "array"
+    },
+    "home_area": {
+      "nullable": false,
+      "family": "string"
+    },
+    "notifications": {
+      "nullable": false,
+      "family": "json"
+    },
+    "share_enabled": {
+      "nullable": false,
+      "family": "boolean"
+    },
+    "updated_at": {
+      "nullable": false,
+      "family": "string"
+    },
+    "user_id": {
+      "nullable": false,
+      "family": "string"
+    }
+  },
+  "profile_trucks": {
+    "bell": {
+      "nullable": false,
+      "family": "boolean"
+    },
+    "following": {
+      "nullable": false,
+      "family": "boolean"
+    },
+    "list": {
+      "nullable": false,
+      "family": "string"
+    },
+    "truck_id": {
+      "nullable": false,
+      "family": "string"
+    },
+    "user_id": {
+      "nullable": false,
+      "family": "string"
+    },
+    "viewed_at": {
+      "nullable": true,
+      "family": "string"
+    },
+    "visited_at": {
+      "nullable": true,
+      "family": "string"
+    }
+  },
+  "profiles": {
+    "avatar_url": {
+      "nullable": true,
+      "family": "string"
+    },
+    "created_at": {
+      "nullable": false,
+      "family": "string"
+    },
+    "crm_synced_at": {
+      "nullable": true,
+      "family": "string"
+    },
+    "display_name": {
+      "nullable": false,
+      "family": "string"
+    },
+    "id": {
+      "nullable": false,
+      "family": "string"
+    },
+    "notify_favorites": {
+      "nullable": false,
+      "family": "boolean"
+    },
+    "onboarding": {
+      "nullable": false,
+      "family": "json"
+    }
+  },
+  "social_posts": {
+    "processed_at": {
+      "nullable": false,
+      "family": "string"
+    },
+    "run_id": {
+      "nullable": true,
+      "family": "string"
+    },
+    "source_id": {
+      "nullable": true,
+      "family": "string"
+    },
+    "stops_created": {
+      "nullable": false,
+      "family": "number"
+    },
+    "url": {
+      "nullable": false,
+      "family": "string"
+    }
+  },
+  "social_sources": {
+    "active": {
+      "nullable": false,
+      "family": "boolean"
+    },
+    "created_at": {
+      "nullable": false,
+      "family": "string"
+    },
+    "id": {
+      "nullable": false,
+      "family": "string"
+    },
+    "kind": {
+      "nullable": false,
+      "family": "string"
+    },
+    "last_posts": {
+      "nullable": false,
+      "family": "number"
+    },
+    "last_reason": {
+      "nullable": true,
+      "family": "string"
+    },
+    "last_run_at": {
+      "nullable": true,
+      "family": "string"
+    },
+    "last_status": {
+      "nullable": true,
+      "family": "string"
+    },
+    "last_stops": {
+      "nullable": false,
+      "family": "number"
+    },
+    "name": {
+      "nullable": false,
+      "family": "string"
+    },
+    "truck_id": {
+      "nullable": true,
+      "family": "string"
+    },
+    "url": {
+      "nullable": false,
+      "family": "string"
+    }
+  },
+  "stop_series": {
+    "address": {
+      "nullable": true,
+      "family": "string"
+    },
+    "city": {
+      "nullable": false,
+      "family": "string"
+    },
+    "created_at": {
+      "nullable": false,
+      "family": "string"
+    },
+    "end_date": {
+      "nullable": true,
+      "family": "string"
+    },
+    "end_time": {
+      "nullable": false,
+      "family": "string"
+    },
+    "external_uid": {
+      "nullable": true,
+      "family": "string"
+    },
+    "freq": {
+      "nullable": false,
+      "family": "string"
+    },
+    "id": {
+      "nullable": false,
+      "family": "string"
+    },
+    "lat": {
+      "nullable": false,
+      "family": "number"
+    },
+    "lng": {
+      "nullable": false,
+      "family": "number"
+    },
+    "month_nth": {
+      "nullable": true,
+      "family": "number"
+    },
+    "note": {
+      "nullable": true,
+      "family": "string"
+    },
+    "skip_dates": {
+      "nullable": false,
+      "family": "array"
+    },
+    "start_date": {
+      "nullable": false,
+      "family": "string"
+    },
+    "start_time": {
+      "nullable": false,
+      "family": "string"
+    },
+    "truck_id": {
+      "nullable": false,
+      "family": "string"
+    },
+    "venue_name": {
+      "nullable": false,
+      "family": "string"
+    },
+    "weekdays": {
+      "nullable": false,
+      "family": "array"
+    }
+  },
+  "stops": {
+    "address": {
+      "nullable": true,
+      "family": "string"
+    },
+    "calendar_occurrence": {
+      "nullable": true,
+      "family": "string"
+    },
+    "calendar_source_id": {
+      "nullable": true,
+      "family": "string"
+    },
+    "calendar_uid": {
+      "nullable": true,
+      "family": "string"
+    },
+    "cancelled": {
+      "nullable": false,
+      "family": "boolean"
+    },
+    "city": {
+      "nullable": false,
+      "family": "string"
+    },
+    "confidence": {
+      "nullable": false,
+      "family": "number"
+    },
+    "created_at": {
+      "nullable": false,
+      "family": "string"
+    },
+    "ends_at": {
+      "nullable": false,
+      "family": "string"
+    },
+    "id": {
+      "nullable": false,
+      "family": "string"
+    },
+    "is_live": {
+      "nullable": false,
+      "family": "boolean"
+    },
+    "lat": {
+      "nullable": false,
+      "family": "number"
+    },
+    "lng": {
+      "nullable": false,
+      "family": "number"
+    },
+    "note": {
+      "nullable": true,
+      "family": "string"
+    },
+    "occurrence_date": {
+      "nullable": true,
+      "family": "string"
+    },
+    "repeat_group": {
+      "nullable": true,
+      "family": "string"
+    },
+    "series_id": {
+      "nullable": true,
+      "family": "string"
+    },
+    "source": {
+      "nullable": false,
+      "family": "string"
+    },
+    "source_url": {
+      "nullable": true,
+      "family": "string"
+    },
+    "starts_at": {
+      "nullable": false,
+      "family": "string"
+    },
+    "truck_id": {
+      "nullable": false,
+      "family": "string"
+    },
+    "venue_name": {
+      "nullable": false,
+      "family": "string"
+    }
+  },
+  "suggested_stops": {
+    "address": {
+      "nullable": true,
+      "family": "string"
+    },
+    "author": {
+      "nullable": true,
+      "family": "string"
+    },
+    "city": {
+      "nullable": false,
+      "family": "string"
+    },
+    "created_at": {
+      "nullable": false,
+      "family": "string"
+    },
+    "ends_at": {
+      "nullable": false,
+      "family": "string"
+    },
+    "excerpt": {
+      "nullable": false,
+      "family": "string"
+    },
+    "id": {
+      "nullable": false,
+      "family": "string"
+    },
+    "lat": {
+      "nullable": true,
+      "family": "number"
+    },
+    "lng": {
+      "nullable": true,
+      "family": "number"
+    },
+    "needs_address_check": {
+      "nullable": false,
+      "family": "boolean"
+    },
+    "reviewed_at": {
+      "nullable": true,
+      "family": "string"
+    },
+    "source": {
+      "nullable": false,
+      "family": "string"
+    },
+    "source_url": {
+      "nullable": true,
+      "family": "string"
+    },
+    "starts_at": {
+      "nullable": false,
+      "family": "string"
+    },
+    "status": {
+      "nullable": false,
+      "family": "string"
+    },
+    "truck_id": {
+      "nullable": false,
+      "family": "string"
+    },
+    "venue_name": {
+      "nullable": false,
+      "family": "string"
+    }
+  },
+  "truck_deletions": {
+    "action": {
+      "nullable": false,
+      "family": "string"
+    },
+    "actor": {
+      "nullable": true,
+      "family": "string"
+    },
+    "actor_email": {
+      "nullable": true,
+      "family": "string"
+    },
+    "created_at": {
+      "nullable": false,
+      "family": "string"
+    },
+    "id": {
+      "nullable": false,
+      "family": "string"
+    },
+    "truck_id": {
+      "nullable": false,
+      "family": "string"
+    },
+    "truck_name": {
+      "nullable": false,
+      "family": "string"
+    }
+  },
+  "truck_photos": {
+    "created_at": {
+      "nullable": false,
+      "family": "string"
+    },
+    "created_by": {
+      "nullable": false,
+      "family": "string"
+    },
+    "id": {
+      "nullable": false,
+      "family": "string"
+    },
+    "is_cover": {
+      "nullable": false,
+      "family": "boolean"
+    },
+    "path": {
+      "nullable": false,
+      "family": "string"
+    },
+    "position": {
+      "nullable": false,
+      "family": "number"
+    },
+    "truck_id": {
+      "nullable": false,
+      "family": "string"
+    }
+  },
+  "trucks": {
+    "accepts_card": {
+      "nullable": false,
+      "family": "boolean"
+    },
+    "base_address": {
+      "nullable": true,
+      "family": "string"
+    },
+    "base_lat": {
+      "nullable": true,
+      "family": "number"
+    },
+    "base_lng": {
+      "nullable": true,
+      "family": "number"
+    },
+    "base_location_confirmed_at": {
+      "nullable": true,
+      "family": "string"
+    },
+    "business_name": {
+      "nullable": false,
+      "family": "string"
+    },
+    "category": {
+      "nullable": false,
+      "family": "string"
+    },
+    "claimed_by": {
+      "nullable": true,
+      "family": "string"
+    },
+    "created_at": {
+      "nullable": false,
+      "family": "string"
+    },
+    "created_by": {
+      "nullable": true,
+      "family": "string"
+    },
+    "deleted_at": {
+      "nullable": true,
+      "family": "string"
+    },
+    "deleted_by": {
+      "nullable": true,
+      "family": "string"
+    },
+    "description": {
+      "nullable": false,
+      "family": "string"
+    },
+    "emoji": {
+      "nullable": false,
+      "family": "string"
+    },
+    "facebook": {
+      "nullable": true,
+      "family": "string"
+    },
+    "google_business_status": {
+      "nullable": true,
+      "family": "string"
+    },
+    "google_hours_updated_at": {
+      "nullable": true,
+      "family": "string"
+    },
+    "google_location_verified": {
+      "nullable": false,
+      "family": "boolean"
+    },
+    "google_place_id": {
+      "nullable": true,
+      "family": "string"
+    },
+    "google_regular_hours": {
+      "nullable": true,
+      "family": "json"
+    },
+    "google_types": {
+      "nullable": false,
+      "family": "array"
+    },
+    "id": {
+      "nullable": false,
+      "family": "string"
+    },
+    "instagram": {
+      "nullable": true,
+      "family": "string"
+    },
+    "is_food_truck": {
+      "nullable": false,
+      "family": "boolean"
+    },
+    "logo_url": {
+      "nullable": true,
+      "family": "string"
+    },
+    "menu": {
+      "nullable": false,
+      "family": "json"
+    },
+    "menu_search": {
+      "nullable": false,
+      "family": "string"
+    },
+    "menu_sections": {
+      "nullable": true,
+      "family": "json"
+    },
+    "menu_summary": {
+      "nullable": true,
+      "family": "string"
+    },
+    "menu_updated_at": {
+      "nullable": true,
+      "family": "string"
+    },
+    "merged_into": {
+      "nullable": true,
+      "family": "string"
+    },
+    "name": {
+      "nullable": false,
+      "family": "string"
+    },
+    "payment_methods": {
+      "nullable": false,
+      "family": "array"
+    },
+    "payment_other": {
+      "nullable": false,
+      "family": "string"
+    },
+    "payments_same_as_business": {
+      "nullable": false,
+      "family": "boolean"
+    },
+    "phone": {
+      "nullable": true,
+      "family": "string"
+    },
+    "reddit": {
+      "nullable": true,
+      "family": "string"
+    },
+    "source": {
+      "nullable": false,
+      "family": "string"
+    },
+    "status": {
+      "nullable": false,
+      "family": "string"
+    },
+    "truck_type": {
+      "nullable": false,
+      "family": "string"
+    },
+    "updated_at": {
+      "nullable": false,
+      "family": "string"
+    },
+    "website": {
+      "nullable": true,
+      "family": "string"
+    }
+  },
+  "user_roles": {
+    "id": {
+      "nullable": false,
+      "family": "string"
+    },
+    "role": {
+      "nullable": false,
+      "family": "string"
+    },
+    "user_id": {
+      "nullable": false,
+      "family": "string"
+    }
+  },
+  "venue_calendar_sources": {
+    "active": {
+      "nullable": false,
+      "family": "boolean"
+    },
+    "address": {
+      "nullable": false,
+      "family": "string"
+    },
+    "city": {
+      "nullable": false,
+      "family": "string"
+    },
+    "created_at": {
+      "nullable": false,
+      "family": "string"
+    },
+    "id": {
+      "nullable": false,
+      "family": "string"
+    },
+    "ignored": {
+      "nullable": false,
+      "family": "number"
+    },
+    "imported": {
+      "nullable": false,
+      "family": "number"
+    },
+    "in_review": {
+      "nullable": false,
+      "family": "number"
+    },
+    "last_error": {
+      "nullable": true,
+      "family": "string"
+    },
+    "last_sync_at": {
+      "nullable": true,
+      "family": "string"
+    },
+    "lat": {
+      "nullable": false,
+      "family": "number"
+    },
+    "lng": {
+      "nullable": false,
+      "family": "number"
+    },
+    "name": {
+      "nullable": false,
+      "family": "string"
+    },
+    "sync_started_at": {
+      "nullable": true,
+      "family": "string"
+    },
+    "sync_token": {
+      "nullable": true,
+      "family": "string"
+    },
+    "timezone": {
+      "nullable": false,
+      "family": "string"
+    },
+    "url": {
+      "nullable": false,
+      "family": "string"
+    }
+  },
+  "venue_calendar_titles": {
+    "decision": {
+      "nullable": false,
+      "family": "string"
+    },
+    "last_seen_at": {
+      "nullable": false,
+      "family": "string"
+    },
+    "occurrences": {
+      "nullable": false,
+      "family": "json"
+    },
+    "source_id": {
+      "nullable": false,
+      "family": "string"
+    },
+    "title": {
+      "nullable": false,
+      "family": "string"
+    },
+    "title_key": {
+      "nullable": false,
+      "family": "string"
+    },
+    "truck_id": {
+      "nullable": true,
+      "family": "string"
+    }
+  },
+  "venues": {
+    "address": {
+      "nullable": true,
+      "family": "string"
+    },
+    "city": {
+      "nullable": false,
+      "family": "string"
+    },
+    "confirmed": {
+      "nullable": false,
+      "family": "boolean"
+    },
+    "created_at": {
+      "nullable": false,
+      "family": "string"
+    },
+    "id": {
+      "nullable": false,
+      "family": "string"
+    },
+    "lat": {
+      "nullable": false,
+      "family": "number"
+    },
+    "lng": {
+      "nullable": false,
+      "family": "number"
+    },
+    "name": {
+      "nullable": false,
+      "family": "string"
+    },
+    "norm_name": {
+      "nullable": false,
+      "family": "string"
+    },
+    "source": {
+      "nullable": false,
+      "family": "string"
+    }
+  }
+}

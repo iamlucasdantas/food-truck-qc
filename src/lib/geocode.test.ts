@@ -3,7 +3,6 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 beforeEach(() => {
   vi.resetModules();
   vi.stubEnv('GOOGLE_MAPS_API_KEY', '');
-  vi.stubEnv('LOVABLE_API_KEY', '');
   vi.spyOn(console, 'info').mockImplementation(() => undefined);
   vi.spyOn(console, 'error').mockImplementation(() => undefined);
 });

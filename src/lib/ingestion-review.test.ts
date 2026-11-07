@@ -11,7 +11,7 @@ describe('scraper listing creation', () => {
   beforeEach(() => {
     inserted = [];
     existingStops = [];
-    process.env['LOVABLE_API_KEY'] = 'test-only';
+    process.env['GOOGLE_API_KEY'] = 'test-only';
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify({ menu: [], stops: [{ truck_name: 'Mexies Food Truck', is_food_truck: true, date: '2026-10-21', start: '11:00', end: '14:00', venue: 'Market', address: '', city: 'DeWitt', confidence: 0.95 }] }) } }] }))));
     venue.mockResolvedValue({ name: 'Market', address: '911 11th St, DeWitt IA', city: 'DeWitt', lat: 41.8258374, lng: -90.5442848, check: false });
     webhook.mockReset();

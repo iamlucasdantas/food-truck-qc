@@ -17,7 +17,8 @@ export const enrichScreenshotLocation = createServerFn({ method: "POST" })
     if (!owns && !admin) throw new Error("Only this truck's owner or an admin can look up stops.");
     const lookup = await import("./screenshot-location.server");
     const sign = async (id: string) => {
-      const secret = process.env["LOVABLE_API_KEY"];
+      // Any server-only secret works as the HMAC key; the service-role key never leaves the server.
+      const secret = process.env["LOOKUP_SIGNING_SECRET"] || process.env["SUPABASE_SERVICE_ROLE_KEY"];
       if (!secret) throw new Error("Address lookup is not connected.");
       const enc = new TextEncoder();
       const key = await crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);

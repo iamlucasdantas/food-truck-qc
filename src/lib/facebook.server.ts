@@ -26,15 +26,14 @@ const ACTORS: Record<Kind, string> = {
   reddit: "apify~reddit-scraper-lite",
   instagram: "apify~instagram-scraper",
 };
-const MODEL = "google/gemini-2.5-flash";
 const KINDS: Kind[] = ["page", "group", "reddit", "instagram"];
 
 const normUrl = (u: string) => u.trim().toLowerCase().replace(/^https?:\/\/(www\.|m\.|web\.)?/, "").replace(/[?#].*$/, "").replace(/\/+$/, "");
 
 export function apifyHeaders() {
-  const t = process.env['APIFY_API_KEY'], lovable = process.env['LOVABLE_API_KEY'];
-  if (!t || !lovable) throw new Error('Apify connection is not configured');
-  return { Authorization:`Bearer ${lovable}`, 'X-Connection-Api-Key':t };
+  const t = process.env['APIFY_API_KEY'];
+  if (!t) throw new Error('APIFY_API_KEY is not set: Apify is not configured');
+  return { Authorization: `Bearer ${t}` };
 }
 
 /** Every truck with a social URL/handle is also a source of that kind. */
@@ -93,7 +92,7 @@ async function startActor(kind: Kind, all: Source[]): Promise<string> {
   const cookies = (kind === "group" || kind === "page") ? facebookCookies() : null;
   if (cookies) Object.assign(input, { cookies });
   const hooks = btoa(JSON.stringify([{ eventTypes: ["ACTOR.RUN.SUCCEEDED", "ACTOR.RUN.FAILED", "ACTOR.RUN.TIMED_OUT", "ACTOR.RUN.ABORTED"], requestUrl: `${PUBLIC_ORIGIN}/api/public/apify-webhook` }]));
-  const res = await fetch(`https://connector-gateway.lovable.dev/apify/acts/${ACTORS[kind]}/runs?webhooks=${hooks}`, {
+  const res = await fetch(`https://api.apify.com/v2/acts/${ACTORS[kind]}/runs?webhooks=${hooks}`, {
     method: "POST", headers: { ...apifyHeaders(), "Content-Type": "application/json" }, body: JSON.stringify(input), signal: AbortSignal.timeout(10000),
   });
   if (!res.ok) throw new Error(`Apify ${kind} start failed [${res.status}]: ${(await res.text()).slice(0, 200)}`);
@@ -205,17 +204,16 @@ function postDay(time: string, today: string): string {
 }
 
 async function extract(text: string, postTime: string, url: string, pageOwner: string | null, today: string, images: string[] = []): Promise<{ stops: Extracted[]; menu: PostMenu }> {
-  const gkey = process.env["GOOGLE_API_KEY"];
-  const key = gkey || process.env["LOVABLE_API_KEY"];
-  if (!key) throw new AiStop("No AI key is configured");
-  const aiUrl = gkey ? "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions" : "https://ai.gateway.lovable.dev/v1/chat/completions";
+  const { hasAiKey, aiKey, AI_CHAT_COMPLETIONS_URL, AI_DEFAULT_MODEL } = await import("./ai.server");
+  if (!hasAiKey()) throw new AiStop("No AI key is configured (GOOGLE_API_KEY)");
+  const key = aiKey();
   const day = postDay(postTime, today);
   const hints = splitVenues(text);
   const date = resolvePostDate(text, day);
-  const ask = (imgs: string[]) => fetch(aiUrl, {
+  const ask = (imgs: string[]) => fetch(AI_CHAT_COMPLETIONS_URL, {
     method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: gkey ? "gemini-3.8-flash" : MODEL,
+      model: AI_DEFAULT_MODEL,
       response_format: { type: "json_schema", json_schema: { name: "stops", strict: true, schema: SCHEMA } },
       messages: [
         { role: "system", content: SYSTEM },
@@ -369,7 +367,7 @@ export async function ingestPost(ctx: IngestCtx, kind: Kind | "paste", p: Post, 
 }
 
 async function fetchRun(id: string) {
-  const res = await fetch(`https://connector-gateway.lovable.dev/apify/actor-runs/${id}`, { headers: apifyHeaders() });
+  const res = await fetch(`https://api.apify.com/v2/actor-runs/${id}`, { headers: apifyHeaders() });
   if (!res.ok) throw Error(`Apify run read failed [${res.status}]: ${await res.text()}`);
   return ((await res.json()) as { data: { id: string; status: string; defaultDatasetId: string } }).data;
 }
@@ -419,7 +417,7 @@ export async function processFacebookRun(db: DB, runId: string, budgetMs = 20_00
         pending = true; continue;
       }
       if (ar.status !== "SUCCEEDED") { pending = true; continue; }
-      const itemsRes = await fetch(`https://connector-gateway.lovable.dev/apify/datasets/${ar.defaultDatasetId}/items?clean=true&limit=2000`, { headers: apifyHeaders() });
+      const itemsRes = await fetch(`https://api.apify.com/v2/datasets/${ar.defaultDatasetId}/items?clean=true&limit=2000`, { headers: apifyHeaders() });
       if (!itemsRes.ok) throw Error(`Apify dataset read failed [${itemsRes.status}]: ${await itemsRes.text()}`);
       items.push(...((await itemsRes.json()) as Item[]));
       ids.forEach((id) => ready.add(id));
