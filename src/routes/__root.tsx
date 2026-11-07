@@ -1,5 +1,6 @@
 import { FavoritesSync } from "@/hooks/use-favorites";
 import { LiveAlerts } from "@/components/LiveAlerts";
+import { MaintenanceBanner } from "@/components/MaintenanceBanner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -148,6 +149,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <MaintenanceBanner />
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
         <FavoritesSync />
